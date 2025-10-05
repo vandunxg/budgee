@@ -1,0 +1,28 @@
+spring:
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/budgee
+    username: root
+    password: 122112
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+  servlet:
+    multipart:
+      max-file-size: 2MB
+      max-request-size: 2MB
+  application:
+    version: 1.0
+jwt:
+  private-key:
+    access-token: IIwLeRIVsznVTPFEYmA6HiVVBrlKkKqC36OpWzqw8mk=
+    refresh-token: tvszknimPZQEdy3c9TCERBLAkOyoCc2ZvOmGcHsRJgg=
+  expiration:
+    access-token: 3600000 # 1 hour = 1 * 60 * 60 * 1000
+    refresh-token: 2592000000 #30 days = 30 * 24 * 60 * 60 * 1000
+
+
