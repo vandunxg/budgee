@@ -7,7 +7,7 @@
                      ███████████  ▒▒████████   ██████████   ▒▒█████████  ██████████ ██████████
                     ▒▒▒▒▒▒▒▒▒▒▒    ▒▒▒▒▒▒▒▒   ▒▒▒▒▒▒▒▒▒▒     ▒▒▒▒▒▒▒▒▒  ▒▒▒▒▒▒▒▒▒▒ ▒▒▒▒▒▒▒▒▒▒
 
-                    WELCOME TO LEGAL AID APP - BACKEND PROJECT FOR WEB/APP ABOUT TO DO SYSTEM
-                                     > Designed for Legal Aid app-backend! <
+                    WELCOME TO BUDGEE APP - BACKEND PROJECT FOR WEB/APP ABOUT MONEY TRACKING SYSTEM
+                                     > Designed for budgee app-backend! <
                                      > Written in Java - Restful Api <
                                      > Spring-boot: ${spring-boot.version} <
