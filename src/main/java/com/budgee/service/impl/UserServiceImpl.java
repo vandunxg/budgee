@@ -18,6 +18,7 @@ import com.budgee.enums.SubscriptionTier;
 import com.budgee.enums.UserStatus;
 import com.budgee.exception.AuthenticationException;
 import com.budgee.exception.ErrorCode;
+import com.budgee.exception.ValidationException;
 import com.budgee.mapper.UserMapper;
 import com.budgee.model.User;
 import com.budgee.payload.request.RegisterRequest;
@@ -48,7 +49,9 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public UUID createUser(RegisterRequest request) {
-        log.info("createUser start");
+        log.info("[createUser] create user with email {}", request.email());
+
+        comparePasswordAndConfirmPassword(request.password(), request.confirmPassword());
 
         final String email = normalizeEmail(request.email());
         checkUserExistsByEmail(email);
@@ -71,9 +74,18 @@ public class UserServiceImpl implements UserService {
         return user.getId();
     }
 
+    void comparePasswordAndConfirmPassword(String password, String confirmPassword) {
+        log.info("[comparePasswordAndConfirmPassword]");
+
+        if (!password.equals(confirmPassword)) {
+            throw new ValidationException(ErrorCode.PASSWORDS_DO_NOT_MATCH);
+        }
+    }
+
     void checkUserExistsByEmail(String email) {
+        log.info("[checkUserExistsByEmail]: {}", email);
         if (userRepository.existsByEmail(email)) {
-            log.error("createUser email already exists");
+            log.error("[checkUserExistsByEmail] email already exists");
             throw new AuthenticationException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
     }
