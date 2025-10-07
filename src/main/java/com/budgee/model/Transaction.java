@@ -1,15 +1,18 @@
 package com.budgee.model;
 
-import com.budgee.enums.TransactionType;
-import com.budgee.enums.ExpenseSource;  // Enum mới cho nguồn tiền chi
-import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+
+import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
+
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import com.budgee.enums.ExpenseSource;
+import com.budgee.enums.TransactionType;
 
 @Getter
 @Setter

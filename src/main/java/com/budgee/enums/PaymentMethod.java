@@ -5,4 +5,3 @@ public enum PaymentMethod {
     GATEWAY,
     VOUCHER_ONLY
 }
-

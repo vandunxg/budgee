@@ -1,17 +1,7 @@
 package com.budgee.model;
 
-import com.budgee.enums.Currency;
-import com.budgee.enums.Role;
-import com.budgee.enums.SubscriptionTier;
-import com.budgee.enums.UserStatus;
-import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -19,6 +9,19 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
+
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import com.budgee.enums.Currency;
+import com.budgee.enums.Role;
+import com.budgee.enums.SubscriptionTier;
+import com.budgee.enums.UserStatus;
 
 @Getter
 @Setter
@@ -75,7 +78,6 @@ public class User extends BaseEntity implements UserDetails {
     UserStatus status;
 
     LocalDateTime lastLogin;
-
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

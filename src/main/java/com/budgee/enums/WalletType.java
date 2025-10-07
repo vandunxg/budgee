@@ -5,4 +5,3 @@ public enum WalletType {
     BANK_ACCOUNT,
     CREDIT_CARD
 }
-

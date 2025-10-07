@@ -1,10 +1,8 @@
 package com.budgee.service.impl;
 
-import com.budgee.enums.TokenType;
-import com.budgee.exception.AuthenticationException;
-import com.budgee.exception.ErrorCode;
-import com.budgee.model.User;
-import com.budgee.service.JwtService;
+import static com.budgee.enums.TokenType.ACCESS_TOKEN;
+import static com.budgee.enums.TokenType.REFRESH_TOKEN;
+
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
@@ -16,10 +14,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.stereotype.Service;
 
 import java.security.Key;
 import java.util.Date;
@@ -27,8 +21,16 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
-import static com.budgee.enums.TokenType.ACCESS_TOKEN;
-import static com.budgee.enums.TokenType.REFRESH_TOKEN;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.stereotype.Service;
+
+import com.budgee.enums.TokenType;
+import com.budgee.exception.AuthenticationException;
+import com.budgee.exception.ErrorCode;
+import com.budgee.model.User;
+import com.budgee.service.JwtService;
 
 @Service
 @RequiredArgsConstructor
@@ -54,7 +56,10 @@ public class JwtServiceImp implements JwtService {
 
     @Override
     public String generateAccessToken(User user) {
-        log.info("generate access token for user {} with authorities {}", user.getEmail(), user.getAuthorities());
+        log.info(
+                "generate access token for user {} with authorities {}",
+                user.getEmail(),
+                user.getAuthorities());
 
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", user.getId());
@@ -65,15 +70,16 @@ public class JwtServiceImp implements JwtService {
 
     @Override
     public String generateRefreshToken(User user) {
-        log.info("generate refresh token for user {} with authorities {}", user.getEmail(), user.getAuthorities());
+        log.info(
+                "generate refresh token for user {} with authorities {}",
+                user.getEmail(),
+                user.getAuthorities());
 
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", user.getId());
-        claims.put("role", user.getAuthorities()
-                .stream()
-                .map(GrantedAuthority::getAuthority)
-                .toList()
-        );
+        claims.put(
+                "role",
+                user.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList());
         return generateRefreshToken(claims, user.getEmail());
     }
 
@@ -91,7 +97,10 @@ public class JwtServiceImp implements JwtService {
                 .setClaims(claims)
                 .setSubject(email)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + Long.parseLong(ACCESS_TOKEN_EXPIRY_TIME)))
+                .setExpiration(
+                        new Date(
+                                System.currentTimeMillis()
+                                        + Long.parseLong(ACCESS_TOKEN_EXPIRY_TIME)))
                 .signWith(getKeys(ACCESS_TOKEN), SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -103,7 +112,10 @@ public class JwtServiceImp implements JwtService {
                 .setClaims(claims)
                 .setSubject(email)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + Long.parseLong(REFRESH_TOKEN_EXPIRY_TIME)))
+                .setExpiration(
+                        new Date(
+                                System.currentTimeMillis()
+                                        + Long.parseLong(REFRESH_TOKEN_EXPIRY_TIME)))
                 .signWith(getKeys(REFRESH_TOKEN), SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -132,7 +144,11 @@ public class JwtServiceImp implements JwtService {
     private Claims extraAllClaim(String token, TokenType type) {
         log.info("----------[ extraAllClaim ]----------");
         try {
-            return Jwts.parserBuilder().setSigningKey(getKeys(type)).build().parseClaimsJws(token).getBody();
+            return Jwts.parserBuilder()
+                    .setSigningKey(getKeys(type))
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
         } catch (ExpiredJwtException e) { // Invalid signature or expired token
             throw new AccessDeniedException("Access denied: " + e.getMessage());
         }

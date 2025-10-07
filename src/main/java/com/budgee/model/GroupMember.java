@@ -1,26 +1,25 @@
 package com.budgee.model;
 
-import com.budgee.enums.GroupRole;
-import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
+
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import com.budgee.enums.GroupRole;
+
 @Getter
 @Setter
 @Entity
-@Table(name = "group_members",
-        uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"group_id", "user_id"})
-        },
-        indexes = {
-                @Index(columnList = "group_id"),
-                @Index(columnList = "user_id")
-        })
+@Table(
+        name = "group_members",
+        uniqueConstraints = {@UniqueConstraint(columnNames = {"group_id", "user_id"})},
+        indexes = {@Index(columnList = "group_id"), @Index(columnList = "user_id")})
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @EntityListeners(AuditingEntityListener.class)
 @Builder

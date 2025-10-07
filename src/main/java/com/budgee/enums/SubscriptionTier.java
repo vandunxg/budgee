@@ -4,4 +4,3 @@ public enum SubscriptionTier {
     BASIC,
     PREMIUM
 }
-

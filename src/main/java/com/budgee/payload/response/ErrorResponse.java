@@ -1,10 +1,12 @@
 package com.budgee.payload.response;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+
 import java.time.LocalDateTime;
 import java.util.Map;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 @Data
 @Builder
@@ -14,11 +16,9 @@ import java.util.Map;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ErrorResponse {
 
-    @Builder.Default
-    boolean success = false;
+    @Builder.Default boolean success = false;
 
-    @Builder.Default
-    LocalDateTime timestamp = LocalDateTime.now();
+    @Builder.Default LocalDateTime timestamp = LocalDateTime.now();
 
     int status;
     int code;

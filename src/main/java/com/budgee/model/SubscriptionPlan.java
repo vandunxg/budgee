@@ -1,14 +1,16 @@
 package com.budgee.model;
 
-
-import com.budgee.enums.SubscriptionDuration;
-import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
+
+import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
+
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import com.budgee.enums.SubscriptionDuration;
 
 @Getter
 @Setter

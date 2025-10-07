@@ -1,11 +1,10 @@
 package com.budgee.exception;
 
 import lombok.Getter;
+
 import org.springframework.http.HttpStatus;
 
-/**
- * Enum defining error codes for the Budgee application, covering all possible error scenarios.
- */
+/** Enum defining error codes for the Budgee application, covering all possible error scenarios. */
 @Getter
 public enum ErrorCode {
     // User-related errors (1000-1999)
@@ -13,11 +12,15 @@ public enum ErrorCode {
     EMAIL_ALREADY_EXISTS(1001, HttpStatus.BAD_REQUEST, "Email already exists"),
     PHONE_ALREADY_EXISTS(1002, HttpStatus.BAD_REQUEST, "Phone number already exists"),
     INVALID_CREDENTIALS(1003, HttpStatus.UNAUTHORIZED, "Invalid email or password"),
-    USER_STATUS_NOT_ALLOWED(1004, HttpStatus.UNAUTHORIZED, "User account status does not allow this action"),
+    USER_STATUS_NOT_ALLOWED(
+            1004, HttpStatus.UNAUTHORIZED, "User account status does not allow this action"),
 
     INVALID_EMAIL_FORMAT(1005, HttpStatus.BAD_REQUEST, "Invalid email format"),
     INVALID_PHONE_FORMAT(1006, HttpStatus.BAD_REQUEST, "Invalid phone number format"),
-    INVALID_PASSWORD_FORMAT(1007, HttpStatus.BAD_REQUEST, "Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character"),
+    INVALID_PASSWORD_FORMAT(
+            1007,
+            HttpStatus.BAD_REQUEST,
+            "Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character"),
     PASSWORDS_DO_NOT_MATCH(1008, HttpStatus.BAD_REQUEST, "Passwords do not match"),
     INVALID_CURRENCY(1009, HttpStatus.BAD_REQUEST, "Invalid currency code"),
     TERMS_NOT_ACCEPTED(1010, HttpStatus.BAD_REQUEST, "Terms and conditions must be accepted"),
@@ -46,32 +49,39 @@ public enum ErrorCode {
     GROUP_NOT_FOUND(2000, HttpStatus.NOT_FOUND, "Group not found"),
     GROUP_MEMBER_NOT_FOUND(2001, HttpStatus.NOT_FOUND, "Member not found in group"),
     NOT_GROUP_ADMIN(2002, HttpStatus.FORBIDDEN, "Only group admins can perform this action"),
-    CANNOT_DELETE_SELF(2003, HttpStatus.BAD_REQUEST, "Admins cannot delete themselves from the group"),
+    CANNOT_DELETE_SELF(
+            2003, HttpStatus.BAD_REQUEST, "Admins cannot delete themselves from the group"),
     GROUP_ALREADY_EXISTS(2004, HttpStatus.BAD_REQUEST, "Group name already exists"),
     INVALID_INVITE_ID(2005, HttpStatus.BAD_REQUEST, "Invalid invite ID"),
     INVALID_INVITE_LINK(2006, HttpStatus.BAD_REQUEST, "Invalid invite link"),
     USER_ALREADY_IN_GROUP(2007, HttpStatus.BAD_REQUEST, "User is already a member of the group"),
     GROUP_DATE_INVALID(2008, HttpStatus.BAD_REQUEST, "Group date range is invalid"),
-    GROUP_BALANCE_INSUFFICIENT(2009, HttpStatus.BAD_REQUEST, "Insufficient group balance for this operation"),
+    GROUP_BALANCE_INSUFFICIENT(
+            2009, HttpStatus.BAD_REQUEST, "Insufficient group balance for this operation"),
     GROUP_MEMBER_LIMIT_EXCEEDED(2010, HttpStatus.BAD_REQUEST, "Group member limit exceeded"),
 
     // Transaction-related errors (3000-3999)
     TRANSACTION_NOT_FOUND(3000, HttpStatus.NOT_FOUND, "Transaction not found"),
-    INVALID_TRANSACTION_AMOUNT(3001, HttpStatus.BAD_REQUEST, "Transaction amount must be at least 0.01"),
+    INVALID_TRANSACTION_AMOUNT(
+            3001, HttpStatus.BAD_REQUEST, "Transaction amount must be at least 0.01"),
     INVALID_TRANSACTION_TYPE(3002, HttpStatus.BAD_REQUEST, "Invalid transaction type"),
     INVALID_EXPENSE_SOURCE(3003, HttpStatus.BAD_REQUEST, "Invalid expense source"),
-    TRANSACTION_DATE_INVALID(3004, HttpStatus.BAD_REQUEST, "Transaction date must be in the past or present"),
-    TRANSACTION_NOT_ALLOWED(3005, HttpStatus.FORBIDDEN, "User is not allowed to perform this transaction"),
+    TRANSACTION_DATE_INVALID(
+            3004, HttpStatus.BAD_REQUEST, "Transaction date must be in the past or present"),
+    TRANSACTION_NOT_ALLOWED(
+            3005, HttpStatus.FORBIDDEN, "User is not allowed to perform this transaction"),
     INVALID_CATEGORY(3006, HttpStatus.BAD_REQUEST, "Invalid category for transaction"),
     INVALID_WALLET(3007, HttpStatus.BAD_REQUEST, "Invalid wallet for transaction"),
     INSUFFICIENT_WALLET_BALANCE(3008, HttpStatus.BAD_REQUEST, "Insufficient wallet balance"),
-    INVALID_RECURRING_TRANSACTION(3009, HttpStatus.BAD_REQUEST, "Invalid recurring transaction configuration"),
+    INVALID_RECURRING_TRANSACTION(
+            3009, HttpStatus.BAD_REQUEST, "Invalid recurring transaction configuration"),
 
     // Category-related errors (4000-4999)
     CATEGORY_NOT_FOUND(4000, HttpStatus.NOT_FOUND, "Category not found"),
     INVALID_CATEGORY_TYPE(4001, HttpStatus.BAD_REQUEST, "Invalid category type"),
     INVALID_CATEGORY_NAME(4002, HttpStatus.BAD_REQUEST, "Category name is invalid or too long"),
-    CATEGORY_ALREADY_EXISTS(4003, HttpStatus.BAD_REQUEST, "Category name already exists for this user"),
+    CATEGORY_ALREADY_EXISTS(
+            4003, HttpStatus.BAD_REQUEST, "Category name already exists for this user"),
     INVALID_PARENT_CATEGORY(4004, HttpStatus.BAD_REQUEST, "Invalid parent category"),
 
     // Debt-related errors (5000-5999)

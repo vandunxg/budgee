@@ -1,16 +1,19 @@
 package com.budgee.exception;
 
-import com.budgee.payload.response.ErrorResponse;
-import com.budgee.util.ResponseUtil;
-import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import jakarta.validation.ConstraintViolationException;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.util.HashMap;
-import java.util.Map;
+import com.budgee.payload.response.ErrorResponse;
+import com.budgee.util.ResponseUtil;
 
 @RestControllerAdvice
 @Slf4j(topic = "GLOBAL-HANDLER-EXCEPTION")
@@ -23,9 +26,11 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException ex) {
+    public ResponseEntity<ErrorResponse> handleValidationException(
+            MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getFieldErrors()
+        ex.getBindingResult()
+                .getFieldErrors()
                 .forEach(e -> errors.put(e.getField(), e.getDefaultMessage()));
 
         log.debug("[Validation Error] {}", errors);
@@ -33,7 +38,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<ErrorResponse> handleConstraintViolation(ConstraintViolationException ex) {
+    public ResponseEntity<ErrorResponse> handleConstraintViolation(
+            ConstraintViolationException ex) {
         Map<String, String> violations = new HashMap<>();
         ex.getConstraintViolations()
                 .forEach(v -> violations.put(v.getPropertyPath().toString(), v.getMessage()));

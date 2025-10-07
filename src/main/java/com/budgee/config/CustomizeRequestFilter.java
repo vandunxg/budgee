@@ -1,19 +1,21 @@
 package com.budgee.config;
 
-import com.budgee.payload.response.ErrorResponse;
-import com.budgee.service.JwtService;
-import com.budgee.service.impl.UserDetailService;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import static com.budgee.enums.TokenType.ACCESS_TOKEN;
+import static org.springframework.http.HttpHeaders.AUTHORIZATION;
+
 import lombok.AccessLevel;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+
+import java.io.IOException;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContext;
@@ -23,10 +25,11 @@ import org.springframework.security.web.authentication.WebAuthenticationDetails;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import java.io.IOException;
-
-import static com.budgee.enums.TokenType.ACCESS_TOKEN;
-import static org.springframework.http.HttpHeaders.AUTHORIZATION;
+import com.budgee.payload.response.ErrorResponse;
+import com.budgee.service.JwtService;
+import com.budgee.service.impl.UserDetailService;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 @Configuration
 @RequiredArgsConstructor
@@ -38,8 +41,11 @@ public class CustomizeRequestFilter extends OncePerRequestFilter {
     UserDetailService userDetails;
 
     @Override
-    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
-                                    @NonNull FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(
+            @NonNull HttpServletRequest request,
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain)
+            throws ServletException, IOException {
         log.info("{} {}", request.getMethod(), request.getRequestURI());
 
         String authHeader = request.getHeader(AUTHORIZATION);
@@ -48,7 +54,7 @@ public class CustomizeRequestFilter extends OncePerRequestFilter {
             log.info("Token {}", token.substring(0, 10));
             String email;
 
-            try{
+            try {
                 email = jwtService.extractEmail(token, ACCESS_TOKEN);
                 log.info("email: {}", email);
             } catch (Exception e) {
@@ -56,11 +62,12 @@ public class CustomizeRequestFilter extends OncePerRequestFilter {
 
                 Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
-                ErrorResponse errorResponse = ErrorResponse.builder()
-                        .error("Forbidden")
-                        .status(HttpServletResponse.SC_FORBIDDEN)
-                        .message(e.getMessage())
-                        .build();
+                ErrorResponse errorResponse =
+                        ErrorResponse.builder()
+                                .error("Forbidden")
+                                .status(HttpServletResponse.SC_FORBIDDEN)
+                                .message(e.getMessage())
+                                .build();
 
                 response.setStatus(HttpServletResponse.SC_OK);
                 response.getWriter().write(gson.toJson(errorResponse));

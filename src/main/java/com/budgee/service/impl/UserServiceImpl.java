@@ -1,5 +1,17 @@
 package com.budgee.service.impl;
 
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
+
+import java.util.UUID;
+
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+
 import com.budgee.enums.Currency;
 import com.budgee.enums.Role;
 import com.budgee.enums.SubscriptionTier;
@@ -11,16 +23,6 @@ import com.budgee.model.User;
 import com.budgee.payload.request.RegisterRequest;
 import com.budgee.repository.UserRepository;
 import com.budgee.service.UserService;
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
-
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -35,9 +37,7 @@ public class UserServiceImpl implements UserService {
         return email == null ? null : email.trim().toLowerCase();
     }
 
-    /**
-     * Avoid logging secrets; return short, non-reversible fingerprints for observability.
-     */
+    /** Avoid logging secrets; return short, non-reversible fingerprints for observability. */
     private static String fingerprint(String secret) {
         if (!StringUtils.hasText(secret)) return "empty";
         int len = secret.length();

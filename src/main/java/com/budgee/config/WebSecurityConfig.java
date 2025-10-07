@@ -1,11 +1,11 @@
 package com.budgee.config;
 
-import com.budgee.service.impl.UserDetailService;
 import lombok.AccessLevel;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -22,6 +22,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import com.budgee.service.impl.UserDetailService;
+
 @Configuration
 @RequiredArgsConstructor
 @Slf4j(topic = "WEB-SECURITY-CONFIG")
@@ -29,30 +31,34 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class WebSecurityConfig {
 
     UserDetailService userDetailService;
-//    CustomizeRequestFilter customizeRequestFilter;
+    //    CustomizeRequestFilter customizeRequestFilter;
 
-    String[] PUBLIC_ENDPOINT = {
-            "/auth/**"
-    };
+    String[] PUBLIC_ENDPOINT = {"/auth/**"};
 
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         log.info("----------------[FILTER - CHAIN]----------------");
 
         http.csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(request -> {
-                    request.requestMatchers(PUBLIC_ENDPOINT).permitAll()
-                            .anyRequest().authenticated();
-                })
+                .sessionManagement(
+                        session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(
+                        request -> {
+                            request.requestMatchers(PUBLIC_ENDPOINT)
+                                    .permitAll()
+                                    .anyRequest()
+                                    .authenticated();
+                        })
                 .authenticationProvider(authenticationProvider());
-//                .addFilterBefore(customizeRequestFilter, UsernamePasswordAuthenticationFilter.class);
+        //                .addFilterBefore(customizeRequestFilter,
+        // UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
     @Bean
-    AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
+    AuthenticationManager authenticationManager(AuthenticationConfiguration configuration)
+            throws Exception {
 
         return configuration.getAuthenticationManager();
     }
@@ -60,7 +66,8 @@ public class WebSecurityConfig {
     @Bean
     AuthenticationProvider authenticationProvider() {
 
-        DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider(userDetailService.userDetailsService());
+        DaoAuthenticationProvider daoAuthenticationProvider =
+                new DaoAuthenticationProvider(userDetailService.userDetailsService());
         daoAuthenticationProvider.setPasswordEncoder(passwordEncoder());
 
         return daoAuthenticationProvider;
@@ -70,9 +77,16 @@ public class WebSecurityConfig {
     @Bean
     public WebSecurityCustomizer ignoreResources() {
 
-        return webSecurity -> webSecurity
-                .ignoring()
-                .requestMatchers("/actuator/**", "/v3/**", "/webjars/**", "/swagger-ui*/*swagger-initializer.js", "/swagger-ui*/**", "/favicon.ico");
+        return webSecurity ->
+                webSecurity
+                        .ignoring()
+                        .requestMatchers(
+                                "/actuator/**",
+                                "/v3/**",
+                                "/webjars/**",
+                                "/swagger-ui*/*swagger-initializer.js",
+                                "/swagger-ui*/**",
+                                "/favicon.ico");
     }
 
     // config cors

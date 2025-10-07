@@ -1,10 +1,10 @@
 package com.budgee.service;
 
-import com.budgee.payload.request.RegisterRequest;
-
 import java.util.UUID;
+
+import com.budgee.payload.request.RegisterRequest;
 
 public interface UserService {
 
-    UUID createUser (RegisterRequest request);
+    UUID createUser(RegisterRequest request);
 }

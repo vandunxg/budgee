@@ -8,4 +8,3 @@ public enum NotificationType {
     GROUP_UPDATE,
     SUBSCRIPTION_REMIND
 }
-
