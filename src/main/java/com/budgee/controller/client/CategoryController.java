@@ -36,9 +36,18 @@ public class CategoryController {
     @PatchMapping("/{id}")
     public ResponseEntity<?> updateCategory(
             @PathVariable UUID id, @RequestBody CategoryUpdateRequest request) {
-        log.info("[PATCH /category/update/{}]={}", id, request.toString());
+        log.info("[PATCH /category/{}]={}", id, request.toString());
 
         return ResponseUtil.success(
                 "Updated successfully", categoryService.updateCategory(request, id));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> updateCategory(@PathVariable UUID id) {
+        log.info("[DELETE /category/{}]", id);
+
+        categoryService.deleteCategory(id);
+
+        return ResponseUtil.deleted();
     }
 }

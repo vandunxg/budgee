@@ -10,6 +10,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import com.budgee.enums.Role;
 import com.budgee.exception.ErrorCode;
 import com.budgee.exception.NotFoundException;
 import com.budgee.mapper.CategoryMapper;
@@ -39,6 +40,11 @@ public class CategoryServiceImpl implements CategoryService {
 
         User authenticatedUser = userService.getCurrentUser();
         newCategory.setUser(authenticatedUser);
+
+        // if the user is admin set category is default by system
+        if (Role.ADMIN.equals(authenticatedUser.getRole())) {
+            newCategory.setIsDefault(Boolean.TRUE);
+        }
 
         log.warn("[categoryCategory] save to db");
         categoryRepository.save(newCategory);
@@ -77,6 +83,29 @@ public class CategoryServiceImpl implements CategoryService {
         categoryRepository.save(category);
 
         return CategoryMapper.INSTANCE.toCategoryResponse(category);
+    }
+
+    @Override
+    public void deleteCategory(UUID id) {
+        log.info("[deleteCategory]={}", id);
+
+        User user = userService.getCurrentUser();
+
+        Category category = getCategoryById(id);
+        category.checkIsOwner(user);
+
+        deleteAssociatedTransactions(category);
+
+        log.warn("[deleteCategory] delete category from db");
+        categoryRepository.delete(category);
+    }
+
+    // PRIVATE FUNCTION
+
+    private void deleteAssociatedTransactions(Category category) {
+        log.info(
+                "[deleteAssociatedTransactions] Deleting transactions for category={}",
+                category.getId());
     }
 
     private Category getCategoryById(UUID id) {
