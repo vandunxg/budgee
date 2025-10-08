@@ -5,8 +5,16 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -19,6 +27,7 @@ import com.budgee.model.User;
 import com.budgee.payload.request.CategoryRequest;
 import com.budgee.payload.request.CategoryUpdateRequest;
 import com.budgee.payload.response.CategoryResponse;
+import com.budgee.payload.response.PagedResponse;
 import com.budgee.repository.CategoryRepository;
 import com.budgee.service.CategoryService;
 import com.budgee.service.UserService;
@@ -31,6 +40,8 @@ public class CategoryServiceImpl implements CategoryService {
 
     CategoryRepository categoryRepository;
     UserService userService;
+
+    final String SORT_BY = "(\\w+?)(:)(.*)";
 
     @Override
     public CategoryResponse createCategory(CategoryRequest request) {
@@ -98,6 +109,45 @@ public class CategoryServiceImpl implements CategoryService {
 
         log.warn("[deleteCategory] delete category from db");
         categoryRepository.delete(category);
+    }
+
+    @Override
+    public PagedResponse<?> getAllCategoryWithSortBy(int pageNo, int pageSize, String sortBy) {
+        log.info(
+                "[getAllCategoryWithSortBy] page={} pageSize={} sortBy={}",
+                pageNo,
+                pageSize,
+                sortBy);
+
+        int page = 0;
+
+        if (pageNo > 0) {
+            page = pageNo - 1;
+        }
+
+        List<Sort.Order> sorts = new ArrayList<>();
+
+        if (StringUtils.hasLength(sortBy)) {
+            // name:asc|desc
+            Pattern pattern = Pattern.compile(SORT_BY);
+            Matcher matcher = pattern.matcher(sortBy);
+            if (matcher.find()) {
+                if (matcher.group(3).equalsIgnoreCase("asc")) {
+                    sorts.add(new Sort.Order(Sort.Direction.ASC, matcher.group(1)));
+                } else {
+                    sorts.add(new Sort.Order(Sort.Direction.DESC, matcher.group(1)));
+                }
+            }
+        }
+
+        Pageable pageable = PageRequest.of(page, pageSize, Sort.by(sorts));
+
+        Page<CategoryResponse> categories =
+                categoryRepository
+                        .findAll(pageable)
+                        .map(CategoryMapper.INSTANCE::toCategoryResponse);
+
+        return PagedResponse.fromPage(categories);
     }
 
     // PRIVATE FUNCTION
