@@ -23,7 +23,7 @@ import com.budgee.enums.WalletType;
 @AllArgsConstructor
 @ToString
 @EqualsAndHashCode(callSuper = true)
-public class Wallet extends BaseEntity {
+public class Wallet extends BaseEntity implements OwnerEntity {
 
     @NotNull(message = "User is required")
     @ManyToOne(fetch = FetchType.LAZY)
@@ -59,4 +59,9 @@ public class Wallet extends BaseEntity {
     @DecimalMax(value = "100.00", message = "Interest rate must be at most 100%")
     @Column(precision = 5, scale = 2)
     BigDecimal interestRate;
+
+    @Override
+    public User getOwner() {
+        return this.user;
+    }
 }

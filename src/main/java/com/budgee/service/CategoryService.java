@@ -9,11 +9,13 @@ import com.budgee.payload.response.PagedResponse;
 
 public interface CategoryService {
 
+    CategoryResponse getCategory(UUID id);
+
     CategoryResponse createCategory(CategoryRequest request);
 
     CategoryResponse updateCategory(CategoryUpdateRequest request, UUID id);
 
     void deleteCategory(UUID id);
 
-    PagedResponse<?> getAllCategoryWithSortBy(int page, int pageSize, String sortBy);
+    PagedResponse<?> getAllCategoriesWithSortBy(int page, int pageSize, String sortBy);
 }

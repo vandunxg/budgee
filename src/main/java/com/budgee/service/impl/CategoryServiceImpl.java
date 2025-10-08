@@ -1,5 +1,6 @@
 package com.budgee.service.impl;
 
+import com.budgee.util.ResponseUtil;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -41,7 +42,17 @@ public class CategoryServiceImpl implements CategoryService {
     CategoryRepository categoryRepository;
     UserService userService;
 
-    final String SORT_BY = "(\\w+?)(:)(.*)";
+    @Override
+    public CategoryResponse getCategory(UUID id) {
+        log.info("[getCategory]={}", id);
+
+        User authenticatedUser = userService.getCurrentUser();
+
+        Category category = getCategoryById(id);
+        category.checkIsOwner(authenticatedUser);
+
+        return CategoryMapper.INSTANCE.toCategoryResponse(category);
+    }
 
     @Override
     public CategoryResponse createCategory(CategoryRequest request) {
@@ -112,12 +123,13 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public PagedResponse<?> getAllCategoryWithSortBy(int pageNo, int pageSize, String sortBy) {
-        log.info(
-                "[getAllCategoryWithSortBy] page={} pageSize={} sortBy={}",
+    public PagedResponse<?> getAllCategoriesWithSortBy(int pageNo, int pageSize, String sortBy) {
+        log.info("[getAllCategoriesWithSortBy] page={} pageSize={} sortBy={}",
                 pageNo,
                 pageSize,
                 sortBy);
+
+        String SORT_BY = "(\\w+?)(:)(.*)";
 
         int page = 0;
 

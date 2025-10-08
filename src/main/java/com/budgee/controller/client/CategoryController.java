@@ -37,7 +37,14 @@ public class CategoryController {
 
         return ResponseUtil.success(
                 MessageConstants.FETCH_SUCCESS,
-                categoryService.getAllCategoryWithSortBy(pageNo, pageSize, sortBy));
+                categoryService.getAllCategoriesWithSortBy(pageNo, pageSize, sortBy));
+    }
+
+    @RequestMapping("/{id}")
+    ResponseEntity<?> getCategory(@PathVariable UUID id) {
+        log.info("[GET /category/{}]", id);
+
+        return ResponseUtil.success(MessageConstants.FETCH_SUCCESS, categoryService.getCategory(id));
     }
 
     @PostMapping("/")
