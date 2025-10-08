@@ -38,12 +38,12 @@ public class Category extends BaseEntity {
     @Column(nullable = false)
     TransactionType type;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parent_id")
-    Category parent;
-
     @Size(max = 500, message = "Description must be at most 500 characters")
     String description;
+
+    @Size(max = 255, message = "Color must be at most 255 characters")
+    @Column(length = 255)
+    String color;
 
     @Size(max = 255, message = "Icon must be at most 255 characters")
     @Column(length = 255)

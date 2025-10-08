@@ -19,6 +19,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -31,7 +32,7 @@ import com.budgee.service.impl.UserDetailService;
 public class WebSecurityConfig {
 
     UserDetailService userDetailService;
-    //    CustomizeRequestFilter customizeRequestFilter;
+    CustomizeRequestFilter customizeRequestFilter;
 
     String[] PUBLIC_ENDPOINT = {"/auth/**"};
 
@@ -49,9 +50,9 @@ public class WebSecurityConfig {
                                     .anyRequest()
                                     .authenticated();
                         })
-                .authenticationProvider(authenticationProvider());
-        //                .addFilterBefore(customizeRequestFilter,
-        // UsernamePasswordAuthenticationFilter.class);
+                .authenticationProvider(authenticationProvider())
+                .addFilterBefore(
+                        customizeRequestFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -65,7 +66,6 @@ public class WebSecurityConfig {
 
     @Bean
     AuthenticationProvider authenticationProvider() {
-
         DaoAuthenticationProvider daoAuthenticationProvider =
                 new DaoAuthenticationProvider(userDetailService.userDetailsService());
         daoAuthenticationProvider.setPasswordEncoder(passwordEncoder());

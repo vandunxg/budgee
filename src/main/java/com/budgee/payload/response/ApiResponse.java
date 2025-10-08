@@ -3,6 +3,7 @@ package com.budgee.payload.response;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -13,7 +14,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ApiResponse<T> {
+public class ApiResponse<T> implements Serializable {
 
     @Builder.Default boolean success = true;
 
