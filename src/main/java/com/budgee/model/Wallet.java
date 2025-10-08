@@ -53,12 +53,9 @@ public class Wallet extends BaseEntity implements OwnerEntity {
     @Size(max = 500, message = "Description must be at most 500 characters")
     String description;
 
-    boolean isDefault = false;
+    Boolean isDefault;
 
-    @DecimalMin(value = "0.00", message = "Interest rate must be non-negative")
-    @DecimalMax(value = "100.00", message = "Interest rate must be at most 100%")
-    @Column(precision = 5, scale = 2)
-    BigDecimal interestRate;
+    Boolean isTotalIgnored;
 
     @Override
     public User getOwner() {
