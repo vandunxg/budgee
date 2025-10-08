@@ -41,6 +41,8 @@ public class Category extends BaseEntity implements OwnerEntity {
     @Size(max = 500, message = "Description must be at most 500 characters")
     String description;
 
+    Boolean isDefault;
+
     @Size(max = 255, message = "Color must be at most 255 characters")
     @Column(length = 255)
     String color;
