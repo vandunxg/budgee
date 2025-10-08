@@ -33,7 +33,7 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody @Valid RegisterRequest request) {
-        log.info("POST auth/register : {}", request.email());
+        log.info("[POST auth/register]={}", request.email());
 
         return ResponseUtil.created(userService.createUser(request));
     }
@@ -41,7 +41,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody @Valid LoginRequest request)
             throws AccessDeniedException {
-        log.info("POST /auth/login {}", request.email());
+        log.info("[POST /auth/login]={}", request.email());
 
         return ResponseUtil.success("Login successfully", authService.getAccessToken(request));
     }

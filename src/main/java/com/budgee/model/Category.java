@@ -21,7 +21,7 @@ import com.budgee.enums.TransactionType;
 @AllArgsConstructor
 @ToString
 @EqualsAndHashCode(callSuper = true)
-public class Category extends BaseEntity {
+public class Category extends BaseEntity implements OwnerEntity {
 
     @NotNull(message = "User is required")
     @ManyToOne(fetch = FetchType.LAZY)
@@ -48,4 +48,9 @@ public class Category extends BaseEntity {
     @Size(max = 255, message = "Icon must be at most 255 characters")
     @Column(length = 255)
     String icon;
+
+    @Override
+    public User getOwner() {
+        return this.user;
+    }
 }

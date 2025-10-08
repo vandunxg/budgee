@@ -7,6 +7,8 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.UUID;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,18 +35,6 @@ public class UserServiceImpl implements UserService {
 
     UserRepository userRepository;
     PasswordEncoder passwordEncoder;
-
-    private static String normalizeEmail(String email) {
-        return email == null ? null : email.trim().toLowerCase();
-    }
-
-    /** Avoid logging secrets; return short, non-reversible fingerprints for observability. */
-    private static String fingerprint(String secret) {
-        if (!StringUtils.hasText(secret)) return "empty";
-        int len = secret.length();
-        String tail = secret.substring(Math.max(0, len - 4));
-        return "***" + tail + "(len=" + len + ")";
-    }
 
     @Override
     @Transactional
@@ -74,6 +64,19 @@ public class UserServiceImpl implements UserService {
         return user.getId();
     }
 
+    @Override
+    public User getCurrentUser() {
+        log.info("[getCurrentUser]");
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !(authentication.getPrincipal() instanceof User user)) {
+            throw new AuthenticationException(ErrorCode.FORBIDDEN);
+        }
+        return user;
+    }
+
+    // PRIVATE FUNCTION
+
     void comparePasswordAndConfirmPassword(String password, String confirmPassword) {
         log.info("[comparePasswordAndConfirmPassword]");
 
@@ -88,5 +91,17 @@ public class UserServiceImpl implements UserService {
             log.error("[checkUserExistsByEmail] email already exists");
             throw new AuthenticationException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
+    }
+
+    private static String normalizeEmail(String email) {
+        return email == null ? null : email.trim().toLowerCase();
+    }
+
+    /** Avoid logging secrets; return short, non-reversible fingerprints for observability. */
+    private static String fingerprint(String secret) {
+        if (!StringUtils.hasText(secret)) return "empty";
+        int len = secret.length();
+        String tail = secret.substring(Math.max(0, len - 4));
+        return "***" + tail + "(len=" + len + ")";
     }
 }
