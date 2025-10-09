@@ -29,21 +29,21 @@ public class CategoryController {
     CategoryService categoryService;
 
     @RequestMapping("/{id}")
-    ResponseEntity<?> get(@PathVariable UUID id) {
+    ResponseEntity<?> getCategory(@PathVariable UUID id) {
         log.info("[GET /categories/{}]", id);
 
         return ResponseUtil.success(MessageConstants.FETCH_SUCCESS, categoryService.getCategory(id));
     }
 
     @PostMapping("/")
-    ResponseEntity<?> create(@Valid @RequestBody CategoryRequest request) {
+    ResponseEntity<?> createCategory(@Valid @RequestBody CategoryRequest request) {
         log.info("[POST /categories/] {}", request.toString());
 
         return ResponseUtil.created(categoryService.createCategory(request));
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<?> update(
+    public ResponseEntity<?> updateCategory(
             @PathVariable UUID id, @RequestBody CategoryUpdateRequest request) {
         log.info("[PATCH /categories/{}]={}", id, request.toString());
 
@@ -52,7 +52,7 @@ public class CategoryController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable UUID id) {
+    public ResponseEntity<?> deleteWallet(@PathVariable UUID id) {
         log.info("[DELETE /categories/{}]", id);
 
         categoryService.deleteCategory(id);
@@ -61,7 +61,7 @@ public class CategoryController {
     }
 
     @GetMapping("/list")
-    ResponseEntity<?> list(
+    ResponseEntity<?> getAllCategoriesWithSortBy(
             @RequestParam(defaultValue = "0", required = false) int pageNo,
             @Min(10) @RequestParam(defaultValue = "10", required = false) int pageSize,
             @RequestParam(required = false) String sortBy) {
