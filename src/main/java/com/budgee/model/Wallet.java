@@ -10,6 +10,7 @@ import jakarta.validation.constraints.*;
 
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import com.budgee.enums.Currency;
 import com.budgee.enums.WalletType;
 
 @Getter
@@ -45,10 +46,8 @@ public class Wallet extends BaseEntity implements OwnerEntity {
     @Column(precision = 15, scale = 2)
     BigDecimal balance = BigDecimal.ZERO;
 
-    @NotBlank(message = "Currency is required")
-    @Pattern(regexp = "[A-Z]{3}", message = "Currency must be a 3-letter code")
-    @Column(length = 3)
-    String currency = "VND";
+    @Enumerated(EnumType.STRING)
+    Currency currency;
 
     @Size(max = 500, message = "Description must be at most 500 characters")
     String description;
