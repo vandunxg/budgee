@@ -90,12 +90,15 @@ public enum ErrorCode {
     INVALID_DEBT_STATUS(5002, HttpStatus.BAD_REQUEST, "Invalid debt status"),
     DEBT_DUE_DATE_INVALID(5003, HttpStatus.BAD_REQUEST, "Debt due date must be valid"),
 
-    // General system errors (6000-6999)
-    DATABASE_ERROR(6000, HttpStatus.INTERNAL_SERVER_ERROR, "Database operation failed"),
-    VALIDATION_FAILED(6001, HttpStatus.BAD_REQUEST, "Validation failed"),
-    INTERNAL_SERVER_ERROR(6002, HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred"),
-    INVALID_REQUEST(6003, HttpStatus.BAD_REQUEST, "Invalid request data"),
-    OPERATION_NOT_SUPPORTED(6004, HttpStatus.BAD_REQUEST, "Operation not supported");
+    // Wallet-related errors  (6000-6999)
+    WALLET_NOT_FOUND(6000, HttpStatus.NOT_FOUND, "Wallet not found"),
+
+    // General system errors (7000-7999)
+    DATABASE_ERROR(7000, HttpStatus.INTERNAL_SERVER_ERROR, "Database operation failed"),
+    VALIDATION_FAILED(7001, HttpStatus.BAD_REQUEST, "Validation failed"),
+    INTERNAL_SERVER_ERROR(7002, HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred"),
+    INVALID_REQUEST(7003, HttpStatus.BAD_REQUEST, "Invalid request data"),
+    OPERATION_NOT_SUPPORTED(7004, HttpStatus.BAD_REQUEST, "Operation not supported");
 
     private final int code;
     private final HttpStatus httpStatus;
