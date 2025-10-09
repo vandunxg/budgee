@@ -58,9 +58,6 @@ public class User extends BaseEntity implements UserDetails {
     @Column(nullable = false)
     String passwordHash;
 
-    @NotBlank(message = "Currency is required")
-    @Pattern(regexp = "[A-Z]{3}", message = "Currency must be a 3-letter code")
-    @Column(length = 3)
     @Enumerated(EnumType.STRING)
     Currency currency;
 
