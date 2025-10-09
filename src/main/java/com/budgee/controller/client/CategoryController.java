@@ -32,7 +32,8 @@ public class CategoryController {
     ResponseEntity<?> getCategory(@PathVariable UUID id) {
         log.info("[GET /categories/{}]", id);
 
-        return ResponseUtil.success(MessageConstants.FETCH_SUCCESS, categoryService.getCategory(id));
+        return ResponseUtil.success(
+                MessageConstants.FETCH_SUCCESS, categoryService.getCategory(id));
     }
 
     @PostMapping("/")
@@ -65,7 +66,8 @@ public class CategoryController {
             @RequestParam(defaultValue = "0", required = false) int pageNo,
             @Min(10) @RequestParam(defaultValue = "10", required = false) int pageSize,
             @RequestParam(required = false) String sortBy) {
-        log.info("[GET /categories/list/pageNo={}&pageSize={}&sortBy={}]", pageNo, pageSize, sortBy);
+        log.info(
+                "[GET /categories/list/pageNo={}&pageSize={}&sortBy={}]", pageNo, pageSize, sortBy);
 
         return ResponseUtil.success(
                 MessageConstants.FETCH_SUCCESS,

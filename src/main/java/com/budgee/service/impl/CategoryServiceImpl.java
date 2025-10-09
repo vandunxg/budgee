@@ -1,6 +1,5 @@
 package com.budgee.service.impl;
 
-import com.budgee.util.ResponseUtil;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -32,6 +31,7 @@ import com.budgee.payload.response.PagedResponse;
 import com.budgee.repository.CategoryRepository;
 import com.budgee.service.CategoryService;
 import com.budgee.service.UserService;
+import com.budgee.util.Helpers;
 
 @Service
 @RequiredArgsConstructor
@@ -41,15 +41,13 @@ public class CategoryServiceImpl implements CategoryService {
 
     CategoryRepository categoryRepository;
     UserService userService;
+    Helpers helpers;
 
     @Override
     public CategoryResponse getCategory(UUID id) {
         log.info("[getCategory]={}", id);
 
-        User authenticatedUser = userService.getCurrentUser();
-
-        Category category = getCategoryById(id);
-        category.checkIsOwner(authenticatedUser);
+        Category category = getCategoryByIdForOwner(id);
 
         return CategoryMapper.INSTANCE.toCategoryResponse(category);
     }
@@ -78,10 +76,7 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryResponse updateCategory(CategoryUpdateRequest request, UUID id) {
         log.info("[updateCategory]={}", request.toString());
 
-        Category category = getCategoryById(id);
-        User currentUserAuthenticated = userService.getCurrentUser();
-
-        category.checkIsOwner(currentUserAuthenticated);
+        Category category = getCategoryByIdForOwner(id);
 
         String currentCategoryName = category.getName();
 
@@ -111,10 +106,7 @@ public class CategoryServiceImpl implements CategoryService {
     public void deleteCategory(UUID id) {
         log.info("[deleteCategory]={}", id);
 
-        User user = userService.getCurrentUser();
-
-        Category category = getCategoryById(id);
-        category.checkIsOwner(user);
+        Category category = getCategoryByIdForOwner(id);
 
         deleteAssociatedTransactions(category);
 
@@ -124,10 +116,13 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public PagedResponse<?> getAllCategoriesWithSortBy(int pageNo, int pageSize, String sortBy) {
-        log.info("[getAllCategoriesWithSortBy] page={} pageSize={} sortBy={}",
+        log.info(
+                "[getAllCategoriesWithSortBy] page={} pageSize={} sortBy={}",
                 pageNo,
                 pageSize,
                 sortBy);
+
+        User authenticatedUser = userService.getCurrentUser();
 
         String SORT_BY = "(\\w+?)(:)(.*)";
 
@@ -156,7 +151,7 @@ public class CategoryServiceImpl implements CategoryService {
 
         Page<CategoryResponse> categories =
                 categoryRepository
-                        .findAll(pageable)
+                        .findAllByUser(authenticatedUser, pageable)
                         .map(CategoryMapper.INSTANCE::toCategoryResponse);
 
         return PagedResponse.fromPage(categories);
@@ -164,17 +159,26 @@ public class CategoryServiceImpl implements CategoryService {
 
     // PRIVATE FUNCTION
 
-    private void deleteAssociatedTransactions(Category category) {
+    void deleteAssociatedTransactions(Category category) {
         log.info(
                 "[deleteAssociatedTransactions] Deleting transactions for category={}",
                 category.getId());
     }
 
-    private Category getCategoryById(UUID id) {
+    Category getCategoryById(UUID id) {
         log.info("[getCategoryById]={}", id);
 
         return categoryRepository
                 .findById(id)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.CATEGORY_NOT_FOUND));
+    }
+
+    Category getCategoryByIdForOwner(UUID id) {
+        log.info("[getCategoryByIdForOwner]={}", id);
+
+        Category category = getCategoryById(id);
+        helpers.checkIsOwner(category);
+
+        return category;
     }
 }
