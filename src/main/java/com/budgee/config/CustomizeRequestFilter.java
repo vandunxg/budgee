@@ -64,7 +64,7 @@ public class CustomizeRequestFilter extends OncePerRequestFilter {
                 log.info(e.getMessage());
 
                 ResponseEntity<ErrorResponse> errorResponse = ResponseUtil.error(ErrorCode.EXPIRED_TOKEN);
-                response.setStatus(HttpServletResponse.SC_OK);
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                 response.getWriter().write(gson.toJson(errorResponse.getBody()));
                 return;
             }
