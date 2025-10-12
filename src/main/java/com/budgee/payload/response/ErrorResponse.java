@@ -4,7 +4,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.io.Serializable;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -19,7 +19,7 @@ public class ErrorResponse implements Serializable {
 
     @Builder.Default boolean success = false;
 
-    @Builder.Default LocalDateTime timestamp = LocalDateTime.now();
+    @Builder.Default Instant timestamp = Instant.now();
 
     int status;
     int code;

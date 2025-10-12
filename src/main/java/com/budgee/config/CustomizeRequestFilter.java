@@ -3,6 +3,8 @@ package com.budgee.config;
 import static com.budgee.enums.TokenType.ACCESS_TOKEN;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
+import com.budgee.exception.ErrorCode;
+import com.budgee.util.ResponseUtil;
 import lombok.AccessLevel;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +19,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -29,7 +32,6 @@ import com.budgee.payload.response.ErrorResponse;
 import com.budgee.service.JwtService;
 import com.budgee.service.impl.UserDetailService;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 @Configuration
 @RequiredArgsConstructor
@@ -39,6 +41,7 @@ public class CustomizeRequestFilter extends OncePerRequestFilter {
 
     JwtService jwtService;
     UserDetailService userDetails;
+    Gson gson;
 
     @Override
     protected void doFilterInternal(
@@ -60,17 +63,9 @@ public class CustomizeRequestFilter extends OncePerRequestFilter {
             } catch (Exception e) {
                 log.info(e.getMessage());
 
-                Gson gson = new GsonBuilder().setPrettyPrinting().create();
-
-                ErrorResponse errorResponse =
-                        ErrorResponse.builder()
-                                .error("Forbidden")
-                                .status(HttpServletResponse.SC_FORBIDDEN)
-                                .message(e.getMessage())
-                                .build();
-
+                ResponseEntity<ErrorResponse> errorResponse = ResponseUtil.error(ErrorCode.EXPIRED_TOKEN);
                 response.setStatus(HttpServletResponse.SC_OK);
-                response.getWriter().write(gson.toJson(errorResponse));
+                response.getWriter().write(gson.toJson(errorResponse.getBody()));
                 return;
             }
 
