@@ -45,7 +45,6 @@ public class GroupMember extends BaseEntity {
     LocalDateTime joinedAt = LocalDateTime.now();
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
     GroupRole role = GroupRole.MEMBER;
 
     @NotNull(message = "Balance owed is required")
