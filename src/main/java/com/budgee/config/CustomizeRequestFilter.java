@@ -3,8 +3,6 @@ package com.budgee.config;
 import static com.budgee.enums.TokenType.ACCESS_TOKEN;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
-import com.budgee.exception.ErrorCode;
-import com.budgee.util.ResponseUtil;
 import lombok.AccessLevel;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -28,9 +26,11 @@ import org.springframework.security.web.authentication.WebAuthenticationDetails;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import com.budgee.exception.ErrorCode;
 import com.budgee.payload.response.ErrorResponse;
 import com.budgee.service.JwtService;
 import com.budgee.service.impl.UserDetailService;
+import com.budgee.util.ResponseUtil;
 import com.google.gson.Gson;
 
 @Configuration
@@ -63,7 +63,8 @@ public class CustomizeRequestFilter extends OncePerRequestFilter {
             } catch (Exception e) {
                 log.info(e.getMessage());
 
-                ResponseEntity<ErrorResponse> errorResponse = ResponseUtil.error(ErrorCode.EXPIRED_TOKEN);
+                ResponseEntity<ErrorResponse> errorResponse =
+                        ResponseUtil.error(ErrorCode.EXPIRED_TOKEN);
                 response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                 response.getWriter().write(gson.toJson(errorResponse.getBody()));
                 return;
