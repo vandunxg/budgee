@@ -12,6 +12,8 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.budgee.enums.Currency;
 import com.budgee.enums.WalletType;
+import com.budgee.exception.ErrorCode;
+import com.budgee.exception.ValidationException;
 
 @Getter
 @Setter
@@ -42,7 +44,6 @@ public class Wallet extends BaseEntity implements OwnerEntity {
     WalletType type;
 
     @NotNull(message = "Balance is required")
-    @DecimalMin(value = "0.00", message = "Balance must be non-negative")
     @Column(precision = 15, scale = 2)
     BigDecimal balance = BigDecimal.ZERO;
 
@@ -59,5 +60,23 @@ public class Wallet extends BaseEntity implements OwnerEntity {
     @Override
     public User getOwner() {
         return this.user;
+    }
+
+    public void increase(BigDecimal amount) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0)
+            throw new ValidationException(ErrorCode.AMOUNT_MUST_BE_POSITIVE);
+        this.balance = this.balance.add(amount);
+    }
+
+    public void decrease(BigDecimal amount) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0)
+            throw new ValidationException(ErrorCode.AMOUNT_MUST_BE_POSITIVE);
+        this.balance = this.balance.subtract(amount);
+    }
+
+    public void transferTo(Wallet target, BigDecimal amount) {
+        if (target == null) throw new IllegalArgumentException("Target wallet required");
+        this.decrease(amount);
+        target.increase(amount);
     }
 }

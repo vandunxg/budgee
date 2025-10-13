@@ -5,12 +5,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
 import com.budgee.enums.Currency;
+import com.budgee.enums.TransactionType;
 import com.budgee.exception.ErrorCode;
 import com.budgee.exception.NotFoundException;
 import com.budgee.mapper.WalletMapper;
@@ -137,7 +139,119 @@ public class WalletServiceImpl implements WalletService {
         walletRepository.delete(wallet);
     }
 
+    @Override
+    public Wallet getWalletByIdForOwner(UUID id) {
+        log.info("[getWalletByIdForOwner]={}", id);
+
+        Wallet wallet = getWalletById(id);
+        helpers.checkIsOwner(wallet);
+
+        return wallet;
+    }
+
+    @Override
+    public void updateWalletBalance(
+            Wallet currentWallet,
+            Wallet newWallet,
+            BigDecimal currentAmount,
+            BigDecimal newAmount,
+            TransactionType currentType,
+            TransactionType newType) {
+        log.info("[updateWalletBalance] currentWallet={} newWallet={}", currentWallet, newWallet);
+
+        boolean isSameWallet = currentWallet.getId().equals(newWallet.getId());
+
+        if (isSameWallet) {
+            updateBalanceSameWallet(currentWallet, currentAmount, newAmount, currentType, newType);
+        } else {
+            updateBalanceDifferentWallet(
+                    currentWallet, newWallet, currentAmount, newAmount, currentType, newType);
+        }
+    }
+
     // PRIVATE FUNCTION
+
+    void updateBalanceSameWallet(
+            Wallet currentWallet,
+            BigDecimal currentAmount,
+            BigDecimal newAmount,
+            TransactionType currentType,
+            TransactionType newType) {
+        log.info(
+                "[updateBalanceSameWallet] currentType={} newType={} currentAmount={} newAmount={}",
+                currentType,
+                newType,
+                currentAmount,
+                newAmount);
+
+        boolean isSameType = currentType.equals(newType);
+        BigDecimal diffAmount = BigDecimal.ZERO;
+
+        if (isSameType) {
+            switch (currentType) {
+                case EXPENSE -> diffAmount = currentAmount.subtract(newAmount);
+                case INCOME -> diffAmount = newAmount.subtract(currentAmount);
+            }
+
+        } else {
+            switch (currentType) {
+                case EXPENSE -> diffAmount = currentAmount.add(newAmount);
+                case INCOME -> diffAmount = currentAmount.add(newAmount).negate();
+            }
+        }
+
+        if (diffAmount.signum() > 0) {
+            currentWallet.increase(diffAmount);
+            log.debug(
+                    "[updateBalanceSameWallet] +{} -> newBalance={}",
+                    diffAmount,
+                    currentWallet.getBalance());
+        } else if (diffAmount.signum() < 0) {
+            currentWallet.decrease(diffAmount.abs());
+            log.debug(
+                    "[updateBalanceSameWallet] -{} -> newBalance={}",
+                    diffAmount.abs(),
+                    currentWallet.getBalance());
+        } else {
+            log.debug("[updateBalanceSameWallet] No change to balance");
+        }
+
+        walletRepository.save(currentWallet);
+    }
+
+    private void updateBalanceDifferentWallet(
+            Wallet currentWallet,
+            Wallet newWallet,
+            BigDecimal currentAmount,
+            BigDecimal newAmount,
+            TransactionType currentType,
+            TransactionType newType) {
+        log.info(
+                "[updateBalanceDifferentWallet] currentType={} newType={} currentAmount={} newAmount={}",
+                currentType,
+                newType,
+                currentAmount,
+                newAmount);
+
+        switch (currentType) {
+            case EXPENSE -> currentWallet.increase(currentAmount);
+            case INCOME -> currentWallet.decrease(currentAmount);
+        }
+
+        switch (newType) {
+            case EXPENSE -> newWallet.decrease(newAmount);
+            case INCOME -> newWallet.increase(newAmount);
+        }
+
+        log.debug(
+                "[updateBalanceDifferentWallet] currentWallet={} newBalance={} | newWallet={} newBalance={}",
+                currentWallet.getId(),
+                currentWallet.getBalance(),
+                newWallet.getId(),
+                newWallet.getBalance());
+
+        walletRepository.saveAll(List.of(currentWallet, newWallet));
+    }
 
     void unsetDefaultAllWallets() {
         log.info("[unsetDefaultAllWallets]");
@@ -158,14 +272,5 @@ public class WalletServiceImpl implements WalletService {
         return walletRepository
                 .findById(id)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.WALLET_NOT_FOUND));
-    }
-
-    Wallet getWalletByIdForOwner(UUID id) {
-        log.info("[getWalletByIdForOwner]={}", id);
-
-        Wallet wallet = getWalletById(id);
-        helpers.checkIsOwner(wallet);
-
-        return wallet;
     }
 }
