@@ -157,6 +157,16 @@ public class CategoryServiceImpl implements CategoryService {
         return PagedResponse.fromPage(categories);
     }
 
+    @Override
+    public Category getCategoryByIdForOwner(UUID id) {
+        log.info("[getCategoryByIdForOwner]={}", id);
+
+        Category category = getCategoryById(id);
+        helpers.checkIsOwner(category);
+
+        return category;
+    }
+
     // PRIVATE FUNCTION
 
     void deleteAssociatedTransactions(Category category) {
@@ -171,14 +181,5 @@ public class CategoryServiceImpl implements CategoryService {
         return categoryRepository
                 .findById(id)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.CATEGORY_NOT_FOUND));
-    }
-
-    Category getCategoryByIdForOwner(UUID id) {
-        log.info("[getCategoryByIdForOwner]={}", id);
-
-        Category category = getCategoryById(id);
-        helpers.checkIsOwner(category);
-
-        return category;
     }
 }

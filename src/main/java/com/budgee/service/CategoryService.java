@@ -2,6 +2,7 @@ package com.budgee.service;
 
 import java.util.UUID;
 
+import com.budgee.model.Category;
 import com.budgee.payload.request.CategoryRequest;
 import com.budgee.payload.request.CategoryUpdateRequest;
 import com.budgee.payload.response.CategoryResponse;
@@ -18,4 +19,6 @@ public interface CategoryService {
     void deleteCategory(UUID id);
 
     PagedResponse<?> getAllCategoriesWithSortBy(int page, int pageSize, String sortBy);
+
+    Category getCategoryByIdForOwner(UUID id);
 }
