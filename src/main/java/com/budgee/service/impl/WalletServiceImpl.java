@@ -9,6 +9,8 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
+import jakarta.transaction.Transactional;
+
 import org.springframework.stereotype.Service;
 
 import com.budgee.enums.Currency;
@@ -20,6 +22,7 @@ import com.budgee.model.User;
 import com.budgee.model.Wallet;
 import com.budgee.payload.request.WalletRequest;
 import com.budgee.payload.response.WalletResponse;
+import com.budgee.repository.TransactionRepository;
 import com.budgee.repository.WalletRepository;
 import com.budgee.service.UserService;
 import com.budgee.service.WalletService;
@@ -43,6 +46,7 @@ import com.budgee.util.Helpers;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class WalletServiceImpl implements WalletService {
 
+    TransactionRepository transactionRepository;
     WalletRepository walletRepository;
     UserService userService;
     Helpers helpers;
@@ -52,7 +56,6 @@ public class WalletServiceImpl implements WalletService {
         log.info("[getWallet]={}", id);
 
         Wallet wallet = getWalletByIdForOwner(id);
-        helpers.checkIsOwner(wallet);
 
         return WalletMapper.INSTANCE.toWalletResponse(wallet);
     }
@@ -99,7 +102,7 @@ public class WalletServiceImpl implements WalletService {
             wallet.setType(request.type());
         }
 
-        if (wallet.getCurrency().equals(request.currency())) {
+        if (!wallet.getCurrency().equals(request.currency())) {
             wallet.setCurrency(request.currency());
         }
 
@@ -122,18 +125,20 @@ public class WalletServiceImpl implements WalletService {
     public List<WalletResponse> getAllWallets() {
         log.info("[getAllWallets]");
 
-        User authenticatedUser = userService.getCurrentUser();
-
-        List<Wallet> wallets = walletRepository.findAllByUser(authenticatedUser);
+        List<Wallet> wallets = getAllWalletsByUser();
 
         return wallets.stream().map(WalletMapper.INSTANCE::toWalletResponse).toList();
     }
 
     @Override
+    @Transactional
     public void deleteWallet(UUID id) {
         log.info("[deleteWallet]={}", id);
 
         Wallet wallet = getWalletByIdForOwner(id);
+
+        log.warn("[deleteWallet] delete all transactions of wallet={}", wallet.getId());
+        deleteAssociatedTransactionsByWallet(wallet);
 
         log.warn("[deleteWallet] delete from db");
         walletRepository.delete(wallet);
@@ -170,6 +175,25 @@ public class WalletServiceImpl implements WalletService {
     }
 
     // PRIVATE FUNCTION
+
+    List<Wallet> getAllWalletsByUser() {
+        log.info("[getAllWalletsByUser]");
+
+        User authenticatedUser = userService.getCurrentUser();
+
+        return walletRepository.findAllByUser(authenticatedUser);
+    }
+
+    @Transactional
+    void deleteAssociatedTransactionsByWallet(Wallet wallet) {
+        log.info(
+                "[deleteAssociatedTransactionsByWallet] Deleting transactions for wallet={}",
+                wallet.getId());
+
+        User userAuthenticated = userService.getCurrentUser();
+
+        transactionRepository.deleteAllByWalletAndUser(wallet, userAuthenticated);
+    }
 
     void updateBalanceSameWallet(
             Wallet currentWallet,
@@ -256,7 +280,7 @@ public class WalletServiceImpl implements WalletService {
     void unsetDefaultAllWallets() {
         log.info("[unsetDefaultAllWallets]");
 
-        List<Wallet> wallets = walletRepository.findAll();
+        List<Wallet> wallets = getAllWalletsByUser();
 
         if (!wallets.isEmpty()) {
             wallets.forEach(x -> x.setIsDefault(Boolean.FALSE));
