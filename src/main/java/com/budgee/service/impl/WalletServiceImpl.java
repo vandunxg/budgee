@@ -243,7 +243,7 @@ public class WalletServiceImpl implements WalletService {
         walletRepository.save(currentWallet);
     }
 
-    private void updateBalanceDifferentWallet(
+    void updateBalanceDifferentWallet(
             Wallet currentWallet,
             Wallet newWallet,
             BigDecimal currentAmount,
