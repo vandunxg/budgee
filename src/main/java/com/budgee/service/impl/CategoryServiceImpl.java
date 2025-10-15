@@ -56,7 +56,7 @@ public class CategoryServiceImpl implements CategoryService {
 
         Category category = getCategoryByIdForOwner(id);
 
-        return CategoryMapper.INSTANCE.toCategoryResponse(category);
+        return toCategoryResponse(category);
     }
 
     @Override
@@ -76,7 +76,7 @@ public class CategoryServiceImpl implements CategoryService {
         log.warn("[categoryCategory] save to db");
         categoryRepository.save(newCategory);
 
-        return CategoryMapper.INSTANCE.toCategoryResponse(newCategory);
+        return toCategoryResponse(newCategory);
     }
 
     @Override
@@ -106,7 +106,7 @@ public class CategoryServiceImpl implements CategoryService {
         log.warn("[updateCategory] update to db");
         categoryRepository.save(category);
 
-        return CategoryMapper.INSTANCE.toCategoryResponse(category);
+        return toCategoryResponse(category);
     }
 
     @Override
@@ -162,7 +162,7 @@ public class CategoryServiceImpl implements CategoryService {
         Page<CategoryResponse> categories =
                 categoryRepository
                         .findAllByUser(authenticatedUser, pageable)
-                        .map(CategoryMapper.INSTANCE::toCategoryResponse);
+                        .map(this::toCategoryResponse);
 
         return PagedResponse.fromPage(categories);
     }
@@ -178,6 +178,19 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     // PRIVATE FUNCTION
+
+    CategoryResponse toCategoryResponse(Category category){
+        log.info("[toCategoryResponse]");
+
+        CategoryResponse response = CategoryMapper.INSTANCE.toCategoryResponse(category);
+
+        if(category.getIsDefault()) {
+            response.setDeletable(false);
+            response.setEditable(false);
+        }
+
+        return response;
+    }
 
     @Transactional
     void removeCategoryFromGoal(Category category) {

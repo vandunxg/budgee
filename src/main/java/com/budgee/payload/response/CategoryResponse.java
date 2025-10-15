@@ -21,4 +21,6 @@ public class CategoryResponse implements Serializable {
     String description;
     String color;
     String icon;
+    Boolean editable;
+    Boolean deletable;
 }
