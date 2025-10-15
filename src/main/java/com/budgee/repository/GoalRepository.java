@@ -27,4 +27,6 @@ public interface GoalRepository extends JpaRepository<Goal, UUID> {
             """)
     List<Goal> findGoalsNotContainingCategories(
             @Param("userId") UUID userId, @Param("categoryIds") List<UUID> categoryIds);
+
+    List<Goal> findAllByUser(User user);
 }

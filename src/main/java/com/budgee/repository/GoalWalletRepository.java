@@ -5,9 +5,7 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.budgee.model.Goal;
 import com.budgee.model.GoalWallet;
 
 @Repository
-public interface GoalWalletRepository extends JpaRepository<GoalWallet, UUID> {
-}
+public interface GoalWalletRepository extends JpaRepository<GoalWallet, UUID> {}
