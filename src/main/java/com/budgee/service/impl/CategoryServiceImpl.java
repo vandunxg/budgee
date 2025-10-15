@@ -11,6 +11,8 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jakarta.transaction.Transactional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -22,13 +24,15 @@ import com.budgee.enums.Role;
 import com.budgee.exception.ErrorCode;
 import com.budgee.exception.NotFoundException;
 import com.budgee.mapper.CategoryMapper;
-import com.budgee.model.Category;
-import com.budgee.model.User;
+import com.budgee.model.*;
 import com.budgee.payload.request.CategoryRequest;
 import com.budgee.payload.request.CategoryUpdateRequest;
 import com.budgee.payload.response.CategoryResponse;
 import com.budgee.payload.response.PagedResponse;
 import com.budgee.repository.CategoryRepository;
+import com.budgee.repository.GoalCategoryRepository;
+import com.budgee.repository.GoalRepository;
+import com.budgee.repository.TransactionRepository;
 import com.budgee.service.CategoryService;
 import com.budgee.service.UserService;
 import com.budgee.util.Helpers;
@@ -42,6 +46,9 @@ public class CategoryServiceImpl implements CategoryService {
     CategoryRepository categoryRepository;
     UserService userService;
     Helpers helpers;
+    TransactionRepository transactionRepository;
+    GoalRepository goalRepository;
+    GoalCategoryRepository goalCategoryRepository;
 
     @Override
     public CategoryResponse getCategory(UUID id) {
@@ -103,12 +110,15 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @Transactional
     public void deleteCategory(UUID id) {
         log.info("[deleteCategory]={}", id);
 
         Category category = getCategoryByIdForOwner(id);
 
-        deleteAssociatedTransactions(category);
+        deleteAssociatedTransactionsByCategory(category);
+
+        removeCategoryFromGoal(category);
 
         log.warn("[deleteCategory] delete category from db");
         categoryRepository.delete(category);
@@ -169,10 +179,36 @@ public class CategoryServiceImpl implements CategoryService {
 
     // PRIVATE FUNCTION
 
-    void deleteAssociatedTransactions(Category category) {
+    @Transactional
+    void removeCategoryFromGoal(Category category) {
+        log.info("[removeCategoryFromGoal]={}", category.getId());
+
+        goalCategoryRepository.deleteAllByCategory(category);
+
+        User authenticatedUser = userService.getCurrentUser();
+
+        List<GoalCategory> allGoalCategoriesOfUser =
+                goalCategoryRepository.findAllByUser(authenticatedUser);
+
+        List<UUID> categoriesIds =
+                allGoalCategoriesOfUser.stream().map(x -> x.getCategory().getId()).toList();
+
+        List<Goal> allGoalsOfAuthenticatedUserNotContainCategories =
+                goalRepository.findGoalsNotContainingCategories(
+                        authenticatedUser.getId(), categoriesIds);
+
+        goalRepository.deleteAll(allGoalsOfAuthenticatedUserNotContainCategories);
+    }
+
+    @Transactional
+    void deleteAssociatedTransactionsByCategory(Category category) {
         log.info(
-                "[deleteAssociatedTransactions] Deleting transactions for category={}",
+                "[deleteAssociatedTransactionsByCategory] Deleting transactions for category={}",
                 category.getId());
+
+        User userAuthenticated = userService.getCurrentUser();
+
+        transactionRepository.deleteAllByCategoryAndUser(category, userAuthenticated);
     }
 
     Category getCategoryById(UUID id) {
