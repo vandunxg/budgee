@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.budgee.enums.TransactionType;
+import com.budgee.model.Transaction;
 import com.budgee.model.Wallet;
 import com.budgee.payload.request.WalletRequest;
 import com.budgee.payload.response.WalletResponse;
@@ -23,11 +24,15 @@ public interface WalletService {
 
     Wallet getWalletByIdForOwner(UUID id);
 
-    void updateWalletBalance(
-            Wallet currentWallet,
+    void applyTransaction(Wallet wallet, Transaction transaction);
+
+    void reverseTransaction(Wallet wallet, Transaction transaction);
+
+    void updateBalanceForTransactionUpdate(
+            Wallet oldWallet,
             Wallet newWallet,
-            BigDecimal currentAmount,
+            BigDecimal oldAmount,
             BigDecimal newAmount,
-            TransactionType currentType,
+            TransactionType oldType,
             TransactionType newType);
 }
