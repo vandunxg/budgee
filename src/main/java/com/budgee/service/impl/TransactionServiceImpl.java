@@ -1,11 +1,13 @@
 package com.budgee.service.impl;
 
+import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -36,6 +38,7 @@ public class TransactionServiceImpl implements TransactionService {
     UserService userService;
 
     @Override
+    @Transactional
     public TransactionResponse createTransaction(TransactionRequest request) {
         log.info("[createTransaction]={}", request);
 
@@ -58,6 +61,7 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
+    @Transactional
     public TransactionResponse updateTransaction(UUID id, TransactionRequest request) {
         log.info("[updateTransaction]={}", request);
 
@@ -109,6 +113,14 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
+    public List<Transaction> getTransactionByCategory(Category category) {
+        log.info("[getTransactionByCategory] category={}", category);
+
+        return transactionRepository.getTransactionsByCategory(category);
+    }
+
+    @Override
+    @Transactional
     public void deleteTransaction(UUID id) {
         log.info("[deleteTransaction] id={}", id);
 
