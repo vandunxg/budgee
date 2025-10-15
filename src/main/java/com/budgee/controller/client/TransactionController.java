@@ -39,7 +39,7 @@ public class TransactionController {
         log.info("[PATCH /transactions/{}]={}", id, request.toString());
 
         return ResponseUtil.success(
-                "Updated successfully", transactionService.updateTransaction(id, request));
+                MessageConstants.UPDATE_SUCCESS, transactionService.updateTransaction(id, request));
     }
 
     @RequestMapping("/{id}")

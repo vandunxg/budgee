@@ -26,7 +26,7 @@ import com.budgee.enums.TransactionType;
 @AllArgsConstructor
 @ToString(exclude = {"user", "wallet", "category", "recurring", "group", "debt"})
 @EqualsAndHashCode(callSuper = true)
-public class Transaction extends BaseEntity {
+public class Transaction extends BaseEntity implements OwnerEntity {
 
     @NotNull(message = "User is required")
     @ManyToOne(fetch = FetchType.LAZY)
@@ -87,4 +87,9 @@ public class Transaction extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "debt_id")
     Debt debt;
+
+    @Override
+    public User getOwner() {
+        return this.user;
+    }
 }

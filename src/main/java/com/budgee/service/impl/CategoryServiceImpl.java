@@ -179,12 +179,12 @@ public class CategoryServiceImpl implements CategoryService {
 
     // PRIVATE FUNCTION
 
-    CategoryResponse toCategoryResponse(Category category){
+    CategoryResponse toCategoryResponse(Category category) {
         log.info("[toCategoryResponse]");
 
         CategoryResponse response = CategoryMapper.INSTANCE.toCategoryResponse(category);
 
-        if(category.getIsDefault()) {
+        if (category.getIsDefault()) {
             response.setDeletable(false);
             response.setEditable(false);
         }

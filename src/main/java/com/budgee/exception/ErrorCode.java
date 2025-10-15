@@ -83,6 +83,7 @@ public enum ErrorCode {
     CATEGORY_ALREADY_EXISTS(
             4003, HttpStatus.BAD_REQUEST, "Category name already exists for this user"),
     INVALID_PARENT_CATEGORY(4004, HttpStatus.BAD_REQUEST, "Invalid parent category"),
+    CATEGORY_IS_REQUIRED(6002, HttpStatus.BAD_REQUEST, "Category is required"),
 
     // Debt-related errors (5000-5999)
     DEBT_NOT_FOUND(5000, HttpStatus.NOT_FOUND, "Debt not found"),
@@ -93,13 +94,20 @@ public enum ErrorCode {
     // Wallet-related errors  (6000-6999)
     WALLET_NOT_FOUND(6000, HttpStatus.NOT_FOUND, "Wallet not found"),
     AMOUNT_MUST_BE_POSITIVE(6001, HttpStatus.BAD_REQUEST, "Amount must be positive"),
+    WALLET_IS_REQUIRED(6002, HttpStatus.BAD_REQUEST, "Wallet is required"),
 
     // General system errors (7000-7999)
     DATABASE_ERROR(7000, HttpStatus.INTERNAL_SERVER_ERROR, "Database operation failed"),
     VALIDATION_FAILED(7001, HttpStatus.BAD_REQUEST, "Validation failed"),
     INTERNAL_SERVER_ERROR(7002, HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred"),
     INVALID_REQUEST(7003, HttpStatus.BAD_REQUEST, "Invalid request data"),
-    OPERATION_NOT_SUPPORTED(7004, HttpStatus.BAD_REQUEST, "Operation not supported");
+    OPERATION_NOT_SUPPORTED(7004, HttpStatus.BAD_REQUEST, "Operation not supported"),
+
+    // Goal-related errors (8000-8999)
+    GOAL_NOT_FOUND(8000, HttpStatus.NOT_FOUND, "Goal not found"),
+    START_DATE_NOT_BEFORE_AFTER_DATE(
+            8001, HttpStatus.BAD_REQUEST, "Start date must be before after date"),
+    ;
 
     private final int code;
     private final HttpStatus httpStatus;

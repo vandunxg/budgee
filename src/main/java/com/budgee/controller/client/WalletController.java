@@ -46,7 +46,7 @@ public class WalletController {
         log.info("[PATCH /wallets/{}]={}", id, request.toString());
 
         return ResponseUtil.success(
-                "Updated wallet successfully", walletService.updateWallet(id, request));
+                MessageConstants.UPDATE_SUCCESS, walletService.updateWallet(id, request));
     }
 
     @DeleteMapping("/{id}")

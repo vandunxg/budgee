@@ -49,7 +49,7 @@ public class CategoryController {
         log.info("[PATCH /categories/{}]={}", id, request.toString());
 
         return ResponseUtil.success(
-                "Updated successfully", categoryService.updateCategory(request, id));
+                MessageConstants.UPDATE_SUCCESS, categoryService.updateCategory(request, id));
     }
 
     @DeleteMapping("/{id}")

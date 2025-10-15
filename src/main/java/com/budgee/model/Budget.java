@@ -22,7 +22,7 @@ import com.budgee.enums.Period;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString
+@ToString(exclude = "user")
 @EqualsAndHashCode(callSuper = true)
 public class Budget extends BaseEntity {
 
