@@ -1,15 +1,19 @@
 package com.budgee.model;
 
-import com.budgee.enums.TransactionType;
-import com.budgee.enums.ExpenseSource;  // Enum mới cho nguồn tiền chi
-import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.LocalTime;
+
+import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
+
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import com.budgee.enums.ExpenseSource;
+import com.budgee.enums.TransactionType;
 
 @Getter
 @Setter
@@ -22,20 +26,21 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @ToString(exclude = {"user", "wallet", "category", "recurring", "group", "debt"})
 @EqualsAndHashCode(callSuper = true)
-public class Transaction extends BaseEntity {
+public class Transaction extends BaseEntity implements OwnerEntity {
 
     @NotNull(message = "User is required")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     User user;
 
+    @NotNull(message = "Wallet is required")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "wallet_id")
     Wallet wallet;
 
+    @NotNull(message = "Category is required")
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id")
-    Category category;
+    private Category category;
 
     @NotNull(message = "Type is required")
     @Enumerated(EnumType.STRING)
@@ -50,7 +55,11 @@ public class Transaction extends BaseEntity {
     @NotNull(message = "Date is required")
     @PastOrPresent(message = "Date must be in the past or present")
     @Column(nullable = false)
-    LocalDateTime date;
+    LocalDate date;
+
+    @NotNull(message = "Time is required")
+    @Column(nullable = false)
+    private LocalTime time;
 
     @Size(max = 1000, message = "Note must be at most 1000 characters")
     String note;
@@ -78,4 +87,9 @@ public class Transaction extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "debt_id")
     Debt debt;
+
+    @Override
+    public User getOwner() {
+        return this.user;
+    }
 }

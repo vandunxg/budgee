@@ -5,4 +5,3 @@ public enum VoucherDiscountType {
     FIXED,
     FREE_MONTHS
 }
-

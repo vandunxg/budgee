@@ -1,16 +1,14 @@
 package com.budgee.model;
 
-
-import com.budgee.enums.NotificationType;
-import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+
+import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
+
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
+import com.budgee.enums.NotificationType;
 
 @Getter
 @Setter

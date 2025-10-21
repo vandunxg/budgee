@@ -7,4 +7,3 @@ public enum Period {
     YEARLY,
     CUSTOM
 }
-

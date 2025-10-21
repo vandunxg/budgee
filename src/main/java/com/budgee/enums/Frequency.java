@@ -6,5 +6,3 @@ public enum Frequency {
     MONTHLY,
     YEARLY
 }
-
-

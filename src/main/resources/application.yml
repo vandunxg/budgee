@@ -22,7 +22,7 @@ jwt:
     access-token: IIwLeRIVsznVTPFEYmA6HiVVBrlKkKqC36OpWzqw8mk=
     refresh-token: tvszknimPZQEdy3c9TCERBLAkOyoCc2ZvOmGcHsRJgg=
   expiration:
-    access-token: 3600000 # 1 hour = 1 * 60 * 60 * 1000
+    access-token: 2592000000 # 1 hour = 1 * 60 * 60 * 1000 = 3600000
     refresh-token: 2592000000 #30 days = 30 * 24 * 60 * 60 * 1000
 
 
