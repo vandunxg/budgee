@@ -4,4 +4,3 @@ public enum SubscriptionDuration {
     MONTHLY,
     YEARLY
 }
-

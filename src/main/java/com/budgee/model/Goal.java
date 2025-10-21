@@ -1,13 +1,17 @@
 package com.budgee.model;
 
-import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+
+import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
+
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Getter
 @Setter
@@ -18,9 +22,9 @@ import java.time.LocalDate;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString
+@ToString(exclude = "user")
 @EqualsAndHashCode(callSuper = true)
-public class Goal extends BaseEntity {
+public class Goal extends BaseEntity implements OwnerEntity {
 
     @NotNull(message = "User is required")
     @ManyToOne(fetch = FetchType.LAZY)
@@ -32,14 +36,13 @@ public class Goal extends BaseEntity {
     @Column(nullable = false, length = 100)
     String name;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id")
-    Category category;
+    @NotNull(message = "Categories is required")
+    @OneToMany(mappedBy = "goal", cascade = CascadeType.ALL, orphanRemoval = true)
+    List<GoalCategory> goalCategories = new ArrayList<>();
 
     @NotNull(message = "Wallet is required")
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "wallet_id", nullable = false)
-    Wallet wallet;
+    @OneToMany(mappedBy = "goal", cascade = CascadeType.ALL, orphanRemoval = true)
+    List<GoalWallet> goalWallets = new ArrayList<>();
 
     @NotNull(message = "Target amount is required")
     @DecimalMin(value = "0.01", message = "Target amount must be at least 0.01")
@@ -47,7 +50,6 @@ public class Goal extends BaseEntity {
     BigDecimal targetAmount;
 
     @NotNull(message = "Current amount is required")
-    @DecimalMin(value = "0.00", message = "Current amount must be non-negative")
     @Column(precision = 15, scale = 2)
     BigDecimal currentAmount = BigDecimal.ZERO;
 
@@ -57,4 +59,9 @@ public class Goal extends BaseEntity {
 
     @FutureOrPresent(message = "End date must be in the present or future")
     LocalDate endDate;
+
+    @Override
+    public User getOwner() {
+        return this.user;
+    }
 }

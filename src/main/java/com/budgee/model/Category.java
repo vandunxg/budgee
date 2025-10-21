@@ -1,11 +1,14 @@
 package com.budgee.model;
 
-import com.budgee.enums.TransactionType;
-import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+
+import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
+
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import com.budgee.enums.TransactionType;
 
 @Getter
 @Setter
@@ -18,7 +21,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @AllArgsConstructor
 @ToString
 @EqualsAndHashCode(callSuper = true)
-public class Category extends BaseEntity {
+public class Category extends BaseEntity implements OwnerEntity {
 
     @NotNull(message = "User is required")
     @ManyToOne(fetch = FetchType.LAZY)
@@ -35,14 +38,21 @@ public class Category extends BaseEntity {
     @Column(nullable = false)
     TransactionType type;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parent_id")
-    Category parent;
-
     @Size(max = 500, message = "Description must be at most 500 characters")
     String description;
+
+    Boolean isDefault;
+
+    @Size(max = 255, message = "Color must be at most 255 characters")
+    @Column(length = 255)
+    String color;
 
     @Size(max = 255, message = "Icon must be at most 255 characters")
     @Column(length = 255)
     String icon;
+
+    @Override
+    public User getOwner() {
+        return this.user;
+    }
 }
