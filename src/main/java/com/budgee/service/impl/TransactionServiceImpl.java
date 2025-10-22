@@ -7,12 +7,15 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 import jakarta.transaction.Transactional;
 
 import org.springframework.stereotype.Service;
 
+import com.budgee.enums.GroupExpenseSource;
+import com.budgee.enums.TransactionSource;
 import com.budgee.enums.TransactionType;
 import com.budgee.exception.ErrorCode;
 import com.budgee.exception.NotFoundException;
@@ -20,13 +23,17 @@ import com.budgee.exception.ValidationException;
 import com.budgee.mapper.TransactionMapper;
 import com.budgee.model.*;
 import com.budgee.payload.request.TransactionRequest;
+import com.budgee.payload.request.group.GroupTransactionRequest;
 import com.budgee.payload.response.TransactionResponse;
+import com.budgee.payload.response.group.GroupTransactionResponse;
+import com.budgee.repository.GroupMemberRepository;
 import com.budgee.repository.TransactionRepository;
 import com.budgee.service.CategoryService;
 import com.budgee.service.TransactionService;
 import com.budgee.service.UserService;
 import com.budgee.service.WalletService;
-import com.budgee.util.Helpers;
+import com.budgee.util.SecurityHelper;
+import com.budgee.util.WalletHelper;
 
 @Service
 @RequiredArgsConstructor
@@ -34,15 +41,16 @@ import com.budgee.util.Helpers;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class TransactionServiceImpl implements TransactionService {
 
+    GroupMemberRepository groupMemberRepository;
     TransactionRepository transactionRepository;
+
     WalletService walletService;
     CategoryService categoryService;
     UserService userService;
-    Helpers helpers;
 
-    // -----------------------------------------------------
-    // CREATE
-    // -----------------------------------------------------
+    SecurityHelper securityHelper;
+    WalletHelper walletHelper;
+
     @Override
     @Transactional
     public TransactionResponse createTransaction(TransactionRequest request) {
@@ -50,7 +58,7 @@ public class TransactionServiceImpl implements TransactionService {
 
         Transaction transaction = TransactionMapper.INSTANCE.toTransaction(request);
 
-        Wallet wallet = walletService.getWalletByIdForOwner(request.walletId());
+        Wallet wallet = walletHelper.getWalletByIdForOwner(request.walletId());
         Category category = categoryService.getCategoryByIdForOwner(request.categoryId());
         User user = userService.getCurrentUser();
 
@@ -59,6 +67,7 @@ public class TransactionServiceImpl implements TransactionService {
         transaction.setWallet(wallet);
         transaction.setCategory(category);
         transaction.setUser(user);
+        transaction.setTransactionSource(TransactionSource.PERSONAL);
 
         walletService.applyTransaction(wallet, transaction);
 
@@ -68,26 +77,50 @@ public class TransactionServiceImpl implements TransactionService {
         return toTransactionResponse(transaction);
     }
 
-    // -----------------------------------------------------
-    // UPDATE
-    // -----------------------------------------------------
+    @Override
+    public GroupTransactionResponse createGroupTransaction(
+            GroupTransactionRequest request, UUID groupId) {
+        log.info("[createGroupTransaction]={}", request);
+
+        Transaction transaction = TransactionMapper.INSTANCE.toTransaction(request);
+        GroupMember member = getMemberById(request.memberId());
+
+        switch (request.groupExpenseSource()) {
+            case GROUP_FUND -> transaction.setGroupExpenseSource(GroupExpenseSource.GROUP_FUND);
+            case MEMBER_ADVANCE -> transaction.setGroupExpenseSource(
+                    GroupExpenseSource.MEMBER_ADVANCE);
+            case MEMBER_SPONSOR -> transaction.setGroupExpenseSource(
+                    GroupExpenseSource.MEMBER_SPONSOR);
+            default -> throw new ValidationException(ErrorCode.INVALID_GROUP_TRANSACTION_SOURCE);
+        }
+
+        if (!Objects.isNull(member.getUser())) {
+            transaction.setUser(member.getUser());
+        }
+
+        transaction.setGroupMember(member);
+        transaction.setTransactionSource(TransactionSource.GROUP);
+
+        return null;
+    }
+
     @Override
     @Transactional
     public TransactionResponse updateTransaction(UUID id, TransactionRequest request) {
         log.info("[updateTransaction] id={} request={}", id, request);
 
         Transaction transaction = getTransactionById(id);
-        helpers.checkIsOwner(transaction);
+        Category newCategory = categoryService.getCategoryByIdForOwner(request.categoryId());
 
+        Wallet newWallet = walletHelper.getWalletByIdForOwner(request.walletId());
         Wallet oldWallet = transaction.getWallet();
-        Wallet newWallet = walletService.getWalletByIdForOwner(request.walletId());
 
         BigDecimal oldAmount = transaction.getAmount();
         BigDecimal newAmount = request.amount();
         TransactionType oldType = transaction.getType();
         TransactionType newType = request.type();
 
-        Category newCategory = categoryService.getCategoryByIdForOwner(request.categoryId());
+        securityHelper.checkIsOwner(transaction);
         checkNewTypeOfTransactionWithTypeOfCategory(newCategory.getType(), newType);
 
         walletService.updateBalanceForTransactionUpdate(
@@ -107,15 +140,12 @@ public class TransactionServiceImpl implements TransactionService {
         return toTransactionResponse(transaction);
     }
 
-    // -----------------------------------------------------
-    // GET
-    // -----------------------------------------------------
     @Override
     public TransactionResponse getTransaction(UUID id) {
         log.info("[getTransaction] id={}", id);
 
-        Transaction transaction = getTransactionById(id);
-        helpers.checkIsOwner(transaction);
+        Transaction transaction = this.getTransactionById(id);
+        securityHelper.checkIsOwner(transaction);
         return toTransactionResponse(transaction);
     }
 
@@ -126,16 +156,13 @@ public class TransactionServiceImpl implements TransactionService {
         return transactionRepository.getTransactionsByCategory(category);
     }
 
-    // -----------------------------------------------------
-    // DELETE
-    // -----------------------------------------------------
     @Override
     @Transactional
     public void deleteTransaction(UUID id) {
         log.info("[deleteTransaction] id={}", id);
 
-        Transaction transaction = getTransactionById(id);
-        helpers.checkIsOwner(transaction);
+        Transaction transaction = this.getTransactionById(id);
+        securityHelper.checkIsOwner(transaction);
 
         walletService.reverseTransaction(transaction.getWallet(), transaction);
 
@@ -143,9 +170,19 @@ public class TransactionServiceImpl implements TransactionService {
         log.warn("[deleteTransaction] deleted transaction id={}", id);
     }
 
+    public Transaction getTransactionById(UUID id) {
+        log.info("[getTransactionById] id={}", id);
+
+        return transactionRepository
+                .findById(id)
+                .orElseThrow(() -> new NotFoundException(ErrorCode.TRANSACTION_NOT_FOUND));
+    }
+
     // -----------------------------------------------------
-    // PRIVATE HELPERS
+    // UTILITIES
+
     // -----------------------------------------------------
+
     void checkNewTypeOfTransactionWithTypeOfCategory(
             TransactionType typeOfCategory, TransactionType typeOfTransaction) {
         log.info(
@@ -160,12 +197,12 @@ public class TransactionServiceImpl implements TransactionService {
         }
     }
 
-    Transaction getTransactionById(UUID id) {
-        log.info("[getTransactionById] id={}", id);
+    GroupMember getMemberById(UUID id) {
+        log.info("[getMemberById]={}", id);
 
-        return transactionRepository
+        return groupMemberRepository
                 .findById(id)
-                .orElseThrow(() -> new NotFoundException(ErrorCode.TRANSACTION_NOT_FOUND));
+                .orElseThrow(() -> new NotFoundException(ErrorCode.GROUP_MEMBER_NOT_FOUND));
     }
 
     TransactionResponse toTransactionResponse(Transaction transaction) {

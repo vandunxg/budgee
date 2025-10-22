@@ -6,7 +6,6 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,14 +20,14 @@ import com.budgee.mapper.GoalMapper;
 import com.budgee.model.*;
 import com.budgee.payload.request.GoalRequest;
 import com.budgee.payload.response.GoalResponse;
-import com.budgee.repository.GoalCategoryRepository;
 import com.budgee.repository.GoalRepository;
-import com.budgee.repository.GoalWalletRepository;
 import com.budgee.service.CategoryService;
 import com.budgee.service.GoalService;
 import com.budgee.service.UserService;
 import com.budgee.service.WalletService;
-import com.budgee.util.Helpers;
+import com.budgee.util.DateValidator;
+import com.budgee.util.SecurityHelper;
+import com.budgee.util.WalletHelper;
 
 @Service
 @RequiredArgsConstructor
@@ -36,14 +35,24 @@ import com.budgee.util.Helpers;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class GoalServiceImpl implements GoalService {
 
+    // -------------------------------------------------------------------
+    // REPOSITORY
+    // -------------------------------------------------------------------
     GoalRepository goalRepository;
-    GoalCategoryRepository goalCategoryRepository;
-    GoalWalletRepository goalWalletRepository;
 
+    // -------------------------------------------------------------------
+    // SERVICE
+    // -------------------------------------------------------------------
     UserService userService;
     WalletService walletService;
     CategoryService categoryService;
-    Helpers helpers;
+
+    // -------------------------------------------------------------------
+    // HELPER
+    // -------------------------------------------------------------------
+    DateValidator dateValidator;
+    SecurityHelper securityHelper;
+    WalletHelper walletHelper;
 
     @Override
     public GoalResponse createGoal(GoalRequest request) {
@@ -54,6 +63,8 @@ public class GoalServiceImpl implements GoalService {
         List<Wallet> wallets = getListWalletsById(request.wallets());
 
         List<Category> categories = getListCategoriesById(request.categories());
+
+        dateValidator.checkEndDateBeforeStartDate(request.startDate(), request.endDate());
 
         Goal goal = GoalMapper.INSTANCE.toGoal(request);
 
@@ -93,7 +104,7 @@ public class GoalServiceImpl implements GoalService {
         log.info("[getGoal]={}", id);
 
         Goal goal = getGoalById(id);
-        helpers.checkIsOwner(goal);
+        securityHelper.checkIsOwner(goal);
 
         return toGoalResponse(goal);
     }
@@ -122,7 +133,7 @@ public class GoalServiceImpl implements GoalService {
                 });
 
         List<Wallet> wallets =
-                request.wallets().stream().map(walletService::getWalletByIdForOwner).toList();
+                request.wallets().stream().map(walletHelper::getWalletByIdForOwner).toList();
 
         goal.getGoalWallets().clear();
 
@@ -141,20 +152,12 @@ public class GoalServiceImpl implements GoalService {
             goal.setTargetAmount(request.targetAmount());
         }
 
-        checkEndDateBeforeStartDate(request.startDate(), request.endDate());
+        dateValidator.checkEndDateBeforeStartDate(request.startDate(), request.endDate());
 
         goal.setStartDate(request.startDate());
         goal.setEndDate(request.endDate());
 
         return toGoalResponse(goal);
-    }
-
-    void checkEndDateBeforeStartDate(LocalDate startDate, LocalDate endDate) {
-        log.info("[checkEndDateAfterStartDate] startDate={} endDate={}", startDate, endDate);
-
-        if (!startDate.isBefore(endDate)) {
-            throw new ValidationException(ErrorCode.START_DATE_NOT_BEFORE_AFTER_DATE);
-        }
     }
 
     @Override
@@ -183,7 +186,9 @@ public class GoalServiceImpl implements GoalService {
         return goals.stream().map(this::toGoalResponse).toList();
     }
 
-    //    PRIVATE FUNCTION
+    // -------------------------------------------------------------------
+    // UTILITIES
+    // -------------------------------------------------------------------
 
     List<Goal> getAllGoalsByUser() {
         log.info("[getAllGoalsByUser]");
@@ -241,8 +246,7 @@ public class GoalServiceImpl implements GoalService {
     List<Wallet> getListWalletsById(List<UUID> walletsId) {
         log.info("[getListWalletsById]={}", walletsId.toString());
 
-        List<Wallet> wallets =
-                walletsId.stream().map(walletService::getWalletByIdForOwner).toList();
+        List<Wallet> wallets = walletsId.stream().map(walletHelper::getWalletByIdForOwner).toList();
 
         if (wallets.isEmpty()) {
             throw new ValidationException(ErrorCode.WALLET_IS_REQUIRED);

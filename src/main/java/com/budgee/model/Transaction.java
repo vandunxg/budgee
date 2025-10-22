@@ -12,7 +12,8 @@ import jakarta.validation.constraints.*;
 
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import com.budgee.enums.ExpenseSource;
+import com.budgee.enums.GroupExpenseSource;
+import com.budgee.enums.TransactionSource;
 import com.budgee.enums.TransactionType;
 
 @Getter
@@ -38,9 +39,8 @@ public class Transaction extends BaseEntity implements OwnerEntity {
     @JoinColumn(name = "wallet_id")
     Wallet wallet;
 
-    @NotNull(message = "Category is required")
     @ManyToOne(fetch = FetchType.LAZY)
-    private Category category;
+    Category category;
 
     @NotNull(message = "Type is required")
     @Enumerated(EnumType.STRING)
@@ -59,7 +59,7 @@ public class Transaction extends BaseEntity implements OwnerEntity {
 
     @NotNull(message = "Time is required")
     @Column(nullable = false)
-    private LocalTime time;
+    LocalTime time;
 
     @Size(max = 1000, message = "Note must be at most 1000 characters")
     String note;
@@ -82,7 +82,10 @@ public class Transaction extends BaseEntity implements OwnerEntity {
     GroupMember groupMember;
 
     @Enumerated(EnumType.STRING)
-    ExpenseSource expenseSource;
+    TransactionSource transactionSource;
+
+    @Enumerated(EnumType.STRING)
+    GroupExpenseSource groupExpenseSource;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "debt_id")

@@ -35,7 +35,7 @@ import com.budgee.repository.GoalRepository;
 import com.budgee.repository.TransactionRepository;
 import com.budgee.service.CategoryService;
 import com.budgee.service.UserService;
-import com.budgee.util.Helpers;
+import com.budgee.util.SecurityHelper;
 
 @Service
 @RequiredArgsConstructor
@@ -45,7 +45,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     CategoryRepository categoryRepository;
     UserService userService;
-    Helpers helpers;
+    SecurityHelper securityHelper;
     TransactionRepository transactionRepository;
     GoalRepository goalRepository;
     GoalCategoryRepository goalCategoryRepository;
@@ -172,7 +172,7 @@ public class CategoryServiceImpl implements CategoryService {
         log.info("[getCategoryByIdForOwner]={}", id);
 
         Category category = getCategoryById(id);
-        helpers.checkIsOwner(category);
+        securityHelper.checkIsOwner(category);
 
         return category;
     }

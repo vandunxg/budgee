@@ -27,7 +27,8 @@ import com.budgee.repository.TransactionRepository;
 import com.budgee.repository.WalletRepository;
 import com.budgee.service.UserService;
 import com.budgee.service.WalletService;
-import com.budgee.util.Helpers;
+import com.budgee.util.SecurityHelper;
+import com.budgee.util.WalletHelper;
 
 /**
  * Implementation of {@link WalletService} that handles CRUD operations and domain-level balance
@@ -42,16 +43,13 @@ public class WalletServiceImpl implements WalletService {
     TransactionRepository transactionRepository;
     WalletRepository walletRepository;
     UserService userService;
-    Helpers helpers;
-
-    // -------------------------------------------------------------------
-    // CRUD
-    // -------------------------------------------------------------------
+    SecurityHelper securityHelper;
+    WalletHelper walletHelper;
 
     @Override
     public WalletResponse getWallet(UUID id) {
         log.info("[getWallet] id={}", id);
-        Wallet wallet = getWalletByIdForOwner(id);
+        Wallet wallet = walletHelper.getWalletByIdForOwner(id);
         return WalletMapper.INSTANCE.toWalletResponse(wallet);
     }
 
@@ -89,7 +87,7 @@ public class WalletServiceImpl implements WalletService {
     public WalletResponse updateWallet(UUID id, WalletRequest request) {
         log.info("[updateWallet] id={} request={}", id, request);
 
-        Wallet wallet = getWalletByIdForOwner(id);
+        Wallet wallet = walletHelper.getWalletByIdForOwner(id);
 
         if (!wallet.getName().equals(request.name())) wallet.setName(request.name());
         if (!wallet.getBalance().equals(request.balance())) wallet.setBalance(request.balance());
@@ -112,17 +110,13 @@ public class WalletServiceImpl implements WalletService {
     public void deleteWallet(UUID id) {
         log.info("[deleteWallet] id={}", id);
 
-        Wallet wallet = getWalletByIdForOwner(id);
+        Wallet wallet = walletHelper.getWalletByIdForOwner(id);
         log.warn("[deleteWallet] removing related transactions walletId={}", wallet.getId());
         transactionRepository.deleteAllByWalletAndUser(wallet, userService.getCurrentUser());
 
         walletRepository.delete(wallet);
         log.warn("[deleteWallet] deleted walletId={}", wallet.getId());
     }
-
-    // -------------------------------------------------------------------
-    // DOMAIN LOGIC: BALANCE OPERATIONS
-    // -------------------------------------------------------------------
 
     @Override
     @Transactional
@@ -223,7 +217,20 @@ public class WalletServiceImpl implements WalletService {
         }
     }
 
-    private void adjustWalletBalance(Wallet wallet, BigDecimal diff) {
+    @Override
+    public Wallet getWalletById(UUID id) {
+        log.info("[getWalletById]={}", id);
+
+        return walletRepository
+                .findById(id)
+                .orElseThrow(() -> new NotFoundException(ErrorCode.WALLET_NOT_FOUND));
+    }
+
+    // -------------------------------------------------------------------
+    // UTILITIES
+    // -------------------------------------------------------------------
+
+    void adjustWalletBalance(Wallet wallet, BigDecimal diff) {
         if (diff.signum() > 0) {
             wallet.increase(diff);
             log.debug("[adjustWalletBalance] +{} -> {}", diff, wallet.getBalance());
@@ -235,33 +242,16 @@ public class WalletServiceImpl implements WalletService {
         }
     }
 
-    // -------------------------------------------------------------------
-    // UTILITIES
-    // -------------------------------------------------------------------
-
-    @Override
-    public Wallet getWalletByIdForOwner(UUID id) {
-        Wallet wallet = getWalletById(id);
-        helpers.checkIsOwner(wallet);
-        return wallet;
-    }
-
-    private List<Wallet> getAllWalletsByUser() {
+    List<Wallet> getAllWalletsByUser() {
         User user = userService.getCurrentUser();
         return walletRepository.findAllByUser(user);
     }
 
-    private void unsetDefaultAllWallets() {
+    void unsetDefaultAllWallets() {
         List<Wallet> wallets = getAllWalletsByUser();
         if (!wallets.isEmpty()) {
             wallets.forEach(w -> w.setIsDefault(false));
             walletRepository.saveAll(wallets);
         }
-    }
-
-    private Wallet getWalletById(UUID id) {
-        return walletRepository
-                .findById(id)
-                .orElseThrow(() -> new NotFoundException(ErrorCode.WALLET_NOT_FOUND));
     }
 }

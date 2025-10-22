@@ -41,7 +41,7 @@ public class UserServiceImpl implements UserService {
     public UUID createUser(RegisterRequest request) {
         log.info("[createUser] create user with email {}", request.email());
 
-        comparePasswordAndConfirmPassword(request.password(), request.confirmPassword());
+        //        comparePasswordAndConfirmPassword(request.password(), request.confirmPassword());
 
         final String email = normalizeEmail(request.email());
         checkUserExistsByEmail(email);

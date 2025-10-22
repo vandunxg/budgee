@@ -32,7 +32,7 @@ import com.budgee.enums.UserStatus;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 public class User extends BaseEntity implements UserDetails {
 
     @NotBlank(message = "Full name is required")

@@ -6,11 +6,15 @@ import java.util.UUID;
 import com.budgee.model.Category;
 import com.budgee.model.Transaction;
 import com.budgee.payload.request.TransactionRequest;
+import com.budgee.payload.request.group.GroupTransactionRequest;
 import com.budgee.payload.response.TransactionResponse;
+import com.budgee.payload.response.group.GroupTransactionResponse;
 
 public interface TransactionService {
 
     TransactionResponse createTransaction(TransactionRequest request);
+
+    GroupTransactionResponse createGroupTransaction(GroupTransactionRequest request, UUID groupId);
 
     TransactionResponse updateTransaction(UUID id, TransactionRequest request);
 
@@ -19,4 +23,6 @@ public interface TransactionService {
     List<Transaction> getTransactionByCategory(Category category);
 
     void deleteTransaction(UUID id);
+
+    Transaction getTransactionById(UUID id);
 }
