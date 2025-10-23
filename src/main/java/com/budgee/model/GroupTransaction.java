@@ -12,33 +12,26 @@ import jakarta.validation.constraints.*;
 
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import com.budgee.enums.GroupExpenseSource;
 import com.budgee.enums.TransactionType;
 
 @Getter
 @Setter
 @Entity
-@Table(name = "transactions")
+@Table(name = "group_transactions")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @EntityListeners(AuditingEntityListener.class)
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString(exclude = {"user", "wallet", "category", "recurring", "group", "debt"})
+@ToString(exclude = {"member", "group"})
 @EqualsAndHashCode(callSuper = true)
-public class Transaction extends BaseEntity implements OwnerEntity {
+public class GroupTransaction extends BaseEntity {
 
-    @NotNull(message = "User is required")
+    @NotNull(message = "Member is required")
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    User user;
-
-    //    @NotNull(message = "Wallet is required")
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "wallet_id")
-    Wallet wallet;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    Category category;
+    @JoinColumn(name = "member_id", nullable = false)
+    GroupMember member;
 
     @NotNull(message = "Type is required")
     @Enumerated(EnumType.STRING)
@@ -67,11 +60,9 @@ public class Transaction extends BaseEntity implements OwnerEntity {
     String imageUrl;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "recurring_id")
-    RecurringTransaction recurring;
+    @JoinColumn(name = "group_id")
+    Group group;
 
-    @Override
-    public User getOwner() {
-        return this.user;
-    }
+    @Enumerated(EnumType.STRING)
+    GroupExpenseSource groupExpenseSource;
 }

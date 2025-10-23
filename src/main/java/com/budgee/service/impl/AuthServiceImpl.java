@@ -39,19 +39,6 @@ public class AuthServiceImpl implements AuthService {
 
     Clock clock = Clock.systemDefaultZone();
 
-    private static String normalizeEmail(String email) {
-        return email == null ? null : email.trim().toLowerCase();
-    }
-
-    private static String fingerprint(String value) {
-        if (!StringUtils.hasText(value)) return "empty";
-        int len = value.length();
-        String tail = value.substring(Math.max(0, len - 4));
-        return "***" + tail + "(len=" + len + ")";
-    }
-
-    // ---------- Helpers ----------
-
     @Override
     public TokenResponse getAccessToken(LoginRequest request) throws AccessDeniedException {
         final String email = normalizeEmail(request.email());
@@ -115,7 +102,20 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
-    private User findUserByEmail(String email) {
+    //    Utilities
+
+    String normalizeEmail(String email) {
+        return email == null ? null : email.trim().toLowerCase();
+    }
+
+    String fingerprint(String value) {
+        if (!StringUtils.hasText(value)) return "empty";
+        int len = value.length();
+        String tail = value.substring(Math.max(0, len - 4));
+        return "***" + tail + "(len=" + len + ")";
+    }
+
+    User findUserByEmail(String email) {
         log.debug("findUserByEmail email_fp={}", fingerprint(email));
         return userRepository
                 .findByEmail(email)

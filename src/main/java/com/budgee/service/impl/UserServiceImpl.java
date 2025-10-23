@@ -34,7 +34,10 @@ import com.budgee.service.UserService;
 public class UserServiceImpl implements UserService {
 
     UserRepository userRepository;
+
     PasswordEncoder passwordEncoder;
+
+    UserMapper userMapper;
 
     @Override
     @Transactional
@@ -46,7 +49,7 @@ public class UserServiceImpl implements UserService {
         final String email = normalizeEmail(request.email());
         checkUserExistsByEmail(email);
 
-        User user = UserMapper.INSTANCE.toUser(request);
+        User user = userMapper.toUser(request);
         user.setFullName(request.fullName());
         user.setEmail(email);
         user.setStatus(UserStatus.ACTIVE);

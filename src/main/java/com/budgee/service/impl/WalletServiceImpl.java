@@ -28,7 +28,6 @@ import com.budgee.repository.WalletRepository;
 import com.budgee.service.UserService;
 import com.budgee.service.WalletService;
 import com.budgee.util.SecurityHelper;
-import com.budgee.util.WalletHelper;
 
 /**
  * Implementation of {@link WalletService} that handles CRUD operations and domain-level balance
@@ -42,22 +41,25 @@ public class WalletServiceImpl implements WalletService {
 
     TransactionRepository transactionRepository;
     WalletRepository walletRepository;
+
     UserService userService;
+
+    WalletMapper walletMapper;
+
     SecurityHelper securityHelper;
-    WalletHelper walletHelper;
 
     @Override
     public WalletResponse getWallet(UUID id) {
         log.info("[getWallet] id={}", id);
-        Wallet wallet = walletHelper.getWalletByIdForOwner(id);
-        return WalletMapper.INSTANCE.toWalletResponse(wallet);
+        Wallet wallet = this.getWalletByIdForOwner(id);
+        return walletMapper.toWalletResponse(wallet);
     }
 
     @Override
     public List<WalletResponse> getAllWallets() {
         log.info("[getAllWallets]");
         List<Wallet> wallets = getAllWalletsByUser();
-        return wallets.stream().map(WalletMapper.INSTANCE::toWalletResponse).toList();
+        return wallets.stream().map(walletMapper::toWalletResponse).toList();
     }
 
     @Override
@@ -66,7 +68,7 @@ public class WalletServiceImpl implements WalletService {
         log.info("[createWallet] request={}", request);
 
         User user = userService.getCurrentUser();
-        Wallet wallet = WalletMapper.INSTANCE.toWallet(request);
+        Wallet wallet = walletMapper.toWallet(request);
         wallet.setUser(user);
         wallet.setCurrency(request.currency() != null ? request.currency() : Currency.VND);
         wallet.setIsTotalIgnored(request.isTotalIgnored());
@@ -79,7 +81,7 @@ public class WalletServiceImpl implements WalletService {
         walletRepository.save(wallet);
         log.debug("[createWallet] saved wallet={} balance={}", wallet.getId(), wallet.getBalance());
 
-        return WalletMapper.INSTANCE.toWalletResponse(wallet);
+        return walletMapper.toWalletResponse(wallet);
     }
 
     @Override
@@ -87,7 +89,7 @@ public class WalletServiceImpl implements WalletService {
     public WalletResponse updateWallet(UUID id, WalletRequest request) {
         log.info("[updateWallet] id={} request={}", id, request);
 
-        Wallet wallet = walletHelper.getWalletByIdForOwner(id);
+        Wallet wallet = this.getWalletByIdForOwner(id);
 
         if (!wallet.getName().equals(request.name())) wallet.setName(request.name());
         if (!wallet.getBalance().equals(request.balance())) wallet.setBalance(request.balance());
@@ -102,7 +104,7 @@ public class WalletServiceImpl implements WalletService {
         walletRepository.save(wallet);
         log.debug(
                 "[updateWallet] updated wallet={} balance={}", wallet.getId(), wallet.getBalance());
-        return WalletMapper.INSTANCE.toWalletResponse(wallet);
+        return walletMapper.toWalletResponse(wallet);
     }
 
     @Override
@@ -110,7 +112,7 @@ public class WalletServiceImpl implements WalletService {
     public void deleteWallet(UUID id) {
         log.info("[deleteWallet] id={}", id);
 
-        Wallet wallet = walletHelper.getWalletByIdForOwner(id);
+        Wallet wallet = this.getWalletByIdForOwner(id);
         log.warn("[deleteWallet] removing related transactions walletId={}", wallet.getId());
         transactionRepository.deleteAllByWalletAndUser(wallet, userService.getCurrentUser());
 
@@ -229,6 +231,14 @@ public class WalletServiceImpl implements WalletService {
     // -------------------------------------------------------------------
     // UTILITIES
     // -------------------------------------------------------------------
+
+    Wallet getWalletByIdForOwner(UUID id) {
+        log.info("[getWalletByIdForOwner]={}", id);
+
+        Wallet wallet = getWalletById(id);
+        securityHelper.checkIsOwner(wallet);
+        return wallet;
+    }
 
     void adjustWalletBalance(Wallet wallet, BigDecimal diff) {
         if (diff.signum() > 0) {

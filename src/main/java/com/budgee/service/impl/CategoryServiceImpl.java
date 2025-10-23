@@ -43,12 +43,28 @@ import com.budgee.util.SecurityHelper;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class CategoryServiceImpl implements CategoryService {
 
+    // -------------------------------------------------------------------
+    // REPOSITORY
+    // -------------------------------------------------------------------
     CategoryRepository categoryRepository;
-    UserService userService;
-    SecurityHelper securityHelper;
     TransactionRepository transactionRepository;
-    GoalRepository goalRepository;
     GoalCategoryRepository goalCategoryRepository;
+    GoalRepository goalRepository;
+
+    // -------------------------------------------------------------------
+    // SERVICE
+    // -------------------------------------------------------------------
+    UserService userService;
+
+    // -------------------------------------------------------------------
+    // MAPPER
+    // -------------------------------------------------------------------
+    CategoryMapper categoryMapper;
+
+    // -------------------------------------------------------------------
+    // HELPER
+    // -------------------------------------------------------------------
+    SecurityHelper securityHelper;
 
     @Override
     public CategoryResponse getCategory(UUID id) {
@@ -63,7 +79,7 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryResponse createCategory(CategoryRequest request) {
         log.info("[createCategory] {}", request.toString());
 
-        Category newCategory = CategoryMapper.INSTANCE.toCategory(request);
+        Category newCategory = categoryMapper.toCategory(request);
 
         User authenticatedUser = userService.getCurrentUser();
         newCategory.setUser(authenticatedUser);
@@ -182,7 +198,7 @@ public class CategoryServiceImpl implements CategoryService {
     CategoryResponse toCategoryResponse(Category category) {
         log.info("[toCategoryResponse]");
 
-        CategoryResponse response = CategoryMapper.INSTANCE.toCategoryResponse(category);
+        CategoryResponse response = categoryMapper.toCategoryResponse(category);
 
         if (category.getIsDefault()) {
             response.setDeletable(false);
