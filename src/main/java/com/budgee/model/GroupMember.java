@@ -18,7 +18,6 @@ import com.budgee.enums.GroupRole;
 @Entity
 @Table(
         name = "group_members",
-        uniqueConstraints = {@UniqueConstraint(columnNames = {"group_id", "user_id"})},
         indexes = {@Index(columnList = "group_id"), @Index(columnList = "user_id")})
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @EntityListeners(AuditingEntityListener.class)
@@ -26,7 +25,7 @@ import com.budgee.enums.GroupRole;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString(exclude = {"group", "user"})
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 public class GroupMember extends BaseEntity {
 
     @NotNull(message = "Group is required")
@@ -34,10 +33,13 @@ public class GroupMember extends BaseEntity {
     @JoinColumn(name = "group_id", nullable = false)
     Group group;
 
-    @NotNull(message = "User is required")
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
     User user;
+
+    @NotNull(message = "Member name is required")
+    @Column(nullable = false)
+    String memberName;
 
     @NotNull(message = "Joined at is required")
     @PastOrPresent(message = "Joined at must be in the past or present")
@@ -45,10 +47,15 @@ public class GroupMember extends BaseEntity {
     LocalDateTime joinedAt = LocalDateTime.now();
 
     @Enumerated(EnumType.STRING)
-    GroupRole role = GroupRole.MEMBER;
+    GroupRole role;
 
     @NotNull(message = "Balance owed is required")
     @DecimalMin(value = "0.00", message = "Balance owed must be non-negative")
     @Column(nullable = false, precision = 15, scale = 2)
-    BigDecimal balanceOwed = BigDecimal.ZERO;
+    BigDecimal balanceOwed;
+
+    @NotNull(message = "Advance amount is required")
+    @DecimalMin(value = "0.00", message = "Advance amount must be non-negative")
+    @Column(nullable = false, precision = 15, scale = 2)
+    BigDecimal advanceAmount;
 }

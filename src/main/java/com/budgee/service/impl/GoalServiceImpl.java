@@ -24,7 +24,6 @@ import com.budgee.repository.GoalRepository;
 import com.budgee.service.CategoryService;
 import com.budgee.service.GoalService;
 import com.budgee.service.UserService;
-import com.budgee.service.WalletService;
 import com.budgee.util.DateValidator;
 import com.budgee.util.SecurityHelper;
 import com.budgee.util.WalletHelper;
@@ -44,8 +43,12 @@ public class GoalServiceImpl implements GoalService {
     // SERVICE
     // -------------------------------------------------------------------
     UserService userService;
-    WalletService walletService;
     CategoryService categoryService;
+
+    // -------------------------------------------------------------------
+    // HELPER
+    // -------------------------------------------------------------------
+    GoalMapper goalMapper;
 
     // -------------------------------------------------------------------
     // HELPER
@@ -66,7 +69,7 @@ public class GoalServiceImpl implements GoalService {
 
         dateValidator.checkEndDateBeforeStartDate(request.startDate(), request.endDate());
 
-        Goal goal = GoalMapper.INSTANCE.toGoal(request);
+        Goal goal = goalMapper.toGoal(request);
 
         goal.setGoalCategories(
                 categories.stream()
@@ -232,7 +235,7 @@ public class GoalServiceImpl implements GoalService {
     GoalResponse toGoalResponse(Goal goal) {
         log.info("[toGoalResponse]={}", goal);
 
-        GoalResponse response = GoalMapper.INSTANCE.toGoalResponse(goal);
+        GoalResponse response = goalMapper.toGoalResponse(goal);
 
         response.setCategoriesId(
                 goal.getGoalCategories().stream().map(x -> x.getCategory().getId()).toList());

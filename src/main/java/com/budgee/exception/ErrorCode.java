@@ -59,7 +59,6 @@ public enum ErrorCode {
     GROUP_BALANCE_INSUFFICIENT(
             2009, HttpStatus.BAD_REQUEST, "Insufficient group balance for this operation"),
     GROUP_MEMBER_LIMIT_EXCEEDED(2010, HttpStatus.BAD_REQUEST, "Group member limit exceeded"),
-
     // Transaction-related errors (3000-3999)
     TRANSACTION_NOT_FOUND(3000, HttpStatus.NOT_FOUND, "Transaction not found"),
     INVALID_TRANSACTION_AMOUNT(
@@ -75,6 +74,10 @@ public enum ErrorCode {
     INSUFFICIENT_WALLET_BALANCE(3008, HttpStatus.BAD_REQUEST, "Insufficient wallet balance"),
     INVALID_RECURRING_TRANSACTION(
             3009, HttpStatus.BAD_REQUEST, "Invalid recurring transaction configuration"),
+    SPONSOR_ADVANCED_ONLY_ONE_FLAG_TRUE(
+            3010, HttpStatus.BAD_REQUEST, "Sponsor and advanced only ine flag true"),
+    INVALID_GROUP_TRANSACTION_SOURCE(
+            3011, HttpStatus.BAD_REQUEST, "Invalid group transaction source"),
 
     // Category-related errors (4000-4999)
     CATEGORY_NOT_FOUND(4000, HttpStatus.NOT_FOUND, "Category not found"),

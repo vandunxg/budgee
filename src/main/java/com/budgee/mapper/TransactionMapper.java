@@ -2,16 +2,13 @@ package com.budgee.mapper;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.factory.Mappers;
 
 import com.budgee.model.Transaction;
 import com.budgee.payload.request.TransactionRequest;
 import com.budgee.payload.response.TransactionResponse;
 
-@Mapper
+@Mapper(componentModel = "spring")
 public interface TransactionMapper {
-
-    TransactionMapper INSTANCE = Mappers.getMapper(TransactionMapper.class);
 
     Transaction toTransaction(TransactionRequest request);
 
