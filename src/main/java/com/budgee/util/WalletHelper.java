@@ -9,8 +9,10 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 
+import com.budgee.exception.ErrorCode;
+import com.budgee.exception.NotFoundException;
 import com.budgee.model.Wallet;
-import com.budgee.service.WalletService;
+import com.budgee.repository.WalletRepository;
 
 @Component
 @RequiredArgsConstructor
@@ -18,15 +20,20 @@ import com.budgee.service.WalletService;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class WalletHelper {
 
-    WalletService walletService;
+    WalletRepository walletRepository;
 
     SecurityHelper securityHelper;
 
     public Wallet getWalletByIdForOwner(UUID id) {
         log.info("[getWalletByIdForOwner]={}", id);
 
-        Wallet wallet = walletService.getWalletById(id);
+        Wallet wallet =
+                walletRepository
+                        .findById(id)
+                        .orElseThrow(() -> new NotFoundException(ErrorCode.WALLET_NOT_FOUND));
+
         securityHelper.checkIsOwner(wallet);
+
         return wallet;
     }
 }
