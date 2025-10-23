@@ -15,6 +15,7 @@ public class DateValidator {
 
     public void checkEndDateBeforeStartDate(LocalDate startDate, LocalDate endDate) {
         log.info("[checkEndDateBeforeStartDate] startDate={} endDate={}", startDate, endDate);
+
         if (!startDate.isBefore(endDate)) {
             throw new ValidationException(ErrorCode.START_DATE_NOT_BEFORE_AFTER_DATE);
         }

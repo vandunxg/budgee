@@ -9,8 +9,10 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 
+import com.budgee.exception.ErrorCode;
+import com.budgee.exception.NotFoundException;
 import com.budgee.model.Transaction;
-import com.budgee.service.TransactionService;
+import com.budgee.repository.TransactionRepository;
 
 @Component
 @RequiredArgsConstructor
@@ -18,11 +20,13 @@ import com.budgee.service.TransactionService;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class TransactionHelper {
 
-    TransactionService transactionService;
+    TransactionRepository transactionRepository;
 
-    Transaction getTransactionById(UUID id) {
+    public Transaction getTransactionById(UUID id) {
         log.info("[getTransactionById] id={}", id);
 
-        return transactionService.getTransactionById(id);
+        return transactionRepository
+                .findById(id)
+                .orElseThrow(() -> new NotFoundException(ErrorCode.TRANSACTION_NOT_FOUND));
     }
 }

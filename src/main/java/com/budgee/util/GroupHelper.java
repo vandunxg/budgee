@@ -9,19 +9,23 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 
+import com.budgee.exception.ErrorCode;
+import com.budgee.exception.NotFoundException;
 import com.budgee.model.Group;
-import com.budgee.service.GroupService;
+import com.budgee.repository.GroupRepository;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j(topic = "GROUP_HELPER")
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class GroupHelper {
-    GroupService groupService;
+    GroupRepository groupRepository;
 
     public Group getGroupById(UUID groupId) {
         log.info("[getGroupById]={}", groupId);
 
-        return groupService.getGroupById(groupId);
+        return groupRepository
+                .findById(groupId)
+                .orElseThrow(() -> new NotFoundException(ErrorCode.GROUP_NOT_FOUND));
     }
 }
