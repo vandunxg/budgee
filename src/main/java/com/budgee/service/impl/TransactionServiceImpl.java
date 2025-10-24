@@ -30,6 +30,9 @@ import com.budgee.service.WalletService;
 import com.budgee.util.SecurityHelper;
 import com.budgee.util.WalletHelper;
 
+import static com.budgee.enums.TransactionType.EXPENSE;
+import static com.budgee.enums.TransactionType.INCOME;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j(topic = "TRANSACTION-SERVICE")
@@ -39,7 +42,6 @@ public class TransactionServiceImpl implements TransactionService {
     // -------------------------------------------------------------------
     // REPOSITORY
     // -------------------------------------------------------------------
-    GroupMemberRepository groupMemberRepository;
     TransactionRepository transactionRepository;
 
     // -------------------------------------------------------------------
@@ -69,29 +71,22 @@ public class TransactionServiceImpl implements TransactionService {
     public TransactionResponse createTransaction(TransactionRequest request) {
         log.info("[createTransaction] request={}", request);
 
-        Transaction transaction = transactionMapper.toTransaction(request);
         Wallet wallet = walletHelper.getWalletByIdForOwner(request.walletId());
         Category category = categoryService.getCategoryByIdForOwner(request.categoryId());
         User user = userService.getCurrentUser();
 
+        Transaction transaction = transactionMapper.toTransaction(request, wallet, category, user);
+
         checkNewTypeOfTransactionWithTypeOfCategory(category.getType(), request.type());
 
-        switch (request.type()) {
-            case INCOME -> transaction.setType(TransactionType.INCOME);
-            case EXPENSE -> transaction.setType(TransactionType.EXPENSE);
-            default -> throw new ValidationException(ErrorCode.INVALID_TRANSACTION_TYPE);
-        }
-
-        transaction.setWallet(wallet);
-        transaction.setCategory(category);
-        transaction.setUser(user);
+        setTransactionType(request.type(), transaction);
 
         walletService.applyTransaction(wallet, transaction);
 
         log.debug("[createTransaction] saving transaction...");
         transactionRepository.save(transaction);
 
-        return toTransactionResponse(transaction);
+        return transactionMapper.toTransactionResponse(transaction);
     }
 
     @Override
@@ -101,7 +96,6 @@ public class TransactionServiceImpl implements TransactionService {
 
         Transaction transaction = getTransactionById(id);
         Category newCategory = categoryService.getCategoryByIdForOwner(request.categoryId());
-
         Wallet newWallet = walletHelper.getWalletByIdForOwner(request.walletId());
         Wallet oldWallet = transaction.getWallet();
 
@@ -127,7 +121,7 @@ public class TransactionServiceImpl implements TransactionService {
         transactionRepository.save(transaction);
         log.debug("[updateTransaction] updated successfully");
 
-        return toTransactionResponse(transaction);
+        return transactionMapper.toTransactionResponse(transaction);
     }
 
     @Override
@@ -136,7 +130,8 @@ public class TransactionServiceImpl implements TransactionService {
 
         Transaction transaction = this.getTransactionById(id);
         securityHelper.checkIsOwner(transaction);
-        return toTransactionResponse(transaction);
+
+        return transactionMapper.toTransactionResponse(transaction);
     }
 
     @Override
@@ -172,6 +167,15 @@ public class TransactionServiceImpl implements TransactionService {
     // PRIVATE FUNCTION
     // -------------------------------------------------------------------
 
+    void setTransactionType(TransactionType type, Transaction transaction) {
+
+        switch (type) {
+            case INCOME -> transaction.setType(INCOME);
+            case EXPENSE -> transaction.setType(EXPENSE);
+            default -> throw new ValidationException(ErrorCode.INVALID_TRANSACTION_TYPE);
+        }
+    }
+
     void checkNewTypeOfTransactionWithTypeOfCategory(
             TransactionType typeOfCategory, TransactionType typeOfTransaction) {
         log.info(
@@ -184,13 +188,5 @@ public class TransactionServiceImpl implements TransactionService {
                     "[checkNewTypeOfTransactionWithTypeOfCategory] typeOfCategory not equal typeOfTransaction");
             throw new ValidationException(ErrorCode.INVALID_TRANSACTION_TYPE);
         }
-    }
-
-    TransactionResponse toTransactionResponse(Transaction transaction) {
-        log.info("[toTransactionResponse]");
-
-        TransactionResponse response = transactionMapper.toTransactionResponse(transaction);
-        response.setNote(transaction.getNote());
-        return response;
     }
 }
