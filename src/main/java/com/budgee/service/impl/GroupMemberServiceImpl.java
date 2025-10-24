@@ -63,9 +63,9 @@ public class GroupMemberServiceImpl implements GroupMemberService {
         User memberUser = null;
 
         if (!Objects.isNull(userId)) {
-            memberUser = userHelper.getUserById(request.userId());
-
             checkUserIdAndAuthenticatedUserId(userId, authenticatedUser);
+
+            memberUser = userHelper.getUserById(request.userId());
         }
 
         if (!Objects.isNull(memberUser)) {
