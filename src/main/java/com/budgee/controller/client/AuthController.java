@@ -28,9 +28,15 @@ import com.budgee.util.ResponseUtil;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AuthController {
 
+    // -------------------------------------------------------------------
+    // SERVICES
+    // -------------------------------------------------------------------
     UserService userService;
     AuthService authService;
 
+    // -------------------------------------------------------------------
+    // PUBLIC API
+    // -------------------------------------------------------------------
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody @Valid RegisterRequest request) {
         log.info("[POST auth/register]={}", request.email());

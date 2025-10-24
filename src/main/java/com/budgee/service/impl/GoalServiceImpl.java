@@ -5,8 +5,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,14 +19,14 @@ import com.budgee.mapper.GoalMapper;
 import com.budgee.model.*;
 import com.budgee.payload.request.GoalRequest;
 import com.budgee.payload.response.GoalResponse;
-import com.budgee.repository.GoalCategoryRepository;
 import com.budgee.repository.GoalRepository;
-import com.budgee.repository.GoalWalletRepository;
 import com.budgee.service.CategoryService;
 import com.budgee.service.GoalService;
 import com.budgee.service.UserService;
-import com.budgee.service.WalletService;
-import com.budgee.util.Helpers;
+import com.budgee.util.CommonHelper;
+import com.budgee.util.DateValidator;
+import com.budgee.util.SecurityHelper;
+import com.budgee.util.WalletHelper;
 
 @Service
 @RequiredArgsConstructor
@@ -36,66 +34,61 @@ import com.budgee.util.Helpers;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class GoalServiceImpl implements GoalService {
 
+    // -------------------------------------------------------------------
+    // REPOSITORY
+    // -------------------------------------------------------------------
     GoalRepository goalRepository;
-    GoalCategoryRepository goalCategoryRepository;
-    GoalWalletRepository goalWalletRepository;
 
+    // -------------------------------------------------------------------
+    // SERVICE
+    // -------------------------------------------------------------------
     UserService userService;
-    WalletService walletService;
     CategoryService categoryService;
-    Helpers helpers;
+
+    // -------------------------------------------------------------------
+    // MAPPER
+    // -------------------------------------------------------------------
+    GoalMapper goalMapper;
+
+    // -------------------------------------------------------------------
+    // HELPER
+    // -------------------------------------------------------------------
+    DateValidator dateValidator;
+    SecurityHelper securityHelper;
+    WalletHelper walletHelper;
+    CommonHelper commonHelper;
+
+    // -------------------------------------------------------------------
+    // PUBLIC METHODS
+    // -------------------------------------------------------------------
 
     @Override
+    @Transactional
     public GoalResponse createGoal(GoalRequest request) {
-        log.info("[createGoal]={}", request);
+        log.info("[createGoal] request={}", request);
 
-        User authenticatedUser = userService.getCurrentUser();
+        User user = userService.getCurrentUser();
+        validateDates(request);
 
-        List<Wallet> wallets = getListWalletsById(request.wallets());
+        Goal goal = goalMapper.toGoal(request, user);
 
-        List<Category> categories = getListCategoriesById(request.categories());
+        // Map related entities
+        goal.setGoalWallets(buildGoalWallets(request.wallets(), goal, user));
+        goal.setGoalCategories(buildGoalCategories(request.categories(), goal, user));
 
-        Goal goal = GoalMapper.INSTANCE.toGoal(request);
-
-        goal.setGoalCategories(
-                categories.stream()
-                        .map(
-                                x ->
-                                        GoalCategory.builder()
-                                                .goal(goal)
-                                                .category(x)
-                                                .user(authenticatedUser)
-                                                .build())
-                        .toList());
-
-        goal.setGoalWallets(
-                wallets.stream()
-                        .map(
-                                x ->
-                                        GoalWallet.builder()
-                                                .goal(goal)
-                                                .wallet(x)
-                                                .user(authenticatedUser)
-                                                .build())
-                        .toList());
-
-        goal.setUser(authenticatedUser);
-        goal.setCurrentAmount(BigDecimal.ZERO);
-
-        log.warn("[createGoal] save to db");
         goalRepository.save(goal);
 
-        return toGoalResponse(goal);
+        return goalMapper.toGoalResponse(goal);
     }
 
     @Override
     public GoalResponse getGoal(UUID id) {
-        log.info("[getGoal]={}", id);
+        log.info("[getGoal] id={}", id);
 
         Goal goal = getGoalById(id);
-        helpers.checkIsOwner(goal);
+        securityHelper.checkIsOwner(goal);
 
-        return toGoalResponse(goal);
+        return goalMapper.toGoalResponse(goal);
     }
 
     @Override
@@ -103,58 +96,14 @@ public class GoalServiceImpl implements GoalService {
     public GoalResponse updateGoal(UUID id, GoalRequest request) {
         log.info("[updateGoal] id={} request={}", id, request);
 
+        User user = userService.getCurrentUser();
         Goal goal = getGoalOfCurrentUserById(id);
 
-        User authenticatedUser = userService.getCurrentUser();
+        validateDates(request);
 
-        List<Category> categories =
-                request.categories().stream()
-                        .map(categoryService::getCategoryByIdForOwner)
-                        .toList();
+        applyGoalUpdate(goal, request, user);
 
-        goal.getGoalCategories().clear();
-
-        categories.forEach(
-                x -> {
-                    GoalCategory goalCategory = createGoalCategory(goal, x, authenticatedUser);
-
-                    goal.getGoalCategories().add(goalCategory);
-                });
-
-        List<Wallet> wallets =
-                request.wallets().stream().map(walletService::getWalletByIdForOwner).toList();
-
-        goal.getGoalWallets().clear();
-
-        wallets.forEach(
-                x -> {
-                    GoalWallet goalWallet = createGoalWallet(goal, x, authenticatedUser);
-
-                    goal.getGoalWallets().add(goalWallet);
-                });
-
-        if (!goal.getName().equals(request.name())) {
-            goal.setName(request.name());
-        }
-
-        if (goal.getTargetAmount().compareTo(request.targetAmount()) != 0) {
-            goal.setTargetAmount(request.targetAmount());
-        }
-
-        checkEndDateBeforeStartDate(request.startDate(), request.endDate());
-
-        goal.setStartDate(request.startDate());
-        goal.setEndDate(request.endDate());
-
-        return toGoalResponse(goal);
-    }
-
-    void checkEndDateBeforeStartDate(LocalDate startDate, LocalDate endDate) {
-        log.info("[checkEndDateAfterStartDate] startDate={} endDate={}", startDate, endDate);
-
-        if (!startDate.isBefore(endDate)) {
-            throw new ValidationException(ErrorCode.START_DATE_NOT_BEFORE_AFTER_DATE);
-        }
+        return goalMapper.toGoalResponse(goal);
     }
 
     @Override
@@ -162,58 +111,92 @@ public class GoalServiceImpl implements GoalService {
     public void deleteGoal(UUID id) {
         log.info("[deleteGoal] id={}", id);
 
-        User authenticatedUser = userService.getCurrentUser();
-
-        Goal goal = getGoalById(id);
-        goal.checkIsOwner(authenticatedUser);
-
+        Goal goal = getGoalOfCurrentUserById(id);
         goal.getGoalWallets().clear();
         goal.getGoalCategories().clear();
 
-        log.warn("[deleteGoal] deleting from db");
         goalRepository.delete(goal);
+        log.warn("[deleteGoal] deleted id={}", id);
     }
 
     @Override
     public List<GoalResponse> getListGoals() {
         log.info("[getListGoals]");
 
-        List<Goal> goals = getAllGoalsByUser();
-
-        return goals.stream().map(this::toGoalResponse).toList();
+        User user = userService.getCurrentUser();
+        List<Goal> goals = goalRepository.findAllByUser(user);
+        return goals.stream().map(goalMapper::toGoalResponse).toList();
     }
 
-    //    PRIVATE FUNCTION
+    // -------------------------------------------------------------------
+    // PRIVATE METHODS
+    // -------------------------------------------------------------------
 
-    List<Goal> getAllGoalsByUser() {
-        log.info("[getAllGoalsByUser]");
+    void validateDates(GoalRequest request) {
+        log.info("[validateDates]");
 
-        User authenticatedUser = userService.getCurrentUser();
-
-        return goalRepository.findAllByUser(authenticatedUser);
+        dateValidator.checkEndDateBeforeStartDate(request.startDate(), request.endDate());
     }
 
-    GoalWallet createGoalWallet(Goal goal, Wallet wallet, User user) {
-        log.info("[createGoalWallet]");
+    List<GoalWallet> buildGoalWallets(List<UUID> walletIds, Goal goal, User user) {
+        log.info("[buildGoalWallets]");
 
-        return GoalWallet.builder().wallet(wallet).goal(goal).user(user).build();
+        if (walletIds == null || walletIds.isEmpty()) {
+            log.error("[buildGoalWallets] walletIds is null");
+
+            throw new ValidationException(ErrorCode.WALLET_IS_REQUIRED);
+        }
+
+        return walletIds.stream()
+                .map(walletHelper::getWalletByIdForOwner)
+                .map(wallet -> GoalWallet.builder().goal(goal).wallet(wallet).user(user).build())
+                .toList();
     }
 
-    GoalCategory createGoalCategory(Goal goal, Category category, User user) {
-        log.info("[createGoalCategory]");
+    List<GoalCategory> buildGoalCategories(List<UUID> categoryIds, Goal goal, User user) {
+        log.info("[buildGoalCategories]");
 
-        return GoalCategory.builder().category(category).user(user).goal(goal).build();
+        if (categoryIds == null || categoryIds.isEmpty()) {
+            throw new ValidationException(ErrorCode.CATEGORY_IS_REQUIRED);
+        }
+
+        return categoryIds.stream()
+                .map(categoryService::getCategoryByIdForOwner)
+                .map(
+                        category ->
+                                GoalCategory.builder()
+                                        .goal(goal)
+                                        .category(category)
+                                        .user(user)
+                                        .build())
+                .toList();
     }
 
-    Goal getGoalOfCurrentUserById(UUID id) {
-        log.info("[getGoalOfCurrentUserById] id={}", id);
+    void updateGoalCategories(Goal goal, GoalRequest request, User user) {
+        log.info("[updateGoalCategories]");
 
-        User authenticatedUser = userService.getCurrentUser();
+        goal.getGoalCategories().clear();
+        goal.getGoalCategories().addAll(buildGoalCategories(request.categories(), goal, user));
+    }
 
-        Goal goal = getGoalById(id);
-        goal.checkIsOwner(authenticatedUser);
+    void updateGoalWallets(Goal goal, GoalRequest request, User user) {
+        log.info("[updateGoalWallets]");
 
-        return goal;
+        goal.getGoalWallets().clear();
+        goal.getGoalWallets().addAll(buildGoalWallets(request.wallets(), goal, user));
+    }
+
+    void applyGoalUpdate(Goal goal, GoalRequest request, User user) {
+        log.info("[applyGoalUpdate]");
+
+        commonHelper.updateIfChanged(goal::getName, goal::setName, request.name());
+        commonHelper.updateIfChanged(
+                goal::getTargetAmount, goal::setTargetAmount, request.targetAmount());
+        commonHelper.updateIfChanged(goal::getStartDate, goal::setStartDate, request.startDate());
+        commonHelper.updateIfChanged(goal::getEndDate, goal::setEndDate, request.endDate());
+
+        updateGoalWallets(goal, request, user);
+        updateGoalCategories(goal, request, user);
     }
 
     Goal getGoalById(UUID id) {
@@ -224,43 +207,13 @@ public class GoalServiceImpl implements GoalService {
                 .orElseThrow(() -> new NotFoundException(ErrorCode.GOAL_NOT_FOUND));
     }
 
-    GoalResponse toGoalResponse(Goal goal) {
-        log.info("[toGoalResponse]={}", goal);
+    Goal getGoalOfCurrentUserById(UUID id) {
+        log.info("[getGoalOfCurrentUserById]={}", id);
 
-        GoalResponse response = GoalMapper.INSTANCE.toGoalResponse(goal);
+        Goal goal = getGoalById(id);
 
-        response.setCategoriesId(
-                goal.getGoalCategories().stream().map(x -> x.getCategory().getId()).toList());
+        securityHelper.checkIsOwner(goal);
 
-        response.setWalletsId(
-                goal.getGoalWallets().stream().map(x -> x.getWallet().getId()).toList());
-
-        return response;
-    }
-
-    List<Wallet> getListWalletsById(List<UUID> walletsId) {
-        log.info("[getListWalletsById]={}", walletsId.toString());
-
-        List<Wallet> wallets =
-                walletsId.stream().map(walletService::getWalletByIdForOwner).toList();
-
-        if (wallets.isEmpty()) {
-            throw new ValidationException(ErrorCode.WALLET_IS_REQUIRED);
-        }
-
-        return wallets;
-    }
-
-    List<Category> getListCategoriesById(List<UUID> categoriesId) {
-        log.info("[getListCategoriesById]={}", categoriesId.toString());
-
-        List<Category> categories =
-                categoriesId.stream().map(categoryService::getCategoryByIdForOwner).toList();
-
-        if (categories.isEmpty()) {
-            throw new ValidationException(ErrorCode.CATEGORY_IS_REQUIRED);
-        }
-
-        return categories;
+        return goal;
     }
 }

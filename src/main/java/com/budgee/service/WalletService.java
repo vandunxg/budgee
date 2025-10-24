@@ -22,7 +22,7 @@ public interface WalletService {
 
     void deleteWallet(UUID id);
 
-    Wallet getWalletByIdForOwner(UUID id);
+    Wallet getWalletById(UUID id);
 
     void applyTransaction(Wallet wallet, Transaction transaction);
 

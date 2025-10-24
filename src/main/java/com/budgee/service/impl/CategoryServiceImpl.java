@@ -35,7 +35,8 @@ import com.budgee.repository.GoalRepository;
 import com.budgee.repository.TransactionRepository;
 import com.budgee.service.CategoryService;
 import com.budgee.service.UserService;
-import com.budgee.util.Helpers;
+import com.budgee.util.CommonHelper;
+import com.budgee.util.SecurityHelper;
 
 @Service
 @RequiredArgsConstructor
@@ -43,12 +44,33 @@ import com.budgee.util.Helpers;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class CategoryServiceImpl implements CategoryService {
 
+    // -------------------------------------------------------------------
+    // REPOSITORY
+    // -------------------------------------------------------------------
     CategoryRepository categoryRepository;
-    UserService userService;
-    Helpers helpers;
     TransactionRepository transactionRepository;
-    GoalRepository goalRepository;
     GoalCategoryRepository goalCategoryRepository;
+    GoalRepository goalRepository;
+
+    // -------------------------------------------------------------------
+    // SERVICE
+    // -------------------------------------------------------------------
+    UserService userService;
+
+    // -------------------------------------------------------------------
+    // MAPPER
+    // -------------------------------------------------------------------
+    CategoryMapper categoryMapper;
+
+    // -------------------------------------------------------------------
+    // HELPER
+    // -------------------------------------------------------------------
+    SecurityHelper securityHelper;
+    CommonHelper commonHelper;
+
+    // -------------------------------------------------------------------
+    // PUBLIC FUNCTION
+    // -------------------------------------------------------------------
 
     @Override
     public CategoryResponse getCategory(UUID id) {
@@ -56,17 +78,16 @@ public class CategoryServiceImpl implements CategoryService {
 
         Category category = getCategoryByIdForOwner(id);
 
-        return toCategoryResponse(category);
+        return categoryMapper.toCategoryResponse(category);
     }
 
     @Override
     public CategoryResponse createCategory(CategoryRequest request) {
         log.info("[createCategory] {}", request.toString());
 
-        Category newCategory = CategoryMapper.INSTANCE.toCategory(request);
-
         User authenticatedUser = userService.getCurrentUser();
-        newCategory.setUser(authenticatedUser);
+
+        Category newCategory = categoryMapper.toCategory(request, authenticatedUser);
 
         // if the user is admin set category is default by system
         if (Role.ADMIN.equals(authenticatedUser.getRole())) {
@@ -76,7 +97,7 @@ public class CategoryServiceImpl implements CategoryService {
         log.warn("[categoryCategory] save to db");
         categoryRepository.save(newCategory);
 
-        return toCategoryResponse(newCategory);
+        return categoryMapper.toCategoryResponse(newCategory);
     }
 
     @Override
@@ -85,28 +106,12 @@ public class CategoryServiceImpl implements CategoryService {
 
         Category category = getCategoryByIdForOwner(id);
 
-        String currentCategoryName = category.getName();
-
-        if (StringUtils.hasText(request.name()) && !currentCategoryName.equals(request.name())) {
-            category.setName(request.name());
-        }
-
-        String currentCategoryColor = category.getColor();
-
-        if (StringUtils.hasText(request.color()) && !currentCategoryColor.equals(request.color())) {
-            category.setColor(request.color());
-        }
-
-        String currentCategoryIcon = category.getColor();
-
-        if (StringUtils.hasText(request.icon()) && !currentCategoryIcon.equals(request.icon())) {
-            category.setIcon(request.icon());
-        }
+        applyCategoryUpdate(category, request);
 
         log.warn("[updateCategory] update to db");
         categoryRepository.save(category);
 
-        return toCategoryResponse(category);
+        return categoryMapper.toCategoryResponse(category);
     }
 
     @Override
@@ -162,7 +167,7 @@ public class CategoryServiceImpl implements CategoryService {
         Page<CategoryResponse> categories =
                 categoryRepository
                         .findAllByUser(authenticatedUser, pageable)
-                        .map(this::toCategoryResponse);
+                        .map(categoryMapper::toCategoryResponse);
 
         return PagedResponse.fromPage(categories);
     }
@@ -172,24 +177,22 @@ public class CategoryServiceImpl implements CategoryService {
         log.info("[getCategoryByIdForOwner]={}", id);
 
         Category category = getCategoryById(id);
-        helpers.checkIsOwner(category);
+        securityHelper.checkIsOwner(category);
 
         return category;
     }
 
+    // -------------------------------------------------------------------
     // PRIVATE FUNCTION
+    // -------------------------------------------------------------------
 
-    CategoryResponse toCategoryResponse(Category category) {
-        log.info("[toCategoryResponse]");
+    void applyCategoryUpdate(Category category, CategoryUpdateRequest request) {
+        log.info("[applyCategoryUpdate]");
 
-        CategoryResponse response = CategoryMapper.INSTANCE.toCategoryResponse(category);
-
-        if (category.getIsDefault()) {
-            response.setDeletable(false);
-            response.setEditable(false);
-        }
-
-        return response;
+        commonHelper.updateIfChanged(category::getName, category::setName, request.name());
+        commonHelper.updateIfChanged(category::getType, category::setType, request.type());
+        commonHelper.updateIfChanged(category::getIcon, category::setIcon, request.icon());
+        commonHelper.updateIfChanged(category::getColor, category::setColor, request.color());
     }
 
     @Transactional

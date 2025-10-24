@@ -19,4 +19,6 @@ public interface TransactionService {
     List<Transaction> getTransactionByCategory(Category category);
 
     void deleteTransaction(UUID id);
+
+    Transaction getTransactionById(UUID id);
 }

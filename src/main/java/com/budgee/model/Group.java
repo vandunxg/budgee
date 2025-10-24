@@ -22,9 +22,9 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString(exclude = {"creator", "members", "transactions"})
-@EqualsAndHashCode(callSuper = true)
-public class Group extends BaseEntity {
+@ToString(exclude = {"creator", "members"})
+@EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
+public class Group extends BaseEntity implements OwnerEntity {
 
     @NotBlank(message = "Name is required")
     @Size(max = 100, message = "Name must be at most 100 characters")
@@ -58,6 +58,8 @@ public class Group extends BaseEntity {
     @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
     Set<GroupMember> members = new HashSet<>();
 
-    @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
-    Set<Transaction> transactions = new HashSet<>();
+    @Override
+    public User getOwner() {
+        return this.creator;
+    }
 }

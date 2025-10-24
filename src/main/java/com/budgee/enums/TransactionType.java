@@ -3,5 +3,5 @@ package com.budgee.enums;
 public enum TransactionType {
     EXPENSE,
     INCOME,
-    CONTRIBUTION
+    CONTRIBUTE
 }

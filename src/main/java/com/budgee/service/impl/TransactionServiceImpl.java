@@ -1,5 +1,8 @@
 package com.budgee.service.impl;
 
+import static com.budgee.enums.TransactionType.EXPENSE;
+import static com.budgee.enums.TransactionType.INCOME;
+
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -26,7 +29,8 @@ import com.budgee.service.CategoryService;
 import com.budgee.service.TransactionService;
 import com.budgee.service.UserService;
 import com.budgee.service.WalletService;
-import com.budgee.util.Helpers;
+import com.budgee.util.SecurityHelper;
+import com.budgee.util.WalletHelper;
 
 @Service
 @RequiredArgsConstructor
@@ -34,89 +38,93 @@ import com.budgee.util.Helpers;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class TransactionServiceImpl implements TransactionService {
 
+    // -------------------------------------------------------------------
+    // REPOSITORY
+    // -------------------------------------------------------------------
     TransactionRepository transactionRepository;
+
+    // -------------------------------------------------------------------
+    // SERVICE
+    // -------------------------------------------------------------------
     WalletService walletService;
     CategoryService categoryService;
     UserService userService;
-    Helpers helpers;
 
-    // -----------------------------------------------------
-    // CREATE
-    // -----------------------------------------------------
+    // -------------------------------------------------------------------
+    // MAPPER
+    // -------------------------------------------------------------------
+    TransactionMapper transactionMapper;
+
+    // -------------------------------------------------------------------
+    // HELPER
+    // -------------------------------------------------------------------
+    WalletHelper walletHelper;
+    SecurityHelper securityHelper;
+
+    // -------------------------------------------------------------------
+    // PUBLIC FUNCTION
+    // -------------------------------------------------------------------
+
     @Override
     @Transactional
     public TransactionResponse createTransaction(TransactionRequest request) {
         log.info("[createTransaction] request={}", request);
 
-        Transaction transaction = TransactionMapper.INSTANCE.toTransaction(request);
-
-        Wallet wallet = walletService.getWalletByIdForOwner(request.walletId());
+        Wallet wallet = walletHelper.getWalletByIdForOwner(request.walletId());
         Category category = categoryService.getCategoryByIdForOwner(request.categoryId());
         User user = userService.getCurrentUser();
 
+        Transaction transaction = transactionMapper.toTransaction(request, wallet, category, user);
+
         checkNewTypeOfTransactionWithTypeOfCategory(category.getType(), request.type());
 
-        transaction.setWallet(wallet);
-        transaction.setCategory(category);
-        transaction.setUser(user);
+        setTransactionType(request.type(), transaction);
 
         walletService.applyTransaction(wallet, transaction);
 
         log.debug("[createTransaction] saving transaction...");
         transactionRepository.save(transaction);
 
-        return toTransactionResponse(transaction);
+        return transactionMapper.toTransactionResponse(transaction);
     }
 
-    // -----------------------------------------------------
-    // UPDATE
-    // -----------------------------------------------------
     @Override
     @Transactional
     public TransactionResponse updateTransaction(UUID id, TransactionRequest request) {
         log.info("[updateTransaction] id={} request={}", id, request);
 
         Transaction transaction = getTransactionById(id);
-        helpers.checkIsOwner(transaction);
-
+        Category newCategory = categoryService.getCategoryByIdForOwner(request.categoryId());
+        Wallet newWallet = walletHelper.getWalletByIdForOwner(request.walletId());
         Wallet oldWallet = transaction.getWallet();
-        Wallet newWallet = walletService.getWalletByIdForOwner(request.walletId());
 
         BigDecimal oldAmount = transaction.getAmount();
         BigDecimal newAmount = request.amount();
         TransactionType oldType = transaction.getType();
         TransactionType newType = request.type();
 
-        Category newCategory = categoryService.getCategoryByIdForOwner(request.categoryId());
+        securityHelper.checkIsOwner(transaction);
         checkNewTypeOfTransactionWithTypeOfCategory(newCategory.getType(), newType);
 
         walletService.updateBalanceForTransactionUpdate(
                 oldWallet, newWallet, oldAmount, newAmount, oldType, newType);
 
-        transaction.setWallet(newWallet);
-        transaction.setCategory(newCategory);
-        transaction.setAmount(newAmount);
-        transaction.setType(newType);
-        transaction.setDate(request.date());
-        transaction.setTime(request.time());
-        transaction.setNote(request.note());
+        applyTransactionChanges(transaction, request, newCategory, newWallet);
 
-        transactionRepository.save(transaction);
         log.debug("[updateTransaction] updated successfully");
+        transactionRepository.save(transaction);
 
-        return toTransactionResponse(transaction);
+        return transactionMapper.toTransactionResponse(transaction);
     }
 
-    // -----------------------------------------------------
-    // GET
-    // -----------------------------------------------------
     @Override
     public TransactionResponse getTransaction(UUID id) {
         log.info("[getTransaction] id={}", id);
 
-        Transaction transaction = getTransactionById(id);
-        helpers.checkIsOwner(transaction);
-        return toTransactionResponse(transaction);
+        Transaction transaction = this.getTransactionById(id);
+        securityHelper.checkIsOwner(transaction);
+
+        return transactionMapper.toTransactionResponse(transaction);
     }
 
     @Override
@@ -126,26 +134,54 @@ public class TransactionServiceImpl implements TransactionService {
         return transactionRepository.getTransactionsByCategory(category);
     }
 
-    // -----------------------------------------------------
-    // DELETE
-    // -----------------------------------------------------
     @Override
     @Transactional
     public void deleteTransaction(UUID id) {
         log.info("[deleteTransaction] id={}", id);
 
-        Transaction transaction = getTransactionById(id);
-        helpers.checkIsOwner(transaction);
+        Transaction transaction = this.getTransactionById(id);
+        securityHelper.checkIsOwner(transaction);
 
         walletService.reverseTransaction(transaction.getWallet(), transaction);
 
-        transactionRepository.delete(transaction);
         log.warn("[deleteTransaction] deleted transaction id={}", id);
+        transactionRepository.delete(transaction);
     }
 
-    // -----------------------------------------------------
-    // PRIVATE HELPERS
-    // -----------------------------------------------------
+    public Transaction getTransactionById(UUID id) {
+        log.info("[getTransactionById] id={}", id);
+
+        return transactionRepository
+                .findById(id)
+                .orElseThrow(() -> new NotFoundException(ErrorCode.TRANSACTION_NOT_FOUND));
+    }
+
+    // -------------------------------------------------------------------
+    // PRIVATE FUNCTION
+    // -------------------------------------------------------------------
+    void applyTransactionChanges(
+            Transaction transaction, TransactionRequest request, Category category, Wallet wallet) {
+        log.info("[applyTransactionChanges]");
+
+        transaction.setCategory(category);
+        transaction.setWallet(wallet);
+        transaction.setAmount(request.amount());
+        transaction.setType(request.type());
+        transaction.setDate(request.date());
+        transaction.setTime(request.time());
+        transaction.setNote(request.note());
+    }
+
+    void setTransactionType(TransactionType type, Transaction transaction) {
+        log.info("[setTransactionType]");
+
+        switch (type) {
+            case INCOME -> transaction.setType(INCOME);
+            case EXPENSE -> transaction.setType(EXPENSE);
+            default -> throw new ValidationException(ErrorCode.INVALID_TRANSACTION_TYPE);
+        }
+    }
+
     void checkNewTypeOfTransactionWithTypeOfCategory(
             TransactionType typeOfCategory, TransactionType typeOfTransaction) {
         log.info(
@@ -156,24 +192,8 @@ public class TransactionServiceImpl implements TransactionService {
         if (!typeOfCategory.equals(typeOfTransaction)) {
             log.error(
                     "[checkNewTypeOfTransactionWithTypeOfCategory] typeOfCategory not equal typeOfTransaction");
+
             throw new ValidationException(ErrorCode.INVALID_TRANSACTION_TYPE);
         }
-    }
-
-    Transaction getTransactionById(UUID id) {
-        log.info("[getTransactionById] id={}", id);
-
-        return transactionRepository
-                .findById(id)
-                .orElseThrow(() -> new NotFoundException(ErrorCode.TRANSACTION_NOT_FOUND));
-    }
-
-    TransactionResponse toTransactionResponse(Transaction transaction) {
-        log.info("[toTransactionResponse]");
-
-        TransactionResponse response =
-                TransactionMapper.INSTANCE.toTransactionResponse(transaction);
-        response.setNote(transaction.getNote());
-        return response;
     }
 }
