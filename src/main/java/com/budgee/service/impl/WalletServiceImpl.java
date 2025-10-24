@@ -27,6 +27,7 @@ import com.budgee.repository.TransactionRepository;
 import com.budgee.repository.WalletRepository;
 import com.budgee.service.UserService;
 import com.budgee.service.WalletService;
+import com.budgee.util.CommonHelper;
 import com.budgee.util.SecurityHelper;
 
 /**
@@ -59,21 +60,27 @@ public class WalletServiceImpl implements WalletService {
     // HELPER
     // -------------------------------------------------------------------
     SecurityHelper securityHelper;
+    CommonHelper commonHelper;
 
     // -------------------------------------------------------------------
     // PUBLIC FUNCTION
     // -------------------------------------------------------------------
+
     @Override
     public WalletResponse getWallet(UUID id) {
         log.info("[getWallet] id={}", id);
+
         Wallet wallet = this.getWalletByIdForOwner(id);
+
         return walletMapper.toWalletResponse(wallet);
     }
 
     @Override
     public List<WalletResponse> getAllWallets() {
         log.info("[getAllWallets]");
+
         List<Wallet> wallets = getAllWalletsByUser();
+
         return wallets.stream().map(walletMapper::toWalletResponse).toList();
     }
 
@@ -82,19 +89,15 @@ public class WalletServiceImpl implements WalletService {
     public WalletResponse createWallet(WalletRequest request) {
         log.info("[createWallet] request={}", request);
 
+        Currency currency = request.currency() != null ? request.currency() : Currency.VND;
+
         User user = userService.getCurrentUser();
-        Wallet wallet = walletMapper.toWallet(request);
-        wallet.setUser(user);
-        wallet.setCurrency(request.currency() != null ? request.currency() : Currency.VND);
-        wallet.setIsTotalIgnored(request.isTotalIgnored());
+        Wallet wallet = walletMapper.toWallet(request, user, currency);
 
-        if (request.isDefault()) {
-            unsetDefaultAllWallets();
-            wallet.setIsDefault(Boolean.TRUE);
-        }
+        setDefaultWallet(request.isDefault(), wallet);
 
-        walletRepository.save(wallet);
         log.debug("[createWallet] saved wallet={} balance={}", wallet.getId(), wallet.getBalance());
+        walletRepository.save(wallet);
 
         return walletMapper.toWalletResponse(wallet);
     }
@@ -106,15 +109,7 @@ public class WalletServiceImpl implements WalletService {
 
         Wallet wallet = this.getWalletByIdForOwner(id);
 
-        if (!wallet.getName().equals(request.name())) wallet.setName(request.name());
-        if (!wallet.getBalance().equals(request.balance())) wallet.setBalance(request.balance());
-        if (!wallet.getType().equals(request.type())) wallet.setType(request.type());
-        if (!wallet.getCurrency().equals(request.currency()))
-            wallet.setCurrency(request.currency());
-        if (!wallet.getIsDefault().equals(request.isDefault()))
-            wallet.setIsDefault(request.isDefault());
-        if (!wallet.getIsTotalIgnored().equals(request.isTotalIgnored()))
-            wallet.setIsTotalIgnored(request.isTotalIgnored());
+        applyWalletUpdates(wallet, request);
 
         walletRepository.save(wallet);
         log.debug(
@@ -128,6 +123,7 @@ public class WalletServiceImpl implements WalletService {
         log.info("[deleteWallet] id={}", id);
 
         Wallet wallet = this.getWalletByIdForOwner(id);
+
         log.warn("[deleteWallet] removing related transactions walletId={}", wallet.getId());
         transactionRepository.deleteAllByWalletAndUser(wallet, userService.getCurrentUser());
 
@@ -246,6 +242,28 @@ public class WalletServiceImpl implements WalletService {
     // -------------------------------------------------------------------
     // PRIVATE FUNCTION
     // -------------------------------------------------------------------
+
+    void applyWalletUpdates(Wallet wallet, WalletRequest request) {
+        log.info("[applyWalletUpdates]");
+
+        commonHelper.updateIfChanged(wallet::getName, wallet::setName, request.name());
+        commonHelper.updateIfChanged(wallet::getBalance, wallet::setBalance, request.balance());
+        commonHelper.updateIfChanged(wallet::getType, wallet::setType, request.type());
+        commonHelper.updateIfChanged(wallet::getCurrency, wallet::setCurrency, request.currency());
+        commonHelper.updateIfChanged(
+                wallet::getIsDefault, wallet::setIsDefault, request.isDefault());
+        commonHelper.updateIfChanged(
+                wallet::getIsTotalIgnored, wallet::setIsTotalIgnored, request.isTotalIgnored());
+    }
+
+    void setDefaultWallet(Boolean isDefault, Wallet wallet) {
+        log.info("[setDefaultWallet]");
+
+        if (isDefault) {
+            unsetDefaultAllWallets();
+            wallet.setIsDefault(Boolean.TRUE);
+        }
+    }
 
     Wallet getWalletByIdForOwner(UUID id) {
         log.info("[getWalletByIdForOwner]={}", id);
