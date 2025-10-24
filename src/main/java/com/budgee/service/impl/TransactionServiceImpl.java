@@ -1,5 +1,8 @@
 package com.budgee.service.impl;
 
+import static com.budgee.enums.TransactionType.EXPENSE;
+import static com.budgee.enums.TransactionType.INCOME;
+
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -21,7 +24,6 @@ import com.budgee.mapper.TransactionMapper;
 import com.budgee.model.*;
 import com.budgee.payload.request.TransactionRequest;
 import com.budgee.payload.response.TransactionResponse;
-import com.budgee.repository.GroupMemberRepository;
 import com.budgee.repository.TransactionRepository;
 import com.budgee.service.CategoryService;
 import com.budgee.service.TransactionService;
@@ -29,9 +31,6 @@ import com.budgee.service.UserService;
 import com.budgee.service.WalletService;
 import com.budgee.util.SecurityHelper;
 import com.budgee.util.WalletHelper;
-
-import static com.budgee.enums.TransactionType.EXPENSE;
-import static com.budgee.enums.TransactionType.INCOME;
 
 @Service
 @RequiredArgsConstructor
@@ -160,7 +159,8 @@ public class TransactionServiceImpl implements TransactionService {
     // -------------------------------------------------------------------
     // PRIVATE FUNCTION
     // -------------------------------------------------------------------
-    void applyTransactionChanges(Transaction transaction, TransactionRequest request, Category category, Wallet wallet) {
+    void applyTransactionChanges(
+            Transaction transaction, TransactionRequest request, Category category, Wallet wallet) {
         log.info("[applyTransactionChanges]");
 
         transaction.setCategory(category);
