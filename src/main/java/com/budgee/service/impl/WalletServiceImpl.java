@@ -39,15 +39,30 @@ import com.budgee.util.SecurityHelper;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class WalletServiceImpl implements WalletService {
 
+    // -------------------------------------------------------------------
+    // REPOSITORY
+    // -------------------------------------------------------------------
     TransactionRepository transactionRepository;
     WalletRepository walletRepository;
 
+    // -------------------------------------------------------------------
+    // SERVICE
+    // -------------------------------------------------------------------
     UserService userService;
 
+    // -------------------------------------------------------------------
+    // MAPPER
+    // -------------------------------------------------------------------
     WalletMapper walletMapper;
 
+    // -------------------------------------------------------------------
+    // HELPER
+    // -------------------------------------------------------------------
     SecurityHelper securityHelper;
 
+    // -------------------------------------------------------------------
+    // PUBLIC FUNCTION
+    // -------------------------------------------------------------------
     @Override
     public WalletResponse getWallet(UUID id) {
         log.info("[getWallet] id={}", id);
@@ -229,7 +244,7 @@ public class WalletServiceImpl implements WalletService {
     }
 
     // -------------------------------------------------------------------
-    // UTILITIES
+    // PRIVATE FUNCTION
     // -------------------------------------------------------------------
 
     Wallet getWalletByIdForOwner(UUID id) {

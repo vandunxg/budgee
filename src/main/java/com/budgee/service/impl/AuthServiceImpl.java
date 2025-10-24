@@ -33,11 +33,34 @@ import com.budgee.service.JwtService;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AuthServiceImpl implements AuthService {
 
-    JwtService jwtService;
+    // -------------------------------------------------------------------
+    // REPOSITORY
+    // -------------------------------------------------------------------
     UserRepository userRepository;
+
+    // -------------------------------------------------------------------
+    // SERVICE
+    // -------------------------------------------------------------------
+    JwtService jwtService;
     AuthenticationManager authenticationManager;
 
+    // -------------------------------------------------------------------
+    // MAPPER
+    // -------------------------------------------------------------------
+
+    // -------------------------------------------------------------------
+    // HELPER
+    // -------------------------------------------------------------------
+
+    // -------------------------------------------------------------------
+    // PRIVATE FIELDS
+    // -------------------------------------------------------------------
+
     Clock clock = Clock.systemDefaultZone();
+
+    // -------------------------------------------------------------------
+    // PUBLIC FUNCTION
+    // -------------------------------------------------------------------
 
     @Override
     public TokenResponse getAccessToken(LoginRequest request) throws AccessDeniedException {
@@ -102,7 +125,9 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
-    //    Utilities
+    // -------------------------------------------------------------------
+    // PRIVATE FUNCTION
+    // -------------------------------------------------------------------
 
     String normalizeEmail(String email) {
         return email == null ? null : email.trim().toLowerCase();

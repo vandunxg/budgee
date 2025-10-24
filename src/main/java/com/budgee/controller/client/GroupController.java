@@ -24,8 +24,16 @@ import com.budgee.util.ResponseUtil;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class GroupController {
 
+    // -------------------------------------------------------------------
+    // SERVICES
+    // -------------------------------------------------------------------
+
     GroupService groupService;
     GroupTransactionService groupTransactionService;
+
+    // -------------------------------------------------------------------
+    // PUBLIC API
+    // -------------------------------------------------------------------
 
     @PostMapping("/")
     ResponseEntity<?> createGroup(@RequestBody GroupRequest request) {
@@ -63,7 +71,6 @@ public class GroupController {
 
         return ResponseUtil.success(
                 MessageConstants.FETCH_SUCCESS,
-                groupTransactionService.getGroupTransaction(groupId, transactionId)
-        );
+                groupTransactionService.getGroupTransaction(groupId, transactionId));
     }
 }

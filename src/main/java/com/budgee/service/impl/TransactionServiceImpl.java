@@ -60,6 +60,10 @@ public class TransactionServiceImpl implements TransactionService {
     WalletHelper walletHelper;
     SecurityHelper securityHelper;
 
+    // -------------------------------------------------------------------
+    // PUBLIC FUNCTION
+    // -------------------------------------------------------------------
+
     @Override
     @Transactional
     public TransactionResponse createTransaction(TransactionRequest request) {
@@ -164,9 +168,9 @@ public class TransactionServiceImpl implements TransactionService {
                 .orElseThrow(() -> new NotFoundException(ErrorCode.TRANSACTION_NOT_FOUND));
     }
 
-    // -----------------------------------------------------
-    // UTILITIES
-    // -----------------------------------------------------
+    // -------------------------------------------------------------------
+    // PRIVATE FUNCTION
+    // -------------------------------------------------------------------
 
     void checkNewTypeOfTransactionWithTypeOfCategory(
             TransactionType typeOfCategory, TransactionType typeOfTransaction) {

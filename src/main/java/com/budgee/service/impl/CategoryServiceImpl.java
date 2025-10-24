@@ -66,6 +66,10 @@ public class CategoryServiceImpl implements CategoryService {
     // -------------------------------------------------------------------
     SecurityHelper securityHelper;
 
+    // -------------------------------------------------------------------
+    // PUBLIC FUNCTION
+    // -------------------------------------------------------------------
+
     @Override
     public CategoryResponse getCategory(UUID id) {
         log.info("[getCategory]={}", id);
@@ -193,7 +197,9 @@ public class CategoryServiceImpl implements CategoryService {
         return category;
     }
 
+    // -------------------------------------------------------------------
     // PRIVATE FUNCTION
+    // -------------------------------------------------------------------
 
     CategoryResponse toCategoryResponse(Category category) {
         log.info("[toCategoryResponse]");

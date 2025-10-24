@@ -22,8 +22,15 @@ import com.budgee.util.ResponseUtil;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class GoalController {
 
+    // -------------------------------------------------------------------
+    // SERVICES
+    // -------------------------------------------------------------------
+
     GoalService goalService;
 
+    // -------------------------------------------------------------------
+    // PUBLIC API
+    // -------------------------------------------------------------------
     @PostMapping("/")
     ResponseEntity<?> createGoal(@RequestBody GoalRequest request) {
         log.info("[POST /goals/]={}", request);

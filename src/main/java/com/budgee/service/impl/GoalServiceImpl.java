@@ -57,6 +57,10 @@ public class GoalServiceImpl implements GoalService {
     SecurityHelper securityHelper;
     WalletHelper walletHelper;
 
+    // -------------------------------------------------------------------
+    // PUBLIC FUNCTION
+    // -------------------------------------------------------------------
+
     @Override
     public GoalResponse createGoal(GoalRequest request) {
         log.info("[createGoal]={}", request);
@@ -190,7 +194,7 @@ public class GoalServiceImpl implements GoalService {
     }
 
     // -------------------------------------------------------------------
-    // UTILITIES
+    // PRIVATE FUNCTION
     // -------------------------------------------------------------------
 
     List<Goal> getAllGoalsByUser() {
