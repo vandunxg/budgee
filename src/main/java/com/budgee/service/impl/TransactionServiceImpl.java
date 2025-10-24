@@ -145,8 +145,8 @@ public class TransactionServiceImpl implements TransactionService {
 
         walletService.reverseTransaction(transaction.getWallet(), transaction);
 
-        transactionRepository.delete(transaction);
         log.warn("[deleteTransaction] deleted transaction id={}", id);
+        transactionRepository.delete(transaction);
     }
 
     public Transaction getTransactionById(UUID id) {
@@ -161,6 +161,8 @@ public class TransactionServiceImpl implements TransactionService {
     // PRIVATE FUNCTION
     // -------------------------------------------------------------------
     void applyTransactionChanges(Transaction transaction, TransactionRequest request, Category category, Wallet wallet) {
+        log.info("[applyTransactionChanges]");
+
         transaction.setCategory(category);
         transaction.setWallet(wallet);
         transaction.setAmount(request.amount());
@@ -171,6 +173,7 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     void setTransactionType(TransactionType type, Transaction transaction) {
+        log.info("[setTransactionType]");
 
         switch (type) {
             case INCOME -> transaction.setType(INCOME);
@@ -189,6 +192,7 @@ public class TransactionServiceImpl implements TransactionService {
         if (!typeOfCategory.equals(typeOfTransaction)) {
             log.error(
                     "[checkNewTypeOfTransactionWithTypeOfCategory] typeOfCategory not equal typeOfTransaction");
+
             throw new ValidationException(ErrorCode.INVALID_TRANSACTION_TYPE);
         }
     }
