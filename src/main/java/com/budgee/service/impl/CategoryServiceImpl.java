@@ -35,6 +35,7 @@ import com.budgee.repository.GoalRepository;
 import com.budgee.repository.TransactionRepository;
 import com.budgee.service.CategoryService;
 import com.budgee.service.UserService;
+import com.budgee.util.CommonHelper;
 import com.budgee.util.SecurityHelper;
 
 @Service
@@ -65,6 +66,7 @@ public class CategoryServiceImpl implements CategoryService {
     // HELPER
     // -------------------------------------------------------------------
     SecurityHelper securityHelper;
+    CommonHelper commonHelper;
 
     // -------------------------------------------------------------------
     // PUBLIC FUNCTION
@@ -104,9 +106,7 @@ public class CategoryServiceImpl implements CategoryService {
 
         Category category = getCategoryByIdForOwner(id);
 
-        updateCategoryName(category, request.name());
-        updateCategoryColor(category, request.color());
-        updateCategoryIcon(category, request.icon());
+        applyCategoryUpdate(category, request);
 
         log.warn("[updateCategory] update to db");
         categoryRepository.save(category);
@@ -186,25 +186,13 @@ public class CategoryServiceImpl implements CategoryService {
     // PRIVATE FUNCTION
     // -------------------------------------------------------------------
 
-    void updateCategoryName(Category category, String newName) {
+    void applyCategoryUpdate(Category category, CategoryUpdateRequest request) {
+        log.info("[applyCategoryUpdate]");
 
-        if (!StringUtils.hasText(newName)) return;
-
-        category.setName(newName);
-    }
-
-    void updateCategoryColor(Category category, String newColor) {
-
-        if (!StringUtils.hasText(newColor)) return;
-
-        category.setColor(newColor);
-    }
-
-    void updateCategoryIcon(Category category, String newIcon) {
-
-        if (!StringUtils.hasText(newIcon)) return;
-
-        category.setIcon(newIcon);
+        commonHelper.updateIfChanged(category::getName, category::setName, request.name());
+        commonHelper.updateIfChanged(category::getType, category::setType, request.type());
+        commonHelper.updateIfChanged(category::getIcon, category::setIcon, request.icon());
+        commonHelper.updateIfChanged(category::getColor, category::setColor, request.color());
     }
 
     @Transactional
