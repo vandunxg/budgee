@@ -18,12 +18,9 @@ public record RegisterRequest(
                         message =
                                 "Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character")
                 String password,
-        @NotBlank(message = "Confirm password must not be blank") String confirmPassword,
-        @NotBlank(message = "Platform must not be blank")
-                @Pattern(
-                        regexp = "^(WEB|IOS|ANDROID)$",
-                        message = "Platform must be WEB, IOS, or ANDROID")
+        //        @NotBlank(message = "Platform must not be blank")
+        @Pattern(regexp = "^(WEB|IOS|ANDROID)$", message = "Platform must be WEB, IOS, or ANDROID")
                 String platform,
-        @NotBlank(message = "Device token must not be blank")
-                @Size(max = 255, message = "Device token must be at most 255 characters")
+        //        @NotBlank(message = "Device token must not be blank")
+        @Size(max = 255, message = "Device token must be at most 255 characters")
                 String tokenDevice) {}

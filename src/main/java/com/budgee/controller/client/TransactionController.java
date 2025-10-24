@@ -24,7 +24,15 @@ import com.budgee.util.ResponseUtil;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class TransactionController {
 
+    // -------------------------------------------------------------------
+    // SERVICES
+    // -------------------------------------------------------------------
+
     TransactionService transactionService;
+
+    // -------------------------------------------------------------------
+    // PUBLIC API
+    // -------------------------------------------------------------------
 
     @PostMapping("/")
     ResponseEntity<?> createTransaction(@RequestBody @Valid TransactionRequest request) {

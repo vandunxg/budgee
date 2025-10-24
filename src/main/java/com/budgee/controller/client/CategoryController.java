@@ -26,8 +26,15 @@ import com.budgee.util.ResponseUtil;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class CategoryController {
 
+    // -------------------------------------------------------------------
+    // SERVICES
+    // -------------------------------------------------------------------
+
     CategoryService categoryService;
 
+    // -------------------------------------------------------------------
+    // PUBLIC API
+    // -------------------------------------------------------------------
     @RequestMapping("/{id}")
     ResponseEntity<?> getCategory(@PathVariable UUID id) {
         log.info("[GET /categories/{}]", id);
