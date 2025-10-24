@@ -112,8 +112,8 @@ public class TransactionServiceImpl implements TransactionService {
 
         applyTransactionChanges(transaction, request, newCategory, newWallet);
 
-        transactionRepository.save(transaction);
         log.debug("[updateTransaction] updated successfully");
+        transactionRepository.save(transaction);
 
         return transactionMapper.toTransactionResponse(transaction);
     }
