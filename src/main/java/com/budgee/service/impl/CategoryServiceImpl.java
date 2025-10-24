@@ -77,7 +77,7 @@ public class CategoryServiceImpl implements CategoryService {
 
         Category category = getCategoryByIdForOwner(id);
 
-        return toCategoryResponse(category);
+        return categoryMapper.toCategoryResponse(category);
     }
 
     @Override
@@ -96,7 +96,7 @@ public class CategoryServiceImpl implements CategoryService {
         log.warn("[categoryCategory] save to db");
         categoryRepository.save(newCategory);
 
-        return toCategoryResponse(newCategory);
+        return categoryMapper.toCategoryResponse(newCategory);
     }
 
     @Override
@@ -112,7 +112,7 @@ public class CategoryServiceImpl implements CategoryService {
         log.warn("[updateCategory] update to db");
         categoryRepository.save(category);
 
-        return toCategoryResponse(category);
+        return categoryMapper.toCategoryResponse(category);
     }
 
     @Override
@@ -168,7 +168,7 @@ public class CategoryServiceImpl implements CategoryService {
         Page<CategoryResponse> categories =
                 categoryRepository
                         .findAllByUser(authenticatedUser, pageable)
-                        .map(this::toCategoryResponse);
+                        .map(categoryMapper::toCategoryResponse);
 
         return PagedResponse.fromPage(categories);
     }
@@ -215,19 +215,6 @@ public class CategoryServiceImpl implements CategoryService {
         if (!Objects.equals(currentIcon, newIcon)) {
             category.setColor(newIcon);
         }
-    }
-
-    CategoryResponse toCategoryResponse(Category category) {
-        log.info("[toCategoryResponse]");
-
-        CategoryResponse response = categoryMapper.toCategoryResponse(category);
-
-        if (category.getIsDefault()) {
-            response.setDeletable(false);
-            response.setEditable(false);
-        }
-
-        return response;
     }
 
     @Transactional
