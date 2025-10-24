@@ -23,7 +23,6 @@ import com.budgee.repository.GroupTransactionRepository;
 import com.budgee.service.GroupTransactionService;
 import com.budgee.util.GroupHelper;
 import com.budgee.util.SecurityHelper;
-import com.budgee.util.UserHelper;
 
 @Service
 @RequiredArgsConstructor
@@ -50,7 +49,6 @@ public class GroupTransactionServiceImpl implements GroupTransactionService {
     // HELPER
     // -------------------------------------------------------------------
     GroupHelper groupHelper;
-    UserHelper userHelper;
     SecurityHelper securityHelper;
 
     // -------------------------------------------------------------------
@@ -67,9 +65,8 @@ public class GroupTransactionServiceImpl implements GroupTransactionService {
 
         checkMemberInGroup(group, member.getId());
 
-        GroupTransaction transaction = groupTransactionMapper.toGroupTransaction(request);
-        transaction.setGroup(group);
-        transaction.setMember(member);
+        GroupTransaction transaction =
+                groupTransactionMapper.toGroupTransaction(request, group, member);
 
         log.warn("[createGroupTransaction] save transaction to db");
         groupTransactionRepository.save(transaction);
@@ -112,7 +109,6 @@ public class GroupTransactionServiceImpl implements GroupTransactionService {
         log.info("[getMemberByAuthenticatedUser]");
 
         User authenticatedUser = securityHelper.getAuthenticatedUser();
-
         GroupMember member = groupMemberRepository.findByGroupAndUser(group, authenticatedUser);
 
         if (Objects.isNull(member)) {
