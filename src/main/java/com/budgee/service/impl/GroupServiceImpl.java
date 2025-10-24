@@ -69,7 +69,7 @@ public class GroupServiceImpl implements GroupService {
         log.info("[createGroup]={}", request);
 
         User authenticatedUser = userService.getCurrentUser();
-        Group group = groupMapper.toGroup(request);
+        Group group = groupMapper.toGroup(request, authenticatedUser);
 
         List<GroupMember> groupMembers = createGroupMembers(request.groupMembers(), group);
 
@@ -80,7 +80,6 @@ public class GroupServiceImpl implements GroupService {
 
         dateValidator.checkEndDateBeforeStartDate(request.startDate(), request.endDate());
 
-        group.setCreator(authenticatedUser);
         group.setBalance(initialBalance);
         group.setMembers(new HashSet<>(groupMembers));
         group.setMemberCount(groupMembers.size());
@@ -122,6 +121,8 @@ public class GroupServiceImpl implements GroupService {
         GroupMember member = groupMemberRepository.findByGroupAndUser(group, authenticatedUser);
 
         if (Objects.isNull(member)) {
+            log.error("[assertGroupMemberPermission] member is not in group");
+
             throw new AuthenticationException(ErrorCode.GROUP_MEMBER_NOT_FOUND);
         }
     }
