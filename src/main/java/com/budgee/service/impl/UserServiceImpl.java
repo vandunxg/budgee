@@ -114,7 +114,7 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    static String normalizeEmail(String email) {
+    String normalizeEmail(String email) {
         return email == null ? null : email.trim().toLowerCase();
     }
 }
