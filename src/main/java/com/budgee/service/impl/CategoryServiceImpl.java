@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -83,10 +84,9 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryResponse createCategory(CategoryRequest request) {
         log.info("[createCategory] {}", request.toString());
 
-        Category newCategory = categoryMapper.toCategory(request);
-
         User authenticatedUser = userService.getCurrentUser();
-        newCategory.setUser(authenticatedUser);
+
+        Category newCategory = categoryMapper.toCategory(request, authenticatedUser);
 
         // if the user is admin set category is default by system
         if (Role.ADMIN.equals(authenticatedUser.getRole())) {
@@ -105,23 +105,9 @@ public class CategoryServiceImpl implements CategoryService {
 
         Category category = getCategoryByIdForOwner(id);
 
-        String currentCategoryName = category.getName();
-
-        if (StringUtils.hasText(request.name()) && !currentCategoryName.equals(request.name())) {
-            category.setName(request.name());
-        }
-
-        String currentCategoryColor = category.getColor();
-
-        if (StringUtils.hasText(request.color()) && !currentCategoryColor.equals(request.color())) {
-            category.setColor(request.color());
-        }
-
-        String currentCategoryIcon = category.getColor();
-
-        if (StringUtils.hasText(request.icon()) && !currentCategoryIcon.equals(request.icon())) {
-            category.setIcon(request.icon());
-        }
+        updateCategoryName(category, request.name());
+        updateCategoryColor(category, request.color());
+        updateCategoryIcon(category, request.icon());
 
         log.warn("[updateCategory] update to db");
         categoryRepository.save(category);
@@ -200,6 +186,36 @@ public class CategoryServiceImpl implements CategoryService {
     // -------------------------------------------------------------------
     // PRIVATE FUNCTION
     // -------------------------------------------------------------------
+
+    void updateCategoryName(Category category, String newName) {
+
+        if (!StringUtils.hasText(newName)) return;
+
+        String currentName = category.getName();
+        if (!Objects.equals(currentName, newName)) {
+            category.setName(newName);
+        }
+    }
+
+    void updateCategoryColor(Category category, String newColor) {
+
+        if (!StringUtils.hasText(newColor)) return;
+
+        String currentColor = category.getColor();
+        if (!Objects.equals(currentColor, newColor)) {
+            category.setColor(newColor);
+        }
+    }
+
+    void updateCategoryIcon(Category category, String newIcon) {
+
+        if (!StringUtils.hasText(newIcon)) return;
+
+        String currentIcon = category.getIcon();
+        if (!Objects.equals(currentIcon, newIcon)) {
+            category.setColor(newIcon);
+        }
+    }
 
     CategoryResponse toCategoryResponse(Category category) {
         log.info("[toCategoryResponse]");
