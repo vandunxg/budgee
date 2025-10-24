@@ -110,13 +110,7 @@ public class TransactionServiceImpl implements TransactionService {
         walletService.updateBalanceForTransactionUpdate(
                 oldWallet, newWallet, oldAmount, newAmount, oldType, newType);
 
-        transaction.setWallet(newWallet);
-        transaction.setCategory(newCategory);
-        transaction.setAmount(newAmount);
-        transaction.setType(newType);
-        transaction.setDate(request.date());
-        transaction.setTime(request.time());
-        transaction.setNote(request.note());
+        applyTransactionChanges(transaction, request, newCategory, newWallet);
 
         transactionRepository.save(transaction);
         log.debug("[updateTransaction] updated successfully");
@@ -166,6 +160,15 @@ public class TransactionServiceImpl implements TransactionService {
     // -------------------------------------------------------------------
     // PRIVATE FUNCTION
     // -------------------------------------------------------------------
+    void applyTransactionChanges(Transaction transaction, TransactionRequest request, Category category, Wallet wallet) {
+        transaction.setCategory(category);
+        transaction.setWallet(wallet);
+        transaction.setAmount(request.amount());
+        transaction.setType(request.type());
+        transaction.setDate(request.date());
+        transaction.setTime(request.time());
+        transaction.setNote(request.note());
+    }
 
     void setTransactionType(TransactionType type, Transaction transaction) {
 
