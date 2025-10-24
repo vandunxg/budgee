@@ -59,6 +59,7 @@ public enum ErrorCode {
     GROUP_BALANCE_INSUFFICIENT(
             2009, HttpStatus.BAD_REQUEST, "Insufficient group balance for this operation"),
     GROUP_MEMBER_LIMIT_EXCEEDED(2010, HttpStatus.BAD_REQUEST, "Group member limit exceeded"),
+    USER_NOT_IN_GROUP(2008, HttpStatus.FORBIDDEN, "User is not a member of this group"),
     // Transaction-related errors (3000-3999)
     TRANSACTION_NOT_FOUND(3000, HttpStatus.NOT_FOUND, "Transaction not found"),
     INVALID_TRANSACTION_AMOUNT(
