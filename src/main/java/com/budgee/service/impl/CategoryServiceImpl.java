@@ -7,7 +7,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -191,30 +190,21 @@ public class CategoryServiceImpl implements CategoryService {
 
         if (!StringUtils.hasText(newName)) return;
 
-        String currentName = category.getName();
-        if (!Objects.equals(currentName, newName)) {
-            category.setName(newName);
-        }
+        category.setName(newName);
     }
 
     void updateCategoryColor(Category category, String newColor) {
 
         if (!StringUtils.hasText(newColor)) return;
 
-        String currentColor = category.getColor();
-        if (!Objects.equals(currentColor, newColor)) {
-            category.setColor(newColor);
-        }
+        category.setColor(newColor);
     }
 
     void updateCategoryIcon(Category category, String newIcon) {
 
         if (!StringUtils.hasText(newIcon)) return;
 
-        String currentIcon = category.getIcon();
-        if (!Objects.equals(currentIcon, newIcon)) {
-            category.setColor(newIcon);
-        }
+        category.setIcon(newIcon);
     }
 
     @Transactional

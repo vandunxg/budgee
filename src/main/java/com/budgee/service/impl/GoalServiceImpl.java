@@ -1,10 +1,13 @@
 package com.budgee.service.impl;
 
+import io.jsonwebtoken.lang.Strings;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -172,16 +175,50 @@ public class GoalServiceImpl implements GoalService {
                 request,
                 user.getId());
 
-        goal.setName(request.name());
-        goal.setTargetAmount(request.targetAmount());
-        goal.setStartDate(request.startDate());
-        goal.setEndDate(request.endDate());
+        updateGoalName(goal, request.name());
+        updateGoalTargetAmount(goal, request.targetAmount());
+        updateGoalStartDate(goal, request.startDate());
+        updateGoalEndDate(goal, request.endDate());
+        updateGoalWallets(goal, request, user);
+        updateGoalCategories(goal, request, user);
+    }
 
-        goal.getGoalWallets().clear();
-        goal.getGoalWallets().addAll(buildGoalWallets(request.wallets(), goal, user));
+    void updateGoalCategories(Goal goal, GoalRequest request, User user) {
 
         goal.getGoalCategories().clear();
         goal.getGoalCategories().addAll(buildGoalCategories(request.categories(), goal, user));
+    }
+
+    void updateGoalWallets(Goal goal, GoalRequest request, User user) {
+
+        goal.getGoalWallets().clear();
+        goal.getGoalWallets().addAll(buildGoalWallets(request.wallets(), goal, user));
+    }
+
+    void updateGoalName(Goal goal, String newName) {
+
+        if (!Strings.hasText(newName)) return;
+
+        goal.setName(newName);
+    }
+
+    void updateGoalTargetAmount(Goal goal, BigDecimal newTargetAmount) {
+
+        if (BigDecimal.ZERO.equals(newTargetAmount)) {
+            return;
+        }
+
+        goal.setTargetAmount(newTargetAmount);
+    }
+
+    void updateGoalStartDate(Goal goal, LocalDate newStartDate) {
+
+        goal.setStartDate(newStartDate);
+    }
+
+    void updateGoalEndDate(Goal goal, LocalDate newEndDate) {
+
+        goal.setEndDate(newEndDate);
     }
 
     Goal getGoalById(UUID id) {
