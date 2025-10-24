@@ -44,7 +44,7 @@ public class GroupMember extends BaseEntity {
     @NotNull(message = "Joined at is required")
     @PastOrPresent(message = "Joined at must be in the past or present")
     @Column(nullable = false)
-    LocalDateTime joinedAt = LocalDateTime.now();
+    LocalDateTime joinedAt;
 
     @Enumerated(EnumType.STRING)
     GroupRole role;
