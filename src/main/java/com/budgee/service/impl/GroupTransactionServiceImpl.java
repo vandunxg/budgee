@@ -1,11 +1,16 @@
 package com.budgee.service.impl;
 
+import com.budgee.exception.ValidationException;
+import com.budgee.model.*;
+import com.budgee.util.SecurityHelper;
+import com.budgee.util.UserHelper;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -13,9 +18,6 @@ import org.springframework.stereotype.Service;
 import com.budgee.exception.ErrorCode;
 import com.budgee.exception.NotFoundException;
 import com.budgee.mapper.GroupTransactionMapper;
-import com.budgee.model.Group;
-import com.budgee.model.GroupMember;
-import com.budgee.model.GroupTransaction;
 import com.budgee.payload.request.group.GroupTransactionRequest;
 import com.budgee.payload.response.group.CreatorTransactionResponse;
 import com.budgee.payload.response.group.GroupTransactionResponse;
@@ -49,6 +51,8 @@ public class GroupTransactionServiceImpl implements GroupTransactionService {
     // HELPER
     // -------------------------------------------------------------------
     GroupHelper groupHelper;
+    UserHelper userHelper;
+    SecurityHelper securityHelper;
 
     // -------------------------------------------------------------------
     // IMPLEMENT METHODS
@@ -62,7 +66,7 @@ public class GroupTransactionServiceImpl implements GroupTransactionService {
         Group group = groupHelper.getGroupById(groupID);
         GroupMember member = getGroupMemberById(request.memberId());
 
-        checkMemberInGroup(group, member);
+        checkMemberInGroup(group, member.getId());
 
         GroupTransaction transaction = groupTransactionMapper.toGroupTransaction(request);
         transaction.setGroup(group);
@@ -70,6 +74,20 @@ public class GroupTransactionServiceImpl implements GroupTransactionService {
 
         log.warn("[createGroupTransaction] save transaction to db");
         groupTransactionRepository.save(transaction);
+
+        return toGroupTransactionResponse(transaction);
+    }
+
+    @Override
+    public GroupTransactionResponse getGroupTransaction(UUID groupId, UUID transactionId) {
+        log.info("[getGroupTransaction] groupId={} transactionId={}", groupId, transactionId);
+
+        Group group = groupHelper.getGroupById(groupId);
+        checkAuthenticatedUserIsMemberOfGroup(group);
+
+        GroupTransaction transaction = groupTransactionRepository.findById(transactionId).orElseThrow(
+                () -> new NotFoundException(ErrorCode.TRANSACTION_NOT_FOUND)
+        );
 
         return toGroupTransactionResponse(transaction);
     }
@@ -90,18 +108,25 @@ public class GroupTransactionServiceImpl implements GroupTransactionService {
         return response;
     }
 
-    void checkMemberInGroup(Group group, GroupMember member) {
-        log.info("[checkMemberInGroup] group={} member={}", group.getId(), member.getId());
+    void checkAuthenticatedUserIsMemberOfGroup(Group group) {
+        log.info("[getMemberByAuthenticatedUser]");
 
-        List<GroupMember> members = groupMemberRepository.findAllByGroup(group);
+        User authenticatedUser = securityHelper.getAuthenticatedUser();
 
-        boolean isMemberInGroup = members.contains(member);
+        GroupMember member = groupMemberRepository.findByGroupAndUser(group, authenticatedUser);
 
-        if (!isMemberInGroup) {
-            log.error(
-                    "[checkMemberInGroup] member={} is not in group={}",
-                    member.getId(),
-                    group.getId());
+        if(Objects.isNull(member)) {
+            throw new ValidationException(ErrorCode.USER_NOT_IN_GROUP);
+        }
+    }
+
+    void checkMemberInGroup(Group group, UUID memberId) {
+        log.info("[checkMemberInGroup] group={} member={}", group.getId(), memberId);
+
+        GroupMember member = groupMemberRepository.findByGroupAndId(group, memberId);
+
+        if(Objects.isNull(member)) {
+            log.error("[checkMemberInGroup] member is not in this group");
 
             throw new NotFoundException(ErrorCode.GROUP_MEMBER_NOT_FOUND);
         }

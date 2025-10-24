@@ -55,4 +55,15 @@ public class GroupController {
 
         return ResponseUtil.created(groupTransactionService.createGroupTransaction(id, request));
     }
+
+    @GetMapping("/{groupId}/transactions/{transactionId}")
+    ResponseEntity<?> getGroupTransaction(
+            @PathVariable UUID groupId, @PathVariable UUID transactionId) {
+        log.info("[GET /groups/{}/transactions/{}]", groupId, transactionId);
+
+        return ResponseUtil.success(
+                MessageConstants.FETCH_SUCCESS,
+                groupTransactionService.getGroupTransaction(groupId, transactionId)
+        );
+    }
 }
