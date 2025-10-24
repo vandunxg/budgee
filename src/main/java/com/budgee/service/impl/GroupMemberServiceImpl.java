@@ -11,6 +11,8 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 
 import com.budgee.enums.GroupRole;
+import com.budgee.exception.ErrorCode;
+import com.budgee.exception.ValidationException;
 import com.budgee.mapper.GroupMemberMapper;
 import com.budgee.model.Group;
 import com.budgee.model.GroupMember;
@@ -62,6 +64,8 @@ public class GroupMemberServiceImpl implements GroupMemberService {
 
         if (!Objects.isNull(userId)) {
             memberUser = userHelper.getUserById(request.userId());
+
+            checkUserIdAndAuthenticatedUserId(userId, authenticatedUser);
         }
 
         if (!Objects.isNull(memberUser)) {
@@ -92,6 +96,19 @@ public class GroupMemberServiceImpl implements GroupMemberService {
     // -------------------------------------------------------------------
     // PRIVATE FUNCTION
     // -------------------------------------------------------------------
+
+    void checkUserIdAndAuthenticatedUserId(UUID creatorId, User authenticatedUser) {
+        log.info(
+                "[checkUserIdAndAuthenticatedUserId] creatorId={} from request authenticatedUser={}",
+                creatorId,
+                authenticatedUser);
+
+        if (!Objects.equals(creatorId, authenticatedUser.getId())) {
+            log.error("[checkUserIdAndAuthenticatedUserId] creatorId not equal authenticated user");
+
+            throw new ValidationException(ErrorCode.CREATOR_ID_NOT_AUTHENTICATED_USER);
+        }
+    }
 
     GroupMember createMember(GroupMemberRequest request, Group group) {
         log.info("[createMember]={}", request);
