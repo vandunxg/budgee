@@ -1,13 +1,10 @@
 package com.budgee.service.impl;
 
-import io.jsonwebtoken.lang.Strings;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,6 +23,7 @@ import com.budgee.repository.GoalRepository;
 import com.budgee.service.CategoryService;
 import com.budgee.service.GoalService;
 import com.budgee.service.UserService;
+import com.budgee.util.CommonHelper;
 import com.budgee.util.DateValidator;
 import com.budgee.util.SecurityHelper;
 import com.budgee.util.WalletHelper;
@@ -48,12 +46,17 @@ public class GoalServiceImpl implements GoalService {
     CategoryService categoryService;
 
     // -------------------------------------------------------------------
-    // MAPPER / HELPER
+    // MAPPER
     // -------------------------------------------------------------------
     GoalMapper goalMapper;
+
+    // -------------------------------------------------------------------
+    // HELPER
+    // -------------------------------------------------------------------
     DateValidator dateValidator;
     SecurityHelper securityHelper;
     WalletHelper walletHelper;
+    CommonHelper commonHelper;
 
     // -------------------------------------------------------------------
     // PUBLIC METHODS
@@ -98,7 +101,8 @@ public class GoalServiceImpl implements GoalService {
 
         validateDates(request);
 
-        updateGoalEntity(goal, request, user);
+        applyGoalUpdate(goal, request, user);
+
         return goalMapper.toGoalResponse(goal);
     }
 
@@ -168,57 +172,31 @@ public class GoalServiceImpl implements GoalService {
                 .toList();
     }
 
-    void updateGoalEntity(Goal goal, GoalRequest request, User user) {
-        log.info(
-                "[updateGoalEntity] goalId={} request={} userId={}",
-                goal.getId(),
-                request,
-                user.getId());
-
-        updateGoalName(goal, request.name());
-        updateGoalTargetAmount(goal, request.targetAmount());
-        updateGoalStartDate(goal, request.startDate());
-        updateGoalEndDate(goal, request.endDate());
-        updateGoalWallets(goal, request, user);
-        updateGoalCategories(goal, request, user);
-    }
-
     void updateGoalCategories(Goal goal, GoalRequest request, User user) {
+        log.info("[updateGoalCategories]");
 
         goal.getGoalCategories().clear();
         goal.getGoalCategories().addAll(buildGoalCategories(request.categories(), goal, user));
     }
 
     void updateGoalWallets(Goal goal, GoalRequest request, User user) {
+        log.info("[updateGoalWallets]");
 
         goal.getGoalWallets().clear();
         goal.getGoalWallets().addAll(buildGoalWallets(request.wallets(), goal, user));
     }
 
-    void updateGoalName(Goal goal, String newName) {
+    void applyGoalUpdate(Goal goal, GoalRequest request, User user) {
+        log.info("[applyGoalUpdate]");
 
-        if (!Strings.hasText(newName)) return;
+        commonHelper.updateIfChanged(goal::getName, goal::setName, request.name());
+        commonHelper.updateIfChanged(
+                goal::getTargetAmount, goal::setTargetAmount, request.targetAmount());
+        commonHelper.updateIfChanged(goal::getStartDate, goal::setStartDate, request.startDate());
+        commonHelper.updateIfChanged(goal::getEndDate, goal::setEndDate, request.endDate());
 
-        goal.setName(newName);
-    }
-
-    void updateGoalTargetAmount(Goal goal, BigDecimal newTargetAmount) {
-
-        if (BigDecimal.ZERO.equals(newTargetAmount)) {
-            return;
-        }
-
-        goal.setTargetAmount(newTargetAmount);
-    }
-
-    void updateGoalStartDate(Goal goal, LocalDate newStartDate) {
-
-        goal.setStartDate(newStartDate);
-    }
-
-    void updateGoalEndDate(Goal goal, LocalDate newEndDate) {
-
-        goal.setEndDate(newEndDate);
+        updateGoalWallets(goal, request, user);
+        updateGoalCategories(goal, request, user);
     }
 
     Goal getGoalById(UUID id) {
