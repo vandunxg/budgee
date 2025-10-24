@@ -31,10 +31,22 @@ import com.budgee.service.impl.UserDetailService;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class WebSecurityConfig {
 
+    // -------------------------------------------------------------------
+    // SERVICES
+    // -------------------------------------------------------------------
+
     UserDetailService userDetailService;
     CustomizeRequestFilter customizeRequestFilter;
 
+    // -------------------------------------------------------------------
+    // PRIVATE FIELDS
+    // -------------------------------------------------------------------
+
     String[] PUBLIC_ENDPOINT = {"/auth/**"};
+
+    // -------------------------------------------------------------------
+    // CONFIGS
+    // -------------------------------------------------------------------
 
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {

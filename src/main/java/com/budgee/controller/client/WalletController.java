@@ -24,7 +24,15 @@ import com.budgee.util.ResponseUtil;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class WalletController {
 
+    // -------------------------------------------------------------------
+    // SERVICES
+    // -------------------------------------------------------------------
+
     WalletService walletService;
+
+    // -------------------------------------------------------------------
+    // PUBLIC API
+    // -------------------------------------------------------------------
 
     @RequestMapping("/{id}")
     ResponseEntity<?> getWallet(@PathVariable UUID id) {

@@ -12,7 +12,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
 import com.budgee.enums.Currency;
 import com.budgee.enums.Role;
@@ -33,11 +32,28 @@ import com.budgee.service.UserService;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class UserServiceImpl implements UserService {
 
+    // -------------------------------------------------------------------
+    // REPOSITORY
+    // -------------------------------------------------------------------
     UserRepository userRepository;
 
+    // -------------------------------------------------------------------
+    // SERVICE
+    // -------------------------------------------------------------------
     PasswordEncoder passwordEncoder;
 
+    // -------------------------------------------------------------------
+    // MAPPER
+    // -------------------------------------------------------------------
     UserMapper userMapper;
+
+    // -------------------------------------------------------------------
+    // HELPER
+    // -------------------------------------------------------------------
+
+    // -------------------------------------------------------------------
+    // PUBLIC FUNCTION
+    // -------------------------------------------------------------------
 
     @Override
     @Transactional
@@ -78,7 +94,9 @@ public class UserServiceImpl implements UserService {
         return user;
     }
 
+    // -------------------------------------------------------------------
     // PRIVATE FUNCTION
+    // -------------------------------------------------------------------
 
     void comparePasswordAndConfirmPassword(String password, String confirmPassword) {
         log.info("[comparePasswordAndConfirmPassword]");
@@ -96,15 +114,7 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    private static String normalizeEmail(String email) {
+    static String normalizeEmail(String email) {
         return email == null ? null : email.trim().toLowerCase();
-    }
-
-    /** Avoid logging secrets; return short, non-reversible fingerprints for observability. */
-    private static String fingerprint(String secret) {
-        if (!StringUtils.hasText(secret)) return "empty";
-        int len = secret.length();
-        String tail = secret.substring(Math.max(0, len - 4));
-        return "***" + tail + "(len=" + len + ")";
     }
 }

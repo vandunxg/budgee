@@ -60,6 +60,10 @@ public class GroupServiceImpl implements GroupService {
     DateValidator dateValidator;
     SecurityHelper securityHelper;
 
+    // -------------------------------------------------------------------
+    // PUBLIC FUNCTION
+    // -------------------------------------------------------------------
+
     @Override
     public GroupResponse createGroup(GroupRequest request) {
         log.info("[createGroup]={}", request);
@@ -107,7 +111,9 @@ public class GroupServiceImpl implements GroupService {
         return toGroupResponse(group);
     }
 
+    // -------------------------------------------------------------------
     // PRIVATE FUNCTION
+    // -------------------------------------------------------------------
 
     void assertGroupMemberPermission(Group group) {
         log.info("[assertGroupMemberPermission]");

@@ -13,18 +13,27 @@ import com.budgee.exception.AuthenticationException;
 import com.budgee.exception.ErrorCode;
 import com.budgee.model.OwnerEntity;
 import com.budgee.model.User;
-import com.budgee.repository.UserRepository;
-import com.budgee.service.UserService;
 
 @Component
 @Slf4j(topic = "SECURITY_HELPER")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class SecurityHelper {
+    // -------------------------------------------------------------------
+    // REPOSITORY
+    // -------------------------------------------------------------------
 
-    UserRepository userRepository;
+    // -------------------------------------------------------------------
+    // SERVICE
+    // -------------------------------------------------------------------
 
-    UserService userService;
+    // -------------------------------------------------------------------
+    // MAPPER
+    // -------------------------------------------------------------------
+
+    // -------------------------------------------------------------------
+    // HELPER
+    // -------------------------------------------------------------------
 
     public <T extends OwnerEntity> void checkIsOwner(T entity) {
         log.info("[checkIsOwner]");

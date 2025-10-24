@@ -1,15 +1,10 @@
 package com.budgee.service.impl;
 
-import com.budgee.exception.ValidationException;
-import com.budgee.model.*;
-import com.budgee.util.SecurityHelper;
-import com.budgee.util.UserHelper;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -17,7 +12,9 @@ import org.springframework.stereotype.Service;
 
 import com.budgee.exception.ErrorCode;
 import com.budgee.exception.NotFoundException;
+import com.budgee.exception.ValidationException;
 import com.budgee.mapper.GroupTransactionMapper;
+import com.budgee.model.*;
 import com.budgee.payload.request.group.GroupTransactionRequest;
 import com.budgee.payload.response.group.CreatorTransactionResponse;
 import com.budgee.payload.response.group.GroupTransactionResponse;
@@ -25,6 +22,8 @@ import com.budgee.repository.GroupMemberRepository;
 import com.budgee.repository.GroupTransactionRepository;
 import com.budgee.service.GroupTransactionService;
 import com.budgee.util.GroupHelper;
+import com.budgee.util.SecurityHelper;
+import com.budgee.util.UserHelper;
 
 @Service
 @RequiredArgsConstructor
@@ -55,7 +54,7 @@ public class GroupTransactionServiceImpl implements GroupTransactionService {
     SecurityHelper securityHelper;
 
     // -------------------------------------------------------------------
-    // IMPLEMENT METHODS
+    // PUBLIC FUNCTION
     // -------------------------------------------------------------------
 
     @Override
@@ -85,15 +84,16 @@ public class GroupTransactionServiceImpl implements GroupTransactionService {
         Group group = groupHelper.getGroupById(groupId);
         checkAuthenticatedUserIsMemberOfGroup(group);
 
-        GroupTransaction transaction = groupTransactionRepository.findById(transactionId).orElseThrow(
-                () -> new NotFoundException(ErrorCode.TRANSACTION_NOT_FOUND)
-        );
+        GroupTransaction transaction =
+                groupTransactionRepository
+                        .findById(transactionId)
+                        .orElseThrow(() -> new NotFoundException(ErrorCode.TRANSACTION_NOT_FOUND));
 
         return toGroupTransactionResponse(transaction);
     }
 
     // -------------------------------------------------------------------
-    // UTILITIES
+    // PRIVATE FUNCTION
     // -------------------------------------------------------------------
 
     GroupTransactionResponse toGroupTransactionResponse(GroupTransaction transaction) {
@@ -115,7 +115,7 @@ public class GroupTransactionServiceImpl implements GroupTransactionService {
 
         GroupMember member = groupMemberRepository.findByGroupAndUser(group, authenticatedUser);
 
-        if(Objects.isNull(member)) {
+        if (Objects.isNull(member)) {
             throw new ValidationException(ErrorCode.USER_NOT_IN_GROUP);
         }
     }
@@ -125,7 +125,7 @@ public class GroupTransactionServiceImpl implements GroupTransactionService {
 
         GroupMember member = groupMemberRepository.findByGroupAndId(group, memberId);
 
-        if(Objects.isNull(member)) {
+        if (Objects.isNull(member)) {
             log.error("[checkMemberInGroup] member is not in this group");
 
             throw new NotFoundException(ErrorCode.GROUP_MEMBER_NOT_FOUND);

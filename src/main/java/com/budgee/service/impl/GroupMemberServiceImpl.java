@@ -29,10 +29,28 @@ import com.budgee.util.UserHelper;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class GroupMemberServiceImpl implements GroupMemberService {
 
+    // -------------------------------------------------------------------
+    // REPOSITORY
+    // -------------------------------------------------------------------
+
+    // -------------------------------------------------------------------
+    // SERVICE
+    // -------------------------------------------------------------------
+
+    // -------------------------------------------------------------------
+    // MAPPER
+    // -------------------------------------------------------------------
+    GroupMemberMapper groupMemberMapper;
+
+    // -------------------------------------------------------------------
+    // HELPER
+    // -------------------------------------------------------------------
     SecurityHelper securityHelper;
     UserHelper userHelper;
 
-    GroupMemberMapper groupMemberMapper;
+    // -------------------------------------------------------------------
+    // PUBLIC FUNCTION
+    // -------------------------------------------------------------------
 
     @Override
     public GroupMember createGroupMember(GroupMemberRequest request, Group group) {
@@ -74,7 +92,9 @@ public class GroupMemberServiceImpl implements GroupMemberService {
         return response;
     }
 
-    //    PRIVATE FUNCTION
+    // -------------------------------------------------------------------
+    // PRIVATE FUNCTION
+    // -------------------------------------------------------------------
 
     GroupMember createMember(GroupMemberRequest request, Group group) {
         log.info("[createMember]={}", request);

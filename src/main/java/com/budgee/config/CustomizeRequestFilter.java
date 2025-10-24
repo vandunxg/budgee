@@ -39,9 +39,22 @@ import com.google.gson.Gson;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class CustomizeRequestFilter extends OncePerRequestFilter {
 
+    // -------------------------------------------------------------------
+    // SERVICES
+    // -------------------------------------------------------------------
+
     JwtService jwtService;
     UserDetailService userDetails;
+
+    // -------------------------------------------------------------------
+    // PRIVATE FIELDS
+    // -------------------------------------------------------------------
+
     Gson gson;
+
+    // -------------------------------------------------------------------
+    // CONFIGS
+    // -------------------------------------------------------------------
 
     @Override
     protected void doFilterInternal(

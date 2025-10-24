@@ -38,6 +38,10 @@ import com.budgee.service.JwtService;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class JwtServiceImp implements JwtService {
 
+    // -------------------------------------------------------------------
+    // PRIVATE VALUE
+    // -------------------------------------------------------------------
+
     @NonFinal
     @Value("${jwt.private-key.access-token}")
     String ACCESS_TOKEN_PRIVATE_KEY;
@@ -53,6 +57,10 @@ public class JwtServiceImp implements JwtService {
     @NonFinal
     @Value("${jwt.expiration.refresh-token}")
     String REFRESH_TOKEN_EXPIRY_TIME;
+
+    // -------------------------------------------------------------------
+    // PUBLIC FUNCTION
+    // -------------------------------------------------------------------
 
     @Override
     public String generateAccessToken(User user) {
@@ -90,7 +98,11 @@ public class JwtServiceImp implements JwtService {
         return extractClaim(token, type, Claims::getSubject);
     }
 
-    private String generateAccessToken(Map<String, Object> claims, String email) {
+    // -------------------------------------------------------------------
+    // PRIVATE FUNCTION
+    // -------------------------------------------------------------------
+
+    String generateAccessToken(Map<String, Object> claims, String email) {
         log.info("----------[ GENERATE-ACCESS-TOKEN ]----------");
 
         return Jwts.builder()
@@ -105,7 +117,7 @@ public class JwtServiceImp implements JwtService {
                 .compact();
     }
 
-    private String generateRefreshToken(Map<String, Object> claims, String email) {
+    String generateRefreshToken(Map<String, Object> claims, String email) {
         log.info("----------[ GENERATE-REFRESH-TOKEN ]----------");
 
         return Jwts.builder()
@@ -120,7 +132,7 @@ public class JwtServiceImp implements JwtService {
                 .compact();
     }
 
-    private Key getKeys(TokenType type) {
+    Key getKeys(TokenType type) {
         log.info("----------[ GET-KEY ]----------");
         switch (type) {
             case ACCESS_TOKEN -> {
@@ -135,13 +147,13 @@ public class JwtServiceImp implements JwtService {
         }
     }
 
-    private <T> T extractClaim(String token, TokenType type, Function<Claims, T> claimResolver) {
+    <T> T extractClaim(String token, TokenType type, Function<Claims, T> claimResolver) {
         log.info("----------[ extractClaim ]----------");
         final Claims claims = extraAllClaim(token, type);
         return claimResolver.apply(claims);
     }
 
-    private Claims extraAllClaim(String token, TokenType type) {
+    Claims extraAllClaim(String token, TokenType type) {
         log.info("----------[ extraAllClaim ]----------");
         try {
             return Jwts.parserBuilder()
