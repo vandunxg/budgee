@@ -12,7 +12,7 @@ import java.util.function.Supplier;
 import org.springframework.stereotype.Component;
 
 @Component
-@Slf4j(topic = "CommonHelper")
+@Slf4j(topic = "COMMON-HELPER")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class CommonHelper {

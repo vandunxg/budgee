@@ -16,7 +16,7 @@ import com.budgee.repository.UserRepository;
 
 @Component
 @RequiredArgsConstructor
-@Slf4j(topic = "USER_HELPER")
+@Slf4j(topic = "USER-HELPER")
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class UserHelper {
 

@@ -36,6 +36,10 @@ public final class ResponseUtil {
         return success(message, payload, HttpStatus.OK);
     }
 
+    public static <T> ResponseEntity<ApiResponse<T>> success(T payload) {
+        return success(null, payload, HttpStatus.OK);
+    }
+
     public static <T> ResponseEntity<ApiResponse<T>> created(T payload) {
         return success(MessageConstants.CREATE_SUCCESS, payload, HttpStatus.CREATED);
     }

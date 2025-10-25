@@ -10,7 +10,7 @@ import com.budgee.exception.ErrorCode;
 import com.budgee.exception.ValidationException;
 
 @Component
-@Slf4j(topic = "DATE_VALIDATOR")
+@Slf4j(topic = "DATE-VALIDATOR")
 public class DateValidator {
 
     // -------------------------------------------------------------------

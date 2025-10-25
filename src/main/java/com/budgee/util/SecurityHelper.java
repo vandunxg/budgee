@@ -15,7 +15,7 @@ import com.budgee.model.OwnerEntity;
 import com.budgee.model.User;
 
 @Component
-@Slf4j(topic = "SECURITY_HELPER")
+@Slf4j(topic = "SECURITY-HELPER")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class SecurityHelper {
