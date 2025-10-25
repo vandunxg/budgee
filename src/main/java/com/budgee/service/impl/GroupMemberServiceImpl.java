@@ -5,14 +5,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.Objects;
-import java.util.UUID;
-
 import org.springframework.stereotype.Service;
 
 import com.budgee.enums.GroupRole;
-import com.budgee.exception.ErrorCode;
-import com.budgee.exception.ValidationException;
 import com.budgee.mapper.GroupMemberMapper;
 import com.budgee.model.Group;
 import com.budgee.model.GroupMember;
@@ -21,7 +16,6 @@ import com.budgee.payload.request.group.GroupMemberRequest;
 import com.budgee.payload.response.group.GroupMemberResponse;
 import com.budgee.service.GroupMemberService;
 import com.budgee.util.SecurityHelper;
-import com.budgee.util.UserHelper;
 
 @Service
 @RequiredArgsConstructor
@@ -46,7 +40,6 @@ public class GroupMemberServiceImpl implements GroupMemberService {
     // HELPER
     // -------------------------------------------------------------------
     SecurityHelper securityHelper;
-    UserHelper userHelper;
 
     // -------------------------------------------------------------------
     // PUBLIC FUNCTION
@@ -57,26 +50,13 @@ public class GroupMemberServiceImpl implements GroupMemberService {
         log.info("[createGroupMember]={}", request);
 
         User authenticatedUser = securityHelper.getAuthenticatedUser();
-
-        UUID userId = request.userId();
-        boolean isCreator = false;
-        User memberUser = null;
-
-        if (!Objects.isNull(userId)) {
-            checkUserIdAndAuthenticatedUserId(userId, authenticatedUser);
-
-            memberUser = userHelper.getUserById(request.userId());
-        }
-
-        if (!Objects.isNull(memberUser)) {
-            isCreator = authenticatedUser.getId().equals(memberUser.getId());
-        }
+        Boolean isCreator = request.isCreator();
 
         final GroupRole ROLE_FOR_MEMBER = isCreator ? GroupRole.ADMIN : GroupRole.MEMBER;
 
         GroupMember member = this.createMember(request, group);
         member.setRole(ROLE_FOR_MEMBER);
-        member.setUser(Objects.isNull(memberUser) ? null : memberUser);
+        member.setUser(isCreator ? authenticatedUser : null);
 
         return member;
     }
@@ -96,19 +76,6 @@ public class GroupMemberServiceImpl implements GroupMemberService {
     // -------------------------------------------------------------------
     // PRIVATE FUNCTION
     // -------------------------------------------------------------------
-
-    void checkUserIdAndAuthenticatedUserId(UUID creatorId, User authenticatedUser) {
-        log.info(
-                "[checkUserIdAndAuthenticatedUserId] creatorId={} from request authenticatedUser={}",
-                creatorId,
-                authenticatedUser);
-
-        if (!Objects.equals(creatorId, authenticatedUser.getId())) {
-            log.error("[checkUserIdAndAuthenticatedUserId] creatorId not equal authenticated user");
-
-            throw new ValidationException(ErrorCode.CREATOR_ID_NOT_AUTHENTICATED_USER);
-        }
-    }
 
     GroupMember createMember(GroupMemberRequest request, Group group) {
         log.info("[createMember]={}", request);

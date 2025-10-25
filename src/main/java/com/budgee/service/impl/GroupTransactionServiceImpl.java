@@ -55,6 +55,18 @@ public class GroupTransactionServiceImpl implements GroupTransactionService {
     // PUBLIC FUNCTION
     // -------------------------------------------------------------------
 
+    //    void checkAuthenticatedUserIsMember(User user, GroupMember member) {
+    //        log.info("[checkAuthenticatedUserIsMember]");
+    //
+    ////        case: authenticated user adds group transaction
+    //        if(Objects.equals(user, member.getUser())) {
+    //            return;
+    //        }
+    //
+    ////        case: authenticated user adds transaction for another member
+    //        checkUserIsGroupCreator();
+    //    }
+
     @Override
     public GroupTransactionResponse createGroupTransaction(
             UUID groupID, GroupTransactionRequest request) {

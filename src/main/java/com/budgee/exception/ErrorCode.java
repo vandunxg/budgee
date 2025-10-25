@@ -62,6 +62,7 @@ public enum ErrorCode {
     USER_NOT_IN_GROUP(2008, HttpStatus.FORBIDDEN, "User is not a member of this group"),
     CREATOR_ID_NOT_AUTHENTICATED_USER(
             2009, HttpStatus.BAD_REQUEST, "CreatorId is not equal authenticated user"),
+    DUPLICATE_CREATOR_ASSIGNMENT(2010, HttpStatus.BAD_REQUEST, "Duplicate creator assignment"),
     // Transaction-related errors (3000-3999)
     TRANSACTION_NOT_FOUND(3000, HttpStatus.NOT_FOUND, "Transaction not found"),
     INVALID_TRANSACTION_AMOUNT(
