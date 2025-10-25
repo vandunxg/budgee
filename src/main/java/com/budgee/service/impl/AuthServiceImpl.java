@@ -82,7 +82,7 @@ public class AuthServiceImpl implements AuthService {
                     "authentication failed email_fingerprint={}, reason={}",
                     fingerprint(email),
                     ex.getClass().getSimpleName());
-            throw new AccessDeniedException("Invalid credentials");
+            throw new com.budgee.exception.AuthenticationException(ErrorCode.INVALID_CREDENTIALS);
         }
 
         User user = findUserByEmail(email);

@@ -55,6 +55,18 @@ public class GroupTransactionServiceImpl implements GroupTransactionService {
     // PUBLIC FUNCTION
     // -------------------------------------------------------------------
 
+    //    void checkAuthenticatedUserIsMember(User user, GroupMember member) {
+    //        log.info("[checkAuthenticatedUserIsMember]");
+    //
+    ////        case: authenticated user adds group transaction
+    //        if(Objects.equals(user, member.getUser())) {
+    //            return;
+    //        }
+    //
+    ////        case: authenticated user adds transaction for another member
+    //        checkUserIsGroupCreator();
+    //    }
+
     @Override
     public GroupTransactionResponse createGroupTransaction(
             UUID groupID, GroupTransactionRequest request) {
@@ -63,6 +75,7 @@ public class GroupTransactionServiceImpl implements GroupTransactionService {
         Group group = groupHelper.getGroupById(groupID);
         GroupMember member = getGroupMemberById(request.memberId());
 
+        checkAuthenticatedUserInGroup(group);
         checkMemberInGroup(group, member.getId());
 
         GroupTransaction transaction =
@@ -112,6 +125,21 @@ public class GroupTransactionServiceImpl implements GroupTransactionService {
         GroupMember member = groupMemberRepository.findByGroupAndUser(group, authenticatedUser);
 
         if (Objects.isNull(member)) {
+            throw new ValidationException(ErrorCode.USER_NOT_IN_GROUP);
+        }
+    }
+
+    void checkAuthenticatedUserInGroup(Group group) {
+        log.info("[checkAuthenticatedUserInGroup]");
+
+        User authenticatedUser = securityHelper.getAuthenticatedUser();
+
+        Boolean isUserInGroup =
+                groupMemberRepository.existsByGroupAndUser(group, authenticatedUser);
+
+        if (!isUserInGroup) {
+            log.error("[checkAuthenticatedUserInGroup] user is not group creator");
+
             throw new ValidationException(ErrorCode.USER_NOT_IN_GROUP);
         }
     }

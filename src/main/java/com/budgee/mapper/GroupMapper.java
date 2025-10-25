@@ -1,19 +1,21 @@
 package com.budgee.mapper;
 
+import java.math.BigDecimal;
+
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 import com.budgee.model.Group;
-import com.budgee.model.User;
 import com.budgee.payload.request.group.GroupRequest;
 import com.budgee.payload.response.group.GroupResponse;
 
 @Mapper(componentModel = "spring")
 public interface GroupMapper {
 
-    @Mapping(source = "user", target = "creator")
-    Group toGroup(GroupRequest request, User user);
+    Group toGroup(GroupRequest request);
 
-    @Mapping(target = "groupId", source = "id")
-    GroupResponse toGroupResponse(Group group);
+    @Mapping(target = "groupId", source = "group.id")
+    @Mapping(target = "groupName", source = "group.name")
+    @Mapping(target = "totalSponsorship", source = "totalSponsorship")
+    GroupResponse toGroupResponse(Group group, BigDecimal totalSponsorship);
 }
