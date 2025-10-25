@@ -33,6 +33,10 @@ public class CommonHelper {
     // HELPER
     // -------------------------------------------------------------------
 
+    // -------------------------------------------------------------------
+    // PUBLIC FUNCTION
+    // -------------------------------------------------------------------
+
     public <T> void updateIfChanged(Supplier<T> getter, Consumer<T> setter, T newValue) {
         log.info("[updateIfChanged]");
 
@@ -44,4 +48,8 @@ public class CommonHelper {
             setter.accept(newValue);
         }
     }
+
+    // -------------------------------------------------------------------
+    // PRIVATE FUNCTION
+    // -------------------------------------------------------------------
 }

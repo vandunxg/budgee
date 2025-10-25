@@ -19,6 +19,7 @@ import com.budgee.model.User;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class SecurityHelper {
+
     // -------------------------------------------------------------------
     // REPOSITORY
     // -------------------------------------------------------------------
@@ -33,6 +34,10 @@ public class SecurityHelper {
 
     // -------------------------------------------------------------------
     // HELPER
+    // -------------------------------------------------------------------
+
+    // -------------------------------------------------------------------
+    // PUBLIC FUNCTION
     // -------------------------------------------------------------------
 
     public <T extends OwnerEntity> void checkIsOwner(T entity) {
@@ -53,4 +58,9 @@ public class SecurityHelper {
 
         return user;
     }
+
+    // -------------------------------------------------------------------
+    // PRIVATE FUNCTION
+    // -------------------------------------------------------------------
+
 }

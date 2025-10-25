@@ -37,6 +37,10 @@ public class TransactionHelper {
     // HELPER
     // -------------------------------------------------------------------
 
+    // -------------------------------------------------------------------
+    // PUBLIC FUNCTION
+    // -------------------------------------------------------------------
+
     public Transaction getTransactionById(UUID id) {
         log.info("[getTransactionById] id={}", id);
 
@@ -44,4 +48,8 @@ public class TransactionHelper {
                 .findById(id)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.TRANSACTION_NOT_FOUND));
     }
+
+    // -------------------------------------------------------------------
+    // PRIVATE FUNCTION
+    // -------------------------------------------------------------------
 }
