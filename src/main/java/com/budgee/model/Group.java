@@ -32,7 +32,7 @@ public class Group extends BaseEntity implements OwnerEntity {
     String name;
 
     @NotNull(message = "Creator is required")
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "creator_id", nullable = false)
     User creator;
 
