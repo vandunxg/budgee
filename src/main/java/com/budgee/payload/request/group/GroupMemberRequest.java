@@ -1,7 +1,6 @@
 package com.budgee.payload.request.group;
 
 import java.math.BigDecimal;
-import java.util.UUID;
 
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Size;
@@ -11,4 +10,4 @@ public record GroupMemberRequest(
                 String memberName,
         @DecimalMin(value = "0.00", message = "Prepaid amount must be non-negative")
                 BigDecimal advanceAmount,
-        UUID userId) {}
+        Boolean isCreator) {}

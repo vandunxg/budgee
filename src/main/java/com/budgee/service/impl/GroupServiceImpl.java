@@ -10,21 +10,24 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.springframework.stereotype.Service;
 
+import com.budgee.enums.GroupExpenseSource;
+import com.budgee.enums.TransactionType;
 import com.budgee.exception.AuthenticationException;
 import com.budgee.exception.ErrorCode;
 import com.budgee.exception.NotFoundException;
+import com.budgee.exception.ValidationException;
 import com.budgee.mapper.GroupMapper;
-import com.budgee.model.Group;
-import com.budgee.model.GroupMember;
-import com.budgee.model.User;
+import com.budgee.model.*;
 import com.budgee.payload.request.group.GroupMemberRequest;
 import com.budgee.payload.request.group.GroupRequest;
 import com.budgee.payload.response.group.GroupResponse;
 import com.budgee.repository.GroupMemberRepository;
 import com.budgee.repository.GroupRepository;
+import com.budgee.repository.GroupTransactionRepository;
 import com.budgee.service.GroupMemberService;
 import com.budgee.service.GroupService;
 import com.budgee.service.UserService;
@@ -42,6 +45,7 @@ public class GroupServiceImpl implements GroupService {
     // -------------------------------------------------------------------
     GroupRepository groupRepository;
     GroupMemberRepository groupMemberRepository;
+    GroupTransactionRepository groupTransactionRepository;
 
     // -------------------------------------------------------------------
     // SERVICE
@@ -130,18 +134,66 @@ public class GroupServiceImpl implements GroupService {
     GroupResponse toGroupResponse(Group group) {
         log.info("[toGroupResponse]");
 
+        List<GroupTransaction> transactions = groupTransactionRepository.findAllByGroup(group);
+
         GroupResponse response = groupMapper.toGroupResponse(group);
         response.setMembers(
                 group.getMembers().stream()
                         .map(groupMemberService::toGroupMemberResponse)
                         .toList());
 
+        calculateTotalSponsorship(transactions, response);
+
         return response;
+    }
+
+    void calculateTotalSponsorship(List<GroupTransaction> transactions, GroupResponse response) {
+        log.info("[calculateTotalSponsorship]");
+
+        BigDecimal totalSponsorshipFromExpense =
+                transactions.stream()
+                        .filter(
+                                x ->
+                                        TransactionType.EXPENSE.equals(x.getType())
+                                                && GroupExpenseSource.MEMBER_SPONSOR.equals(
+                                                        x.getGroupExpenseSource()))
+                        .map(GroupTransaction::getAmount)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalSponsorshipFromMember =
+                transactions.stream()
+                        .filter(x -> TransactionType.CONTRIBUTE.equals(x.getType()))
+                        .map(GroupTransaction::getAmount)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalSponsorshipOfGroup =
+                totalSponsorshipFromExpense.add(totalSponsorshipFromMember);
+
+        response.setTotalSponsorship(totalSponsorshipOfGroup);
     }
 
     List<GroupMember> createGroupMembers(List<GroupMemberRequest> request, Group group) {
         log.info("[createGroupMember]={}", request);
 
+        checkJustOnlyOneCreator(request);
+
         return request.stream().map(x -> groupMemberService.createGroupMember(x, group)).toList();
+    }
+
+    void checkJustOnlyOneCreator(List<GroupMemberRequest> requests) {
+        log.info("[checkJustOnlyOneCreator]");
+
+        AtomicInteger count = new AtomicInteger(0);
+
+        requests.forEach(
+                x -> {
+                    if (x.isCreator()) {
+                        count.getAndIncrement();
+                    }
+                });
+
+        if (count.get() > 1) {
+            throw new ValidationException(ErrorCode.DUPLICATE_CREATOR_ASSIGNMENT);
+        }
     }
 }

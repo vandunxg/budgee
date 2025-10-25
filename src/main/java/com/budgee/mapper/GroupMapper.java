@@ -15,5 +15,6 @@ public interface GroupMapper {
     Group toGroup(GroupRequest request, User user);
 
     @Mapping(target = "groupId", source = "id")
+    @Mapping(target = "groupName", source = "name")
     GroupResponse toGroupResponse(Group group);
 }
