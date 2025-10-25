@@ -1,5 +1,7 @@
 package com.budgee.mapper;
 
+import java.math.BigDecimal;
+
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -16,5 +18,8 @@ public interface GroupMemberMapper {
     GroupMember toGroupMember(GroupMemberRequest request, Group group);
 
     @Mapping(target = "memberId", source = "member.id")
-    GroupMemberResponse toGroupMemberResponse(GroupMember member);
+    @Mapping(target = "isCreator", source = "isCreator")
+    @Mapping(target = "totalSponsorship", source = "totalSponsorship")
+    GroupMemberResponse toGroupMemberResponse(
+            GroupMember member, Boolean isCreator, BigDecimal totalSponsorship);
 }

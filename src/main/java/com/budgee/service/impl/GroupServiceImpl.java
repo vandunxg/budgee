@@ -14,8 +14,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.springframework.stereotype.Service;
 
-import com.budgee.enums.GroupExpenseSource;
-import com.budgee.enums.TransactionType;
 import com.budgee.exception.AuthenticationException;
 import com.budgee.exception.ErrorCode;
 import com.budgee.exception.NotFoundException;
@@ -32,6 +30,7 @@ import com.budgee.service.GroupMemberService;
 import com.budgee.service.GroupService;
 import com.budgee.service.UserService;
 import com.budgee.util.DateValidator;
+import com.budgee.util.GroupTransactionHelper;
 import com.budgee.util.SecurityHelper;
 
 @Service
@@ -63,6 +62,7 @@ public class GroupServiceImpl implements GroupService {
     // -------------------------------------------------------------------
     DateValidator dateValidator;
     SecurityHelper securityHelper;
+    GroupTransactionHelper groupTransactionHelper;
 
     // -------------------------------------------------------------------
     // PUBLIC FUNCTION
@@ -136,41 +136,16 @@ public class GroupServiceImpl implements GroupService {
         log.info("[toGroupResponse]");
 
         List<GroupTransaction> transactions = groupTransactionRepository.findAllByGroup(group);
+        BigDecimal totalSponsorship =
+                groupTransactionHelper.calculateTotalSponsorship(transactions);
+        GroupResponse response = groupMapper.toGroupResponse(group, totalSponsorship);
 
-        GroupResponse response = groupMapper.toGroupResponse(group);
         response.setMembers(
                 group.getMembers().stream()
-                        .map(groupMemberService::toGroupMemberResponse)
+                        .map(x -> groupMemberService.toGroupMemberResponse(x, group))
                         .toList());
 
-        calculateTotalSponsorship(transactions, response);
-
         return response;
-    }
-
-    void calculateTotalSponsorship(List<GroupTransaction> transactions, GroupResponse response) {
-        log.info("[calculateTotalSponsorship]");
-
-        BigDecimal totalSponsorshipFromExpense =
-                transactions.stream()
-                        .filter(
-                                x ->
-                                        TransactionType.EXPENSE.equals(x.getType())
-                                                && GroupExpenseSource.MEMBER_SPONSOR.equals(
-                                                        x.getGroupExpenseSource()))
-                        .map(GroupTransaction::getAmount)
-                        .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        BigDecimal totalSponsorshipFromMember =
-                transactions.stream()
-                        .filter(x -> TransactionType.CONTRIBUTE.equals(x.getType()))
-                        .map(GroupTransaction::getAmount)
-                        .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        BigDecimal totalSponsorshipOfGroup =
-                totalSponsorshipFromExpense.add(totalSponsorshipFromMember);
-
-        response.setTotalSponsorship(totalSponsorshipOfGroup);
     }
 
     List<GroupMember> createGroupMembers(List<GroupMemberRequest> request, Group group) {
