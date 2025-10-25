@@ -115,9 +115,51 @@ public class GroupServiceImpl implements GroupService {
         return toGroupResponse(group);
     }
 
+    @Override
+    public List<GroupResponse> getListGroups() {
+        log.info("[getListGroups]");
+
+        List<Group> groups = findAllGroupByAuthenticatedUser();
+
+        return toListGroupResponse(groups);
+    }
+
     // -------------------------------------------------------------------
     // PRIVATE FUNCTION
     // -------------------------------------------------------------------
+
+    List<GroupResponse> toListGroupResponse(List<Group> groups) {
+        log.info("[toListGroupResponse]");
+
+        return groups.stream()
+                .map(
+                        group -> {
+                            List<GroupTransaction> transactions =
+                                    groupTransactionRepository.findAllByGroup(group);
+                            BigDecimal totalSponsorship =
+                                    groupTransactionHelper.calculateTotalSponsorship(transactions);
+                            BigDecimal totalIncome =
+                                    groupTransactionHelper.calculateTotalIncome(transactions);
+                            BigDecimal totalExpense =
+                                    groupTransactionHelper.calculateTotalExpense(transactions);
+
+                            BigDecimal totalIncomeAndExpense = totalSponsorship.add(totalIncome);
+
+                            return groupMapper.toGroupResponse(
+                                    group, totalIncomeAndExpense, totalExpense);
+                        })
+                .toList();
+    }
+
+    List<Group> findAllGroupByAuthenticatedUser() {
+        log.info("[findAllGroupByAuthenticatedUser]");
+
+        User authenticatedUser = securityHelper.getAuthenticatedUser();
+
+        List<GroupMember> members = groupMemberRepository.findAllByUser(authenticatedUser);
+
+        return members.stream().map(GroupMember::getGroup).toList();
+    }
 
     void assertGroupMemberPermission(Group group) {
         log.info("[assertGroupMemberPermission]");
