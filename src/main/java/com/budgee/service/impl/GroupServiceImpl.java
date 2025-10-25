@@ -6,6 +6,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -14,21 +15,23 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.springframework.stereotype.Service;
 
-import com.budgee.exception.AuthenticationException;
-import com.budgee.exception.ErrorCode;
-import com.budgee.exception.NotFoundException;
-import com.budgee.exception.ValidationException;
+import com.budgee.enums.GroupRole;
+import com.budgee.enums.GroupSharingStatus;
+import com.budgee.exception.*;
 import com.budgee.mapper.GroupMapper;
 import com.budgee.model.*;
 import com.budgee.payload.request.group.GroupMemberRequest;
 import com.budgee.payload.request.group.GroupRequest;
 import com.budgee.payload.response.group.GroupResponse;
+import com.budgee.payload.response.group.GroupSharingTokenResponse;
 import com.budgee.repository.GroupMemberRepository;
 import com.budgee.repository.GroupRepository;
+import com.budgee.repository.GroupSharingRepository;
 import com.budgee.repository.GroupTransactionRepository;
 import com.budgee.service.GroupMemberService;
 import com.budgee.service.GroupService;
 import com.budgee.service.UserService;
+import com.budgee.util.CodeGenerator;
 import com.budgee.util.DateValidator;
 import com.budgee.util.GroupTransactionHelper;
 import com.budgee.util.SecurityHelper;
@@ -40,11 +43,17 @@ import com.budgee.util.SecurityHelper;
 public class GroupServiceImpl implements GroupService {
 
     // -------------------------------------------------------------------
+    // PRIVATE FIELDS
+    // -------------------------------------------------------------------
+    Integer SHARING_TOKEN_LENGTH = 5;
+
+    // -------------------------------------------------------------------
     // REPOSITORY
     // -------------------------------------------------------------------
     GroupRepository groupRepository;
     GroupMemberRepository groupMemberRepository;
     GroupTransactionRepository groupTransactionRepository;
+    GroupSharingRepository groupSharingRepository;
 
     // -------------------------------------------------------------------
     // SERVICE
@@ -63,6 +72,7 @@ public class GroupServiceImpl implements GroupService {
     DateValidator dateValidator;
     SecurityHelper securityHelper;
     GroupTransactionHelper groupTransactionHelper;
+    CodeGenerator codeGenerator;
 
     // -------------------------------------------------------------------
     // PUBLIC FUNCTION
@@ -124,9 +134,98 @@ public class GroupServiceImpl implements GroupService {
         return toListGroupResponse(groups);
     }
 
+    @Override
+    public GroupSharingTokenResponse getGroupSharingToken(UUID groupId) {
+        log.info("[getGroupSharingToken] groupId={}", groupId);
+
+        Group group = getGroupById(groupId);
+
+        if (group.getIsSharing()) {
+
+            return mapToGroupSharingTokenResponse(group, group.getSharingToken());
+        }
+
+        String sharingToken = codeGenerator.generateGroupInviteToken(SHARING_TOKEN_LENGTH);
+        setGroupSharing(group, sharingToken);
+
+        return mapToGroupSharingTokenResponse(group, sharingToken);
+    }
+
+    @Override
+    public Void joinGroup(UUID groupId, String sharingToken) {
+        log.info("[joinGroup] groupId={} sharingToken={}", groupId, sharingToken);
+
+        Group group = getGroupById(groupId);
+        User authenticatedUser = securityHelper.getAuthenticatedUser();
+
+        checkGroupIsSharing(group);
+        checkValidSharingToken(group, sharingToken);
+
+        createGroupSharing(authenticatedUser, group, sharingToken);
+
+        return null;
+    }
+
     // -------------------------------------------------------------------
     // PRIVATE FUNCTION
     // -------------------------------------------------------------------
+
+    void createGroupSharing(User user, Group group, String sharingToken) {
+        log.info("[createGroupSharing]");
+
+        final GroupRole role = GroupRole.MEMBER;
+        final GroupSharingStatus status = GroupSharingStatus.PENDING;
+
+        GroupSharing groupSharing =
+                GroupSharing.builder()
+                        .role(role)
+                        .sharedUser(user)
+                        .group(group)
+                        .status(status)
+                        .sharingToken(sharingToken)
+                        .joinedAt(LocalDateTime.now())
+                        .build();
+
+        log.warn("[createGroupSharing] save group sharing to db");
+        groupSharingRepository.save(groupSharing);
+    }
+
+    void checkGroupIsSharing(Group group) {
+        log.info("[checkGroupIsSharing]");
+
+        if (!group.getIsSharing()) {
+            throw new BusinessException(ErrorCode.GROUP_NOT_SHARING);
+        }
+    }
+
+    void checkValidSharingToken(Group group, String sharingToken) {
+        log.info("[checkValidSharingToken]");
+
+        String tokenOfGroup = group.getSharingToken();
+
+        if (!Objects.equals(tokenOfGroup, sharingToken)) {
+            throw new ValidationException(ErrorCode.SHARING_TOKEN_INVALID);
+        }
+    }
+
+    void setGroupSharing(Group group, String sharingToken) {
+        log.info("[setGroupSharing]");
+
+        group.setIsSharing(Boolean.TRUE);
+        group.setSharingToken(sharingToken);
+
+        log.warn("[setGroupSharing] update group to db");
+        groupRepository.save(group);
+    }
+
+    GroupSharingTokenResponse mapToGroupSharingTokenResponse(Group group, String sharingToken) {
+        log.info("[mapToGroupSharingTokenResponse]");
+
+        return GroupSharingTokenResponse.builder()
+                .token(sharingToken)
+                .groupId(group.getId())
+                .build();
+    }
 
     List<GroupResponse> toListGroupResponse(List<Group> groups) {
         log.info("[toListGroupResponse]");
