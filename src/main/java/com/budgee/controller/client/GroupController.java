@@ -73,4 +73,11 @@ public class GroupController {
                 MessageConstants.FETCH_SUCCESS,
                 groupTransactionService.getGroupTransaction(groupId, transactionId));
     }
+
+    @GetMapping("/list")
+    ResponseEntity<?> getListGroups() {
+        log.info("[GET /groups/list]");
+
+        return ResponseUtil.success(MessageConstants.FETCH_SUCCESS, groupService.getListGroups());
+    }
 }

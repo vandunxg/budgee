@@ -48,6 +48,24 @@ public class GroupTransactionHelper {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
+    public BigDecimal calculateTotalIncome(List<GroupTransaction> transactions) {
+        log.info("[calculateTotalIncome]");
+
+        return transactions.stream()
+                .filter(x -> TransactionType.INCOME.equals(x.getType()))
+                .map(GroupTransaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    public BigDecimal calculateTotalExpense(List<GroupTransaction> transactions) {
+        log.info("[calculateTotalExpense]");
+
+        return transactions.stream()
+                .filter(x -> TransactionType.EXPENSE.equals(x.getType()))
+                .map(GroupTransaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
     // -------------------------------------------------------------------
     // PRIVATE FUNCTION
     // -------------------------------------------------------------------

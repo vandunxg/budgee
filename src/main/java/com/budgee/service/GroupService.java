@@ -1,5 +1,6 @@
 package com.budgee.service;
 
+import java.util.List;
 import java.util.UUID;
 
 import com.budgee.model.Group;
@@ -13,4 +14,6 @@ public interface GroupService {
     Group getGroupById(UUID groupId);
 
     GroupResponse getGroup(UUID id);
+
+    List<GroupResponse> getListGroups();
 }
