@@ -38,6 +38,10 @@ public class WalletHelper {
     // -------------------------------------------------------------------
     SecurityHelper securityHelper;
 
+    // -------------------------------------------------------------------
+    // PUBLIC FUNCTION
+    // -------------------------------------------------------------------
+
     public Wallet getWalletByIdForOwner(UUID id) {
         log.info("[getWalletByIdForOwner]={}", id);
 
@@ -50,4 +54,9 @@ public class WalletHelper {
 
         return wallet;
     }
+
+    // -------------------------------------------------------------------
+    // PRIVATE FUNCTION
+    // -------------------------------------------------------------------
+
 }
