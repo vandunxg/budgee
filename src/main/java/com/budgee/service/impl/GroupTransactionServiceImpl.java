@@ -134,16 +134,11 @@ public class GroupTransactionServiceImpl implements GroupTransactionService {
 
         User authenticatedUser = securityHelper.getAuthenticatedUser();
 
-        checkUserIsGroupCreator(group, authenticatedUser);
-    }
+        Boolean isUserInGroup =
+                groupMemberRepository.existsByGroupAndUser(group, authenticatedUser);
 
-    void checkUserIsGroupCreator(Group group, User user) {
-        log.info("[checkUserIsCreatorGroup]");
-
-        User groupCreator = group.getCreator();
-
-        if (!Objects.equals(groupCreator, user)) {
-            log.error("[checkUserIsGroupCreator] user is not group creator");
+        if (!isUserInGroup) {
+            log.error("[checkAuthenticatedUserInGroup] user is not group creator");
 
             throw new ValidationException(ErrorCode.USER_NOT_IN_GROUP);
         }
