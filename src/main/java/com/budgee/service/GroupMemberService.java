@@ -9,5 +9,5 @@ public interface GroupMemberService {
 
     GroupMember createGroupMember(GroupMemberRequest request, Group group);
 
-    GroupMemberResponse toGroupMemberResponse(GroupMember member);
+    GroupMemberResponse toGroupMemberResponse(GroupMember member, Group group);
 }

@@ -5,16 +5,23 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Objects;
+
 import org.springframework.stereotype.Service;
 
 import com.budgee.enums.GroupRole;
 import com.budgee.mapper.GroupMemberMapper;
 import com.budgee.model.Group;
 import com.budgee.model.GroupMember;
+import com.budgee.model.GroupTransaction;
 import com.budgee.model.User;
 import com.budgee.payload.request.group.GroupMemberRequest;
 import com.budgee.payload.response.group.GroupMemberResponse;
+import com.budgee.repository.GroupTransactionRepository;
 import com.budgee.service.GroupMemberService;
+import com.budgee.util.GroupTransactionHelper;
 import com.budgee.util.SecurityHelper;
 
 @Service
@@ -26,6 +33,7 @@ public class GroupMemberServiceImpl implements GroupMemberService {
     // -------------------------------------------------------------------
     // REPOSITORY
     // -------------------------------------------------------------------
+    GroupTransactionRepository groupTransactionRepository;
 
     // -------------------------------------------------------------------
     // SERVICE
@@ -40,6 +48,7 @@ public class GroupMemberServiceImpl implements GroupMemberService {
     // HELPER
     // -------------------------------------------------------------------
     SecurityHelper securityHelper;
+    GroupTransactionHelper groupTransactionHelper;
 
     // -------------------------------------------------------------------
     // PUBLIC FUNCTION
@@ -62,10 +71,18 @@ public class GroupMemberServiceImpl implements GroupMemberService {
     }
 
     @Override
-    public GroupMemberResponse toGroupMemberResponse(GroupMember member) {
+    public GroupMemberResponse toGroupMemberResponse(GroupMember member, Group group) {
         log.info("[toGroupMemberResponse]");
 
-        GroupMemberResponse response = groupMemberMapper.toGroupMemberResponse(member);
+        Boolean isCreator = Objects.equals(group.getCreator(), member.getUser());
+
+        List<GroupTransaction> transactions =
+                getAllGroupTransactionsByGroupAndMember(group, member);
+        BigDecimal totalSponsorship =
+                groupTransactionHelper.calculateTotalSponsorship(transactions);
+
+        GroupMemberResponse response =
+                groupMemberMapper.toGroupMemberResponse(member, isCreator, totalSponsorship);
 
         /* todo: calculate `totalSponsorship` and `totalAdvanceAmount`, check member is creator
         group */
@@ -76,6 +93,13 @@ public class GroupMemberServiceImpl implements GroupMemberService {
     // -------------------------------------------------------------------
     // PRIVATE FUNCTION
     // -------------------------------------------------------------------
+
+    List<GroupTransaction> getAllGroupTransactionsByGroupAndMember(
+            Group group, GroupMember member) {
+        log.info("[getAllGroupTransactionsByGroupAndMember]");
+
+        return groupTransactionRepository.findAllByGroupAndMember(group, member);
+    }
 
     GroupMember createMember(GroupMemberRequest request, Group group) {
         log.info("[createMember]={}", request);

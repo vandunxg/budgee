@@ -11,4 +11,6 @@ import com.budgee.model.*;
 @Repository
 public interface GroupTransactionRepository extends JpaRepository<GroupTransaction, UUID> {
     List<GroupTransaction> findAllByGroup(Group group);
+
+    List<GroupTransaction> findAllByGroupAndMember(Group group, GroupMember member);
 }
