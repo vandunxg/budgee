@@ -148,8 +148,8 @@ public class WalletServiceImpl implements WalletService {
                     "Unsupported type: " + transaction.getType());
         }
 
-        walletRepository.save(wallet);
         log.debug("[applyTransaction] newBalance={}", wallet.getBalance());
+        walletRepository.save(wallet);
     }
 
     @Override
@@ -274,6 +274,8 @@ public class WalletServiceImpl implements WalletService {
     }
 
     void adjustWalletBalance(Wallet wallet, BigDecimal diff) {
+        log.info("[adjustWalletBalance]");
+
         if (diff.signum() > 0) {
             wallet.increase(diff);
             log.debug("[adjustWalletBalance] +{} -> {}", diff, wallet.getBalance());
@@ -286,11 +288,15 @@ public class WalletServiceImpl implements WalletService {
     }
 
     List<Wallet> getAllWalletsByUser() {
+        log.info("[getAllWalletsByUser]");
+
         User user = userService.getCurrentUser();
         return walletRepository.findAllByUser(user);
     }
 
     void unsetDefaultAllWallets() {
+        log.info("[unsetDefaultAllWallets]");
+
         List<Wallet> wallets = getAllWalletsByUser();
         if (!wallets.isEmpty()) {
             wallets.forEach(w -> w.setIsDefault(false));

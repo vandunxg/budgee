@@ -37,6 +37,10 @@ public class UserHelper {
     // HELPER
     // -------------------------------------------------------------------
 
+    // -------------------------------------------------------------------
+    // PUBLIC FUNCTION
+    // -------------------------------------------------------------------
+
     public User getUserById(UUID id) {
         log.info("[getUserById]={}", id);
 
@@ -44,4 +48,9 @@ public class UserHelper {
                 .findById(id)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND));
     }
+
+    // -------------------------------------------------------------------
+    // PRIVATE FUNCTION
+    // -------------------------------------------------------------------
+
 }
