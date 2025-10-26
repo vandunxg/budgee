@@ -42,7 +42,7 @@ public class GroupSharing extends BaseEntity {
     @Column(length = 20, nullable = false)
     GroupSharingStatus status;
 
-    @Column(name = "invite_token", unique = true, length = 64)
+    @Column(name = "sharing_token", length = 10)
     String sharingToken;
 
     LocalDateTime joinedAt;
