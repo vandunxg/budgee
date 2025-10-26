@@ -80,14 +80,11 @@ public class GroupMemberServiceImpl implements GroupMemberService {
                 getAllGroupTransactionsByGroupAndMember(group, member);
         BigDecimal totalSponsorship =
                 groupTransactionHelper.calculateTotalSponsorship(transactions);
+        BigDecimal totalAdvanceAmount =
+                groupTransactionHelper.calculateAdvancePaymentFromMember(transactions);
 
-        GroupMemberResponse response =
-                groupMemberMapper.toGroupMemberResponse(member, isCreator, totalSponsorship);
-
-        /* todo: calculate `totalSponsorship` and `totalAdvanceAmount`, check member is creator
-        group */
-
-        return response;
+        return groupMemberMapper.toGroupMemberResponse(
+                member, isCreator, totalSponsorship, totalAdvanceAmount);
     }
 
     // -------------------------------------------------------------------

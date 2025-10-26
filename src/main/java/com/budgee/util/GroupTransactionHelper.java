@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Objects;
 
 import org.springframework.stereotype.Component;
 
@@ -39,6 +40,16 @@ public class GroupTransactionHelper {
     // -------------------------------------------------------------------
     // PUBLIC FUNCTION
     // -------------------------------------------------------------------
+
+    public BigDecimal calculateAdvancePaymentFromMember(List<GroupTransaction> transactions) {
+        log.info("[calculateAdvancePaymentFromMember]");
+
+        return transactions.stream()
+                .filter(this::isAdvancePaymentFromMember)
+                .map(GroupTransaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
     public BigDecimal calculateTotalSponsorship(List<GroupTransaction> transactions) {
         log.info("[calculateTotalSponsorship]");
 
@@ -70,7 +81,16 @@ public class GroupTransactionHelper {
     // PRIVATE FUNCTION
     // -------------------------------------------------------------------
 
+    private boolean isAdvancePaymentFromMember(GroupTransaction transaction) {
+        log.info("[isAdvancePaymentFromMember]");
+
+        return Objects.equals(
+                GroupExpenseSource.MEMBER_ADVANCE, transaction.getGroupExpenseSource());
+    }
+
     private boolean isSponsorshipTransaction(GroupTransaction tx) {
+        log.info("[isSponsorshipTransaction]");
+
         return (tx.getType() == TransactionType.EXPENSE
                         && tx.getGroupExpenseSource() == GroupExpenseSource.MEMBER_SPONSOR)
                 || tx.getType() == TransactionType.CONTRIBUTE;
