@@ -63,6 +63,12 @@ public enum ErrorCode {
     CREATOR_ID_NOT_AUTHENTICATED_USER(
             2009, HttpStatus.BAD_REQUEST, "CreatorId is not equal authenticated user"),
     DUPLICATE_CREATOR_ASSIGNMENT(2010, HttpStatus.BAD_REQUEST, "Duplicate creator assignment"),
+    SHARING_TOKEN_INVALID(2011, HttpStatus.BAD_REQUEST, "Sharing token invalid"),
+    GROUP_NOT_SHARING(2012, HttpStatus.BAD_REQUEST, "Group is not sharing"),
+    JOIN_REQUEST_IS_PENDING(2012, HttpStatus.BAD_REQUEST, "Join request is pending"),
+    USER_IN_GROUP(2013, HttpStatus.BAD_REQUEST, "User in group"),
+    INVALID_JOIN_STATUS(2014, HttpStatus.BAD_REQUEST, "Invalid join status"),
+    GROUP_ADMIN_CANT_JOIN(2015, HttpStatus.BAD_REQUEST, "Group admin can't join own group"),
     // Transaction-related errors (3000-3999)
     TRANSACTION_NOT_FOUND(3000, HttpStatus.NOT_FOUND, "Transaction not found"),
     INVALID_TRANSACTION_AMOUNT(

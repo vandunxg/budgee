@@ -16,7 +16,7 @@ import com.budgee.repository.WalletRepository;
 
 @Component
 @RequiredArgsConstructor
-@Slf4j(topic = "WALLET_HELPER")
+@Slf4j(topic = "WALLET-HELPER")
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class WalletHelper {
 

@@ -22,17 +22,26 @@ public final class ResponseUtil {
     }
 
     public static <T> ResponseEntity<ApiResponse<T>> success(
-            String message, T data, HttpStatus status) {
+            String message, T payload, HttpStatus status) {
         return ResponseEntity.status(status)
-                .body(ApiResponse.<T>builder().message(message).data(data).path(getPath()).build());
+                .body(
+                        ApiResponse.<T>builder()
+                                .message(message)
+                                .payload(payload)
+                                .path(getPath())
+                                .build());
     }
 
-    public static <T> ResponseEntity<ApiResponse<T>> success(String message, T data) {
-        return success(message, data, HttpStatus.OK);
+    public static <T> ResponseEntity<ApiResponse<T>> success(String message, T payload) {
+        return success(message, payload, HttpStatus.OK);
     }
 
-    public static <T> ResponseEntity<ApiResponse<T>> created(T data) {
-        return success(MessageConstants.CREATE_SUCCESS, data, HttpStatus.CREATED);
+    public static <T> ResponseEntity<ApiResponse<T>> success(T payload) {
+        return success(null, payload, HttpStatus.OK);
+    }
+
+    public static <T> ResponseEntity<ApiResponse<T>> created(T payload) {
+        return success(MessageConstants.CREATE_SUCCESS, payload, HttpStatus.CREATED);
     }
 
     public static ResponseEntity<ApiResponse<Void>> deleted() {

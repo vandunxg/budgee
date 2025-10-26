@@ -16,7 +16,7 @@ import com.budgee.repository.TransactionRepository;
 
 @Component
 @RequiredArgsConstructor
-@Slf4j(topic = "TRANSACTION_HELPER")
+@Slf4j(topic = "TRANSACTION-HELPER")
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class TransactionHelper {
 

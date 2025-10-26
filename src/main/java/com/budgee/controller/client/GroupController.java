@@ -73,4 +73,27 @@ public class GroupController {
                 MessageConstants.FETCH_SUCCESS,
                 groupTransactionService.getGroupTransaction(groupId, transactionId));
     }
+
+    @GetMapping("/list")
+    ResponseEntity<?> getListGroups() {
+        log.info("[GET /groups/list]");
+
+        return ResponseUtil.success(MessageConstants.FETCH_SUCCESS, groupService.getListGroups());
+    }
+
+    @GetMapping("/{id}/sharing")
+    ResponseEntity<?> getGroupSharingToken(@PathVariable UUID id) {
+        log.info("[GET /{}/sharing]", id);
+
+        return ResponseUtil.success(groupService.getGroupSharingToken(id));
+    }
+
+    @GetMapping("/{id}/join")
+    ResponseEntity<?> joinGroupSharing(
+            @RequestParam(name = "sharing-token") String sharingToken, @PathVariable UUID id) {
+        log.info("[GET /groups/{}/join?sharing-token={}]", id, sharingToken);
+
+        return ResponseUtil.success(
+                MessageConstants.JOIN_GROUP_SUCCESS, groupService.joinGroup(id, sharingToken));
+    }
 }

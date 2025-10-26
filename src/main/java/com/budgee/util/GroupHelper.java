@@ -16,7 +16,7 @@ import com.budgee.repository.GroupRepository;
 
 @Component
 @RequiredArgsConstructor
-@Slf4j(topic = "GROUP_HELPER")
+@Slf4j(topic = "GROUP-HELPER")
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class GroupHelper {
 
