@@ -20,6 +20,10 @@ public interface GroupMemberMapper {
     @Mapping(target = "memberId", source = "member.id")
     @Mapping(target = "isCreator", source = "isCreator")
     @Mapping(target = "totalSponsorship", source = "totalSponsorship")
+    @Mapping(target = "totalAdvanceAmount", source = "totalAdvanceAmount")
     GroupMemberResponse toGroupMemberResponse(
-            GroupMember member, Boolean isCreator, BigDecimal totalSponsorship);
+            GroupMember member,
+            Boolean isCreator,
+            BigDecimal totalSponsorship,
+            BigDecimal totalAdvanceAmount);
 }
