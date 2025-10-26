@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.security.core.Authentication;
@@ -57,30 +58,26 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public UUID createUser(RegisterRequest request) {
+    public Map<String, UUID> createUser(RegisterRequest request) {
         log.info("[createUser] create user with email {}", request.email());
 
         //        comparePasswordAndConfirmPassword(request.password(), request.confirmPassword());
 
         final String email = normalizeEmail(request.email());
         checkUserExistsByEmail(email);
+        UserStatus status = UserStatus.ACTIVE;
+        Currency currency = Currency.VND;
+        Role defaultUserRole = Role.USER;
+        SubscriptionTier defaultSubscription = SubscriptionTier.BASIC;
 
-        User user = userMapper.toUser(request);
-        user.setFullName(request.fullName());
-        user.setEmail(email);
-        user.setStatus(UserStatus.ACTIVE);
+        User user =
+                userMapper.toUser(request, status, currency, defaultUserRole, defaultSubscription);
+
         user.setPasswordHash(passwordEncoder.encode(request.password()));
-        user.setCurrency(Currency.VND);
-
-        // Default role always USER
-        user.setRole(Role.USER);
-
-        // Default subscription always FREE
-        user.setSubscriptionTier(SubscriptionTier.BASIC);
-
         userRepository.save(user);
         log.info("createUser success id={}", user.getId());
-        return user.getId();
+
+        return Map.of("userId", user.getId());
     }
 
     @Override
