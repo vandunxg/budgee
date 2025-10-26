@@ -1,6 +1,8 @@
 package com.budgee.util;
 
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.UUID;
@@ -17,6 +19,7 @@ import com.budgee.repository.GroupMemberRepository;
 @Component
 @RequiredArgsConstructor
 @Slf4j(topic = "GROUP-TRANSACTION-VALIDATOR")
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class GroupTransactionValidator {
 
     // -------------------------------------------------------------------

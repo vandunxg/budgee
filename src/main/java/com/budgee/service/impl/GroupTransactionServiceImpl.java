@@ -80,23 +80,6 @@ public class GroupTransactionServiceImpl implements GroupTransactionService {
         return toGroupTransactionResponse(transaction);
     }
 
-    void adjustGroupBalance(GroupTransactionRequest request, Group group) {
-        log.info("[adjustGroupBalance]");
-
-        BigDecimal amount = request.amount();
-
-        switch (request.type()) {
-            case INCOME, CONTRIBUTE -> group.increase(amount);
-            case EXPENSE -> {
-                if (GroupExpenseSource.GROUP_FUND.equals(request.groupExpenseSource())) {
-                    group.decrease(amount);
-                }
-            }
-            default -> log.warn(
-                    "[adjustGroupBalance] Unsupported transaction type: {}", request.type());
-        }
-    }
-
     @Override
     public GroupTransactionResponse getGroupTransaction(UUID groupId, UUID transactionId) {
         log.info("[getGroupTransaction] groupId={} transactionId={}", groupId, transactionId);
@@ -115,6 +98,23 @@ public class GroupTransactionServiceImpl implements GroupTransactionService {
     // -------------------------------------------------------------------
     // PRIVATE FUNCTION
     // -------------------------------------------------------------------
+
+    void adjustGroupBalance(GroupTransactionRequest request, Group group) {
+        log.info("[adjustGroupBalance]");
+
+        BigDecimal amount = request.amount();
+
+        switch (request.type()) {
+            case INCOME, CONTRIBUTE -> group.increase(amount);
+            case EXPENSE -> {
+                if (GroupExpenseSource.GROUP_FUND.equals(request.groupExpenseSource())) {
+                    group.decrease(amount);
+                }
+            }
+            default -> log.warn(
+                    "[adjustGroupBalance] Unsupported transaction type: {}", request.type());
+        }
+    }
 
     GroupTransactionResponse toGroupTransactionResponse(GroupTransaction transaction) {
         log.info("[toGroupTransactionResponse]");
