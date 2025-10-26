@@ -23,7 +23,7 @@ import com.budgee.enums.TransactionType;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString(exclude = {"user", "wallet", "category", "recurring", "group", "debt"})
+@ToString(exclude = {"user", "wallet", "category", "recurring"})
 @EqualsAndHashCode(callSuper = true)
 public class Transaction extends BaseEntity implements OwnerEntity {
 
