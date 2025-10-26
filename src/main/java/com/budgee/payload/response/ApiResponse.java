@@ -21,6 +21,6 @@ public class ApiResponse<T> implements Serializable {
     @Builder.Default LocalDateTime timestamp = LocalDateTime.now();
 
     String message;
-    T data;
+    T payload;
     String path;
 }

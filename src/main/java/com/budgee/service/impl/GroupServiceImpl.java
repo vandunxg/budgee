@@ -8,36 +8,40 @@ import lombok.extern.slf4j.Slf4j;
 import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
+
+import jakarta.transaction.Transactional;
 
 import org.springframework.stereotype.Service;
 
-import com.budgee.exception.AuthenticationException;
-import com.budgee.exception.ErrorCode;
-import com.budgee.exception.NotFoundException;
-import com.budgee.exception.ValidationException;
+import com.budgee.enums.GroupSharingStatus;
+import com.budgee.exception.*;
 import com.budgee.mapper.GroupMapper;
 import com.budgee.model.*;
 import com.budgee.payload.request.group.GroupMemberRequest;
 import com.budgee.payload.request.group.GroupRequest;
 import com.budgee.payload.response.group.GroupResponse;
+import com.budgee.payload.response.group.GroupSharingResponse;
+import com.budgee.payload.response.group.GroupSharingTokenResponse;
 import com.budgee.repository.GroupMemberRepository;
 import com.budgee.repository.GroupRepository;
 import com.budgee.repository.GroupTransactionRepository;
 import com.budgee.service.GroupMemberService;
 import com.budgee.service.GroupService;
+import com.budgee.service.GroupSharingService;
 import com.budgee.service.UserService;
-import com.budgee.util.DateValidator;
-import com.budgee.util.GroupTransactionHelper;
-import com.budgee.util.SecurityHelper;
+import com.budgee.util.*;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j(topic = "GROUP-SERVICE")
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class GroupServiceImpl implements GroupService {
+
+    // -------------------------------------------------------------------
+    // PRIVATE FIELDS
+    // -------------------------------------------------------------------
+    Integer SHARING_TOKEN_LENGTH = 5;
 
     // -------------------------------------------------------------------
     // REPOSITORY
@@ -51,6 +55,7 @@ public class GroupServiceImpl implements GroupService {
     // -------------------------------------------------------------------
     GroupMemberService groupMemberService;
     UserService userService;
+    GroupSharingService groupSharingService;
 
     // -------------------------------------------------------------------
     // MAPPER
@@ -63,6 +68,8 @@ public class GroupServiceImpl implements GroupService {
     DateValidator dateValidator;
     SecurityHelper securityHelper;
     GroupTransactionHelper groupTransactionHelper;
+    CodeGenerator codeGenerator;
+    GroupValidator groupValidator;
 
     // -------------------------------------------------------------------
     // PUBLIC FUNCTION
@@ -73,21 +80,12 @@ public class GroupServiceImpl implements GroupService {
         log.info("[createGroup]={}", request);
 
         User authenticatedUser = userService.getCurrentUser();
-        Group group = groupMapper.toGroup(request);
-
-        List<GroupMember> groupMembers = createGroupMembers(request.groupMembers(), group);
-
-        BigDecimal initialBalance =
-                request.groupMembers().stream()
-                        .map(GroupMemberRequest::advanceAmount)
-                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+        Group group = groupMapper.toGroup(request, authenticatedUser);
 
         dateValidator.checkEndDateBeforeStartDate(request.startDate(), request.endDate());
 
-        group.setCreator(authenticatedUser);
-        group.setBalance(initialBalance);
-        group.setMembers(new HashSet<>(groupMembers));
-        group.setMemberCount(groupMembers.size());
+        setCalculateInitialBalance(request, group);
+        setMembersForGroup(request, group);
 
         log.warn("[createGroup] save group to db");
         groupRepository.save(group);
@@ -110,26 +108,131 @@ public class GroupServiceImpl implements GroupService {
 
         Group group = getGroupById(id);
 
-        assertGroupMemberPermission(group);
+        groupValidator.assertGroupMemberPermission(group);
 
         return toGroupResponse(group);
+    }
+
+    @Override
+    public List<GroupResponse> getListGroups() {
+        log.info("[getListGroups]");
+
+        List<Group> groups = findAllGroupByAuthenticatedUser();
+
+        return toListGroupResponse(groups);
+    }
+
+    @Override
+    public GroupSharingTokenResponse getGroupSharingToken(UUID groupId) {
+        log.info("[getGroupSharingToken] groupId={}", groupId);
+
+        Group group = getGroupById(groupId);
+
+        if (group.getIsSharing()) {
+
+            return mapToGroupSharingTokenResponse(group, group.getSharingToken());
+        }
+
+        String sharingToken = codeGenerator.generateGroupInviteToken(SHARING_TOKEN_LENGTH);
+        setGroupSharing(group, sharingToken);
+
+        return mapToGroupSharingTokenResponse(group, sharingToken);
+    }
+
+    @Transactional
+    @Override
+    public GroupSharingResponse joinGroup(UUID groupId, String sharingToken) {
+        log.info("[joinGroup] groupId={} sharingToken={}", groupId, sharingToken);
+
+        Group group = getGroupById(groupId);
+        User user = securityHelper.getAuthenticatedUser();
+
+        groupValidator.ensureNotAdminJoining(group, user);
+        groupValidator.ensureJoinEligibility(user, group);
+        groupValidator.ensureGroupIsSharing(group);
+        groupValidator.ensureValidToken(group, sharingToken);
+
+        groupSharingService.createGroupSharing(user, group, sharingToken);
+
+        return GroupSharingResponse.builder()
+                .groupId(groupId)
+                .status(GroupSharingStatus.PENDING)
+                .build();
     }
 
     // -------------------------------------------------------------------
     // PRIVATE FUNCTION
     // -------------------------------------------------------------------
 
-    void assertGroupMemberPermission(Group group) {
-        log.info("[assertGroupMemberPermission]");
+    void setMembersForGroup(GroupRequest request, Group group) {
+        log.info("[setMembersForGroup]");
+
+        List<GroupMember> groupMembers = createGroupMembers(request.groupMembers(), group);
+        group.setMembers(new HashSet<>(groupMembers));
+        group.setMemberCount(groupMembers.size());
+    }
+
+    void setCalculateInitialBalance(GroupRequest request, Group group) {
+        log.info("[setCalculateInitialBalance]");
+
+        BigDecimal initialBalance =
+                request.groupMembers().stream()
+                        .map(GroupMemberRequest::advanceAmount)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        group.setBalance(initialBalance);
+    }
+
+    void setGroupSharing(Group group, String sharingToken) {
+        log.info("[setGroupSharing]");
+
+        group.setIsSharing(Boolean.TRUE);
+        group.setSharingToken(sharingToken);
+
+        log.warn("[setGroupSharing] update group to db");
+        groupRepository.save(group);
+    }
+
+    GroupSharingTokenResponse mapToGroupSharingTokenResponse(Group group, String sharingToken) {
+        log.info("[mapToGroupSharingTokenResponse]");
+
+        return GroupSharingTokenResponse.builder()
+                .token(sharingToken)
+                .groupId(group.getId())
+                .build();
+    }
+
+    List<GroupResponse> toListGroupResponse(List<Group> groups) {
+        log.info("[toListGroupResponse]");
+
+        return groups.stream()
+                .map(
+                        group -> {
+                            List<GroupTransaction> transactions =
+                                    groupTransactionRepository.findAllByGroup(group);
+                            BigDecimal totalSponsorship =
+                                    groupTransactionHelper.calculateTotalSponsorship(transactions);
+                            BigDecimal totalIncome =
+                                    groupTransactionHelper.calculateTotalIncome(transactions);
+                            BigDecimal totalExpense =
+                                    groupTransactionHelper.calculateTotalExpense(transactions);
+
+                            BigDecimal totalIncomeAndExpense = totalSponsorship.add(totalIncome);
+
+                            return groupMapper.toGroupResponse(
+                                    group, totalIncomeAndExpense, totalExpense);
+                        })
+                .toList();
+    }
+
+    List<Group> findAllGroupByAuthenticatedUser() {
+        log.info("[findAllGroupByAuthenticatedUser]");
 
         User authenticatedUser = securityHelper.getAuthenticatedUser();
-        GroupMember member = groupMemberRepository.findByGroupAndUser(group, authenticatedUser);
 
-        if (Objects.isNull(member)) {
-            log.error("[assertGroupMemberPermission] member is not in group");
+        List<GroupMember> members = groupMemberRepository.findAllByUser(authenticatedUser);
 
-            throw new AuthenticationException(ErrorCode.GROUP_MEMBER_NOT_FOUND);
-        }
+        return members.stream().map(GroupMember::getGroup).toList();
     }
 
     GroupResponse toGroupResponse(Group group) {
@@ -151,25 +254,8 @@ public class GroupServiceImpl implements GroupService {
     List<GroupMember> createGroupMembers(List<GroupMemberRequest> request, Group group) {
         log.info("[createGroupMember]={}", request);
 
-        checkJustOnlyOneCreator(request);
+        groupValidator.checkJustOnlyOneCreator(request);
 
         return request.stream().map(x -> groupMemberService.createGroupMember(x, group)).toList();
-    }
-
-    void checkJustOnlyOneCreator(List<GroupMemberRequest> requests) {
-        log.info("[checkJustOnlyOneCreator]");
-
-        AtomicInteger count = new AtomicInteger(0);
-
-        requests.forEach(
-                x -> {
-                    if (x.isCreator()) {
-                        count.getAndIncrement();
-                    }
-                });
-
-        if (count.get() > 1) {
-            throw new ValidationException(ErrorCode.DUPLICATE_CREATOR_ASSIGNMENT);
-        }
     }
 }

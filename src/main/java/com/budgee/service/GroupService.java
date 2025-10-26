@@ -1,10 +1,13 @@
 package com.budgee.service;
 
+import java.util.List;
 import java.util.UUID;
 
 import com.budgee.model.Group;
 import com.budgee.payload.request.group.GroupRequest;
 import com.budgee.payload.response.group.GroupResponse;
+import com.budgee.payload.response.group.GroupSharingResponse;
+import com.budgee.payload.response.group.GroupSharingTokenResponse;
 
 public interface GroupService {
 
@@ -13,4 +16,10 @@ public interface GroupService {
     Group getGroupById(UUID groupId);
 
     GroupResponse getGroup(UUID id);
+
+    List<GroupResponse> getListGroups();
+
+    GroupSharingTokenResponse getGroupSharingToken(UUID groupId);
+
+    GroupSharingResponse joinGroup(UUID groupId, String sharingToken);
 }

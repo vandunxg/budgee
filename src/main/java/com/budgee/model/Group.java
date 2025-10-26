@@ -13,6 +13,9 @@ import jakarta.validation.constraints.*;
 
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import com.budgee.exception.ErrorCode;
+import com.budgee.exception.ValidationException;
+
 @Getter
 @Setter
 @Entity
@@ -36,6 +39,7 @@ public class Group extends BaseEntity implements OwnerEntity {
     @JoinColumn(name = "creator_id", nullable = false)
     User creator;
 
+    @Builder.Default
     @NotNull(message = "Balance is required")
     @DecimalMin(value = "0.00", message = "Balance must be non-negative")
     @Column(precision = 15, scale = 2)
@@ -49,11 +53,10 @@ public class Group extends BaseEntity implements OwnerEntity {
 
     LocalDate endDate;
 
-    @Column(unique = true, length = 255)
-    String inviteLink;
+    @Builder.Default Boolean isSharing = Boolean.FALSE;
 
-    @Column(unique = true, length = 50)
-    String inviteId;
+    @Column(unique = true, length = 5)
+    String sharingToken;
 
     @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
     Set<GroupMember> members = new HashSet<>();
@@ -61,5 +64,17 @@ public class Group extends BaseEntity implements OwnerEntity {
     @Override
     public User getOwner() {
         return this.creator;
+    }
+
+    public void increase(BigDecimal amount) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0)
+            throw new ValidationException(ErrorCode.AMOUNT_MUST_BE_POSITIVE);
+        this.balance = this.balance.add(amount);
+    }
+
+    public void decrease(BigDecimal amount) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0)
+            throw new ValidationException(ErrorCode.AMOUNT_MUST_BE_POSITIVE);
+        this.balance = this.balance.subtract(amount);
     }
 }

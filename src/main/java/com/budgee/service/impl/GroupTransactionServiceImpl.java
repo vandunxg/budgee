@@ -5,14 +5,16 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.Objects;
+import java.math.BigDecimal;
 import java.util.UUID;
+
+import jakarta.transaction.Transactional;
 
 import org.springframework.stereotype.Service;
 
+import com.budgee.enums.GroupExpenseSource;
 import com.budgee.exception.ErrorCode;
 import com.budgee.exception.NotFoundException;
-import com.budgee.exception.ValidationException;
 import com.budgee.mapper.GroupTransactionMapper;
 import com.budgee.model.*;
 import com.budgee.payload.request.group.GroupTransactionRequest;
@@ -22,7 +24,7 @@ import com.budgee.repository.GroupMemberRepository;
 import com.budgee.repository.GroupTransactionRepository;
 import com.budgee.service.GroupTransactionService;
 import com.budgee.util.GroupHelper;
-import com.budgee.util.SecurityHelper;
+import com.budgee.util.GroupTransactionValidator;
 
 @Service
 @RequiredArgsConstructor
@@ -49,24 +51,13 @@ public class GroupTransactionServiceImpl implements GroupTransactionService {
     // HELPER
     // -------------------------------------------------------------------
     GroupHelper groupHelper;
-    SecurityHelper securityHelper;
+    GroupTransactionValidator groupTransactionValidator;
 
     // -------------------------------------------------------------------
     // PUBLIC FUNCTION
     // -------------------------------------------------------------------
 
-    //    void checkAuthenticatedUserIsMember(User user, GroupMember member) {
-    //        log.info("[checkAuthenticatedUserIsMember]");
-    //
-    ////        case: authenticated user adds group transaction
-    //        if(Objects.equals(user, member.getUser())) {
-    //            return;
-    //        }
-    //
-    ////        case: authenticated user adds transaction for another member
-    //        checkUserIsGroupCreator();
-    //    }
-
+    @Transactional
     @Override
     public GroupTransactionResponse createGroupTransaction(
             UUID groupID, GroupTransactionRequest request) {
@@ -75,11 +66,13 @@ public class GroupTransactionServiceImpl implements GroupTransactionService {
         Group group = groupHelper.getGroupById(groupID);
         GroupMember member = getGroupMemberById(request.memberId());
 
-        checkAuthenticatedUserInGroup(group);
-        checkMemberInGroup(group, member.getId());
+        groupTransactionValidator.validateAuthenticatedUserIsGroupMember(group);
+        groupTransactionValidator.validateMemberBelongsToGroup(group, member.getId());
 
         GroupTransaction transaction =
                 groupTransactionMapper.toGroupTransaction(request, group, member);
+
+        adjustGroupBalance(request, group);
 
         log.warn("[createGroupTransaction] save transaction to db");
         groupTransactionRepository.save(transaction);
@@ -92,7 +85,7 @@ public class GroupTransactionServiceImpl implements GroupTransactionService {
         log.info("[getGroupTransaction] groupId={} transactionId={}", groupId, transactionId);
 
         Group group = groupHelper.getGroupById(groupId);
-        checkAuthenticatedUserIsMemberOfGroup(group);
+        groupTransactionValidator.validateAuthenticatedUserIsGroupMember(group);
 
         GroupTransaction transaction =
                 groupTransactionRepository
@@ -106,6 +99,23 @@ public class GroupTransactionServiceImpl implements GroupTransactionService {
     // PRIVATE FUNCTION
     // -------------------------------------------------------------------
 
+    void adjustGroupBalance(GroupTransactionRequest request, Group group) {
+        log.info("[adjustGroupBalance]");
+
+        BigDecimal amount = request.amount();
+
+        switch (request.type()) {
+            case INCOME, CONTRIBUTE -> group.increase(amount);
+            case EXPENSE -> {
+                if (GroupExpenseSource.GROUP_FUND.equals(request.groupExpenseSource())) {
+                    group.decrease(amount);
+                }
+            }
+            default -> log.warn(
+                    "[adjustGroupBalance] Unsupported transaction type: {}", request.type());
+        }
+    }
+
     GroupTransactionResponse toGroupTransactionResponse(GroupTransaction transaction) {
         log.info("[toGroupTransactionResponse]");
 
@@ -116,44 +126,6 @@ public class GroupTransactionServiceImpl implements GroupTransactionService {
         response.setCreator(creator);
 
         return response;
-    }
-
-    void checkAuthenticatedUserIsMemberOfGroup(Group group) {
-        log.info("[getMemberByAuthenticatedUser]");
-
-        User authenticatedUser = securityHelper.getAuthenticatedUser();
-        GroupMember member = groupMemberRepository.findByGroupAndUser(group, authenticatedUser);
-
-        if (Objects.isNull(member)) {
-            throw new ValidationException(ErrorCode.USER_NOT_IN_GROUP);
-        }
-    }
-
-    void checkAuthenticatedUserInGroup(Group group) {
-        log.info("[checkAuthenticatedUserInGroup]");
-
-        User authenticatedUser = securityHelper.getAuthenticatedUser();
-
-        Boolean isUserInGroup =
-                groupMemberRepository.existsByGroupAndUser(group, authenticatedUser);
-
-        if (!isUserInGroup) {
-            log.error("[checkAuthenticatedUserInGroup] user is not group creator");
-
-            throw new ValidationException(ErrorCode.USER_NOT_IN_GROUP);
-        }
-    }
-
-    void checkMemberInGroup(Group group, UUID memberId) {
-        log.info("[checkMemberInGroup] group={} member={}", group.getId(), memberId);
-
-        GroupMember member = groupMemberRepository.findByGroupAndId(group, memberId);
-
-        if (Objects.isNull(member)) {
-            log.error("[checkMemberInGroup] member is not in this group");
-
-            throw new NotFoundException(ErrorCode.GROUP_MEMBER_NOT_FOUND);
-        }
     }
 
     GroupMember getGroupMemberById(UUID memberId) {
