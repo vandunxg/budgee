@@ -20,6 +20,7 @@ public class GroupResponse {
 
     UUID groupId;
     String groupName;
+    BigDecimal balance;
     BigDecimal totalSponsorship;
     BigDecimal totalIncome;
     BigDecimal totalExpense;

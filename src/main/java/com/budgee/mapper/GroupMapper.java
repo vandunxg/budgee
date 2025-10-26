@@ -26,6 +26,7 @@ public interface GroupMapper {
     @Mapping(target = "totalIncomeAndSponsorship", source = "totalIncomeAndSponsorship")
     @Mapping(target = "totalExpense", source = "totalExpense")
     @Mapping(target = "members", expression = "java( null )")
+    @Mapping(target = "balance", source = "group.balance")
     GroupResponse toGroupResponse(
             Group group, BigDecimal totalIncomeAndSponsorship, BigDecimal totalExpense);
 }
