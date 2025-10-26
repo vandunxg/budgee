@@ -13,6 +13,9 @@ import jakarta.validation.constraints.*;
 
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import com.budgee.exception.ErrorCode;
+import com.budgee.exception.ValidationException;
+
 @Getter
 @Setter
 @Entity
@@ -61,5 +64,17 @@ public class Group extends BaseEntity implements OwnerEntity {
     @Override
     public User getOwner() {
         return this.creator;
+    }
+
+    public void increase(BigDecimal amount) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0)
+            throw new ValidationException(ErrorCode.AMOUNT_MUST_BE_POSITIVE);
+        this.balance = this.balance.add(amount);
+    }
+
+    public void decrease(BigDecimal amount) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0)
+            throw new ValidationException(ErrorCode.AMOUNT_MUST_BE_POSITIVE);
+        this.balance = this.balance.subtract(amount);
     }
 }

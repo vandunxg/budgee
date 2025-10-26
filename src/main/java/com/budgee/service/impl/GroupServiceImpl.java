@@ -80,21 +80,12 @@ public class GroupServiceImpl implements GroupService {
         log.info("[createGroup]={}", request);
 
         User authenticatedUser = userService.getCurrentUser();
-        Group group = groupMapper.toGroup(request);
-
-        List<GroupMember> groupMembers = createGroupMembers(request.groupMembers(), group);
-
-        BigDecimal initialBalance =
-                request.groupMembers().stream()
-                        .map(GroupMemberRequest::advanceAmount)
-                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+        Group group = groupMapper.toGroup(request, authenticatedUser);
 
         dateValidator.checkEndDateBeforeStartDate(request.startDate(), request.endDate());
 
-        group.setCreator(authenticatedUser);
-        group.setBalance(initialBalance);
-        group.setMembers(new HashSet<>(groupMembers));
-        group.setMemberCount(groupMembers.size());
+        setCalculateInitialBalance(request, group);
+        setMembersForGroup(request, group);
 
         log.warn("[createGroup] save group to db");
         groupRepository.save(group);
@@ -172,6 +163,25 @@ public class GroupServiceImpl implements GroupService {
     // -------------------------------------------------------------------
     // PRIVATE FUNCTION
     // -------------------------------------------------------------------
+
+    void setMembersForGroup(GroupRequest request, Group group) {
+        log.info("[setMembersForGroup]");
+
+        List<GroupMember> groupMembers = createGroupMembers(request.groupMembers(), group);
+        group.setMembers(new HashSet<>(groupMembers));
+        group.setMemberCount(groupMembers.size());
+    }
+
+    void setCalculateInitialBalance(GroupRequest request, Group group) {
+        log.info("[setCalculateInitialBalance]");
+
+        BigDecimal initialBalance =
+                request.groupMembers().stream()
+                        .map(GroupMemberRequest::advanceAmount)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        group.setBalance(initialBalance);
+    }
 
     void setGroupSharing(Group group, String sharingToken) {
         log.info("[setGroupSharing]");
