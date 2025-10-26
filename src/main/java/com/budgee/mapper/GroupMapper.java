@@ -6,13 +6,15 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 import com.budgee.model.Group;
+import com.budgee.model.User;
 import com.budgee.payload.request.group.GroupRequest;
 import com.budgee.payload.response.group.GroupResponse;
 
 @Mapper(componentModel = "spring")
 public interface GroupMapper {
 
-    Group toGroup(GroupRequest request);
+    @Mapping(target = "creator", source = "user")
+    Group toGroup(GroupRequest request, User user);
 
     @Mapping(target = "groupId", source = "group.id")
     @Mapping(target = "groupName", source = "group.name")
