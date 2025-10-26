@@ -8,9 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import jakarta.transaction.Transactional;
 
@@ -119,7 +117,7 @@ public class GroupServiceImpl implements GroupService {
 
         Group group = getGroupById(id);
 
-        assertGroupMemberPermission(group);
+        groupValidator.assertGroupMemberPermission(group);
 
         return toGroupResponse(group);
     }
@@ -227,19 +225,6 @@ public class GroupServiceImpl implements GroupService {
         return members.stream().map(GroupMember::getGroup).toList();
     }
 
-    void assertGroupMemberPermission(Group group) {
-        log.info("[assertGroupMemberPermission]");
-
-        User authenticatedUser = securityHelper.getAuthenticatedUser();
-        GroupMember member = groupMemberRepository.findByGroupAndUser(group, authenticatedUser);
-
-        if (Objects.isNull(member)) {
-            log.error("[assertGroupMemberPermission] member is not in group");
-
-            throw new AuthenticationException(ErrorCode.GROUP_MEMBER_NOT_FOUND);
-        }
-    }
-
     GroupResponse toGroupResponse(Group group) {
         log.info("[toGroupResponse]");
 
@@ -259,25 +244,8 @@ public class GroupServiceImpl implements GroupService {
     List<GroupMember> createGroupMembers(List<GroupMemberRequest> request, Group group) {
         log.info("[createGroupMember]={}", request);
 
-        checkJustOnlyOneCreator(request);
+        groupValidator.checkJustOnlyOneCreator(request);
 
         return request.stream().map(x -> groupMemberService.createGroupMember(x, group)).toList();
-    }
-
-    void checkJustOnlyOneCreator(List<GroupMemberRequest> requests) {
-        log.info("[checkJustOnlyOneCreator]");
-
-        AtomicInteger count = new AtomicInteger(0);
-
-        requests.forEach(
-                x -> {
-                    if (x.isCreator()) {
-                        count.getAndIncrement();
-                    }
-                });
-
-        if (count.get() > 1) {
-            throw new ValidationException(ErrorCode.DUPLICATE_CREATOR_ASSIGNMENT);
-        }
     }
 }
