@@ -170,6 +170,8 @@ public class GroupServiceImpl implements GroupService {
         Group group = getGroupById(groupId);
         User authenticatedUser = securityHelper.getAuthenticatedUser();
 
+        group.ensureCreator(authenticatedUser);
+
         groupValidator.ensureUserIsGroupCreator(group, authenticatedUser);
 
         List<GroupSharing> joinRequests = getJoinRequestsByGroup(group);

@@ -25,6 +25,9 @@ import com.budgee.repository.GoalRepository;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class GoalEventHandler {
 
+    // -------------------------------------------------------------------
+    // REPOSITORY
+    // -------------------------------------------------------------------
     GoalCategoryRepository goalCategoryRepository;
     GoalRepository goalRepository;
 

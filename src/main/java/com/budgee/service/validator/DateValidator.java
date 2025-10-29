@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 import com.budgee.exception.ErrorCode;
 import com.budgee.exception.ValidationException;
 
-@Component("dateValidatorNew")
+@Component
 @Slf4j(topic = "DATE-VALIDATOR")
 public class DateValidator {
 
