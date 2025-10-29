@@ -16,7 +16,7 @@ public interface TransactionMapper {
     @Mapping(target = "user", source = "user")
     @Mapping(target = "wallet", source = "wallet")
     @Mapping(target = "category", source = "category")
-    @Mapping(target = "type", ignore = true)
+    @Mapping(target = "type", source = "request.type")
     Transaction toTransaction(
             TransactionRequest request, Wallet wallet, Category category, User user);
 

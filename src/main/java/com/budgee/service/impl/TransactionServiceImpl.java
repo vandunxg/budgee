@@ -1,8 +1,5 @@
 package com.budgee.service.impl;
 
-import static com.budgee.enums.TransactionType.EXPENSE;
-import static com.budgee.enums.TransactionType.INCOME;
-
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -25,12 +22,11 @@ import com.budgee.model.*;
 import com.budgee.payload.request.TransactionRequest;
 import com.budgee.payload.response.TransactionResponse;
 import com.budgee.repository.TransactionRepository;
-import com.budgee.service.CategoryService;
-import com.budgee.service.TransactionService;
-import com.budgee.service.UserService;
-import com.budgee.service.WalletService;
+import com.budgee.repository.WalletRepository;
+import com.budgee.service.*;
+import com.budgee.service.lookup.CategoryLookup;
+import com.budgee.service.lookup.WalletLookup;
 import com.budgee.util.AuthContext;
-import com.budgee.util.WalletHelper;
 
 @Service
 @RequiredArgsConstructor
@@ -42,13 +38,12 @@ public class TransactionServiceImpl implements TransactionService {
     // REPOSITORY
     // -------------------------------------------------------------------
     TransactionRepository transactionRepository;
+    WalletRepository walletRepository;
 
     // -------------------------------------------------------------------
     // SERVICE
     // -------------------------------------------------------------------
-    WalletService walletService;
-    CategoryService categoryService;
-    UserService userService;
+    WalletDomainService walletDomainService;
 
     // -------------------------------------------------------------------
     // MAPPER
@@ -58,8 +53,13 @@ public class TransactionServiceImpl implements TransactionService {
     // -------------------------------------------------------------------
     // HELPER
     // -------------------------------------------------------------------
-    WalletHelper walletHelper;
     AuthContext authContext;
+
+    // -------------------------------------------------------------------
+    // LOOKUP
+    // -------------------------------------------------------------------
+    WalletLookup walletLookup;
+    CategoryLookup categoryLookup;
 
     // -------------------------------------------------------------------
     // PUBLIC FUNCTION
@@ -70,17 +70,20 @@ public class TransactionServiceImpl implements TransactionService {
     public TransactionResponse createTransaction(TransactionRequest request) {
         log.info("[createTransaction] request={}", request);
 
-        Wallet wallet = walletHelper.getWalletByIdForOwner(request.walletId());
-        Category category = categoryService.getCategoryByIdForOwner(request.categoryId());
-        User user = userService.getCurrentUser();
+        Wallet wallet = walletLookup.getWalletForCurrentUser(request.walletId());
+        Category category = categoryLookup.getCategoryForCurrentUser(request.categoryId());
+        User user = authContext.getAuthenticatedUser();
 
         Transaction transaction = transactionMapper.toTransaction(request, wallet, category, user);
 
-        checkNewTypeOfTransactionWithTypeOfCategory(category.getType(), request.type());
+        ensureTransactionTypeMatchesCategory(category.getType(), request.type());
 
-        setTransactionType(request.type(), transaction);
+        walletDomainService.applyTransaction(wallet, transaction);
 
-        walletService.applyTransaction(wallet, transaction);
+        log.debug(
+                "[createTransaction] update wallet when create transactionId={}",
+                transaction.getId());
+        walletRepository.save(wallet);
 
         log.debug("[createTransaction] saving transaction...");
         transactionRepository.save(transaction);
@@ -94,8 +97,8 @@ public class TransactionServiceImpl implements TransactionService {
         log.info("[updateTransaction] id={} request={}", id, request);
 
         Transaction transaction = getTransactionById(id);
-        Category newCategory = categoryService.getCategoryByIdForOwner(request.categoryId());
-        Wallet newWallet = walletHelper.getWalletByIdForOwner(request.walletId());
+        Category newCategory = categoryLookup.getCategoryForCurrentUser(request.categoryId());
+        Wallet newWallet = walletLookup.getWalletForCurrentUser(request.walletId());
         Wallet oldWallet = transaction.getWallet();
 
         BigDecimal oldAmount = transaction.getAmount();
@@ -104,12 +107,16 @@ public class TransactionServiceImpl implements TransactionService {
         TransactionType newType = request.type();
 
         authContext.checkIsOwner(transaction);
-        checkNewTypeOfTransactionWithTypeOfCategory(newCategory.getType(), newType);
-
-        walletService.updateBalanceForTransactionUpdate(
-                oldWallet, newWallet, oldAmount, newAmount, oldType, newType);
+        ensureTransactionTypeMatchesCategory(newCategory.getType(), newType);
 
         applyTransactionChanges(transaction, request, newCategory, newWallet);
+
+        walletDomainService.updateBalanceForTransactionUpdate(
+                oldWallet, newWallet, oldAmount, newAmount, oldType, newType);
+        log.debug(
+                "[createTransaction] save wallet when update transactionId={}",
+                transaction.getId());
+        walletRepository.saveAll(List.of(oldWallet, newWallet));
 
         log.debug("[updateTransaction] updated successfully");
         transactionRepository.save(transaction);
@@ -121,7 +128,7 @@ public class TransactionServiceImpl implements TransactionService {
     public TransactionResponse getTransaction(UUID id) {
         log.info("[getTransaction] id={}", id);
 
-        Transaction transaction = this.getTransactionById(id);
+        Transaction transaction = getTransactionById(id);
         authContext.checkIsOwner(transaction);
 
         return transactionMapper.toTransactionResponse(transaction);
@@ -139,10 +146,15 @@ public class TransactionServiceImpl implements TransactionService {
     public void deleteTransaction(UUID id) {
         log.info("[deleteTransaction] id={}", id);
 
-        Transaction transaction = this.getTransactionById(id);
+        Transaction transaction = getTransactionById(id);
+        Wallet wallet = transaction.getWallet();
         authContext.checkIsOwner(transaction);
 
-        walletService.reverseTransaction(transaction.getWallet(), transaction);
+        walletDomainService.reverseTransaction(wallet, transaction);
+        log.debug(
+                "[deleteTransaction] update wallet when delete transactionId={}",
+                transaction.getId());
+        walletRepository.save(wallet);
 
         log.warn("[deleteTransaction] deleted transaction id={}", id);
         transactionRepository.delete(transaction);
@@ -172,26 +184,16 @@ public class TransactionServiceImpl implements TransactionService {
         transaction.setNote(request.note());
     }
 
-    void setTransactionType(TransactionType type, Transaction transaction) {
-        log.info("[setTransactionType]");
-
-        switch (type) {
-            case INCOME -> transaction.setType(INCOME);
-            case EXPENSE -> transaction.setType(EXPENSE);
-            default -> throw new ValidationException(ErrorCode.INVALID_TRANSACTION_TYPE);
-        }
-    }
-
-    void checkNewTypeOfTransactionWithTypeOfCategory(
+    void ensureTransactionTypeMatchesCategory(
             TransactionType typeOfCategory, TransactionType typeOfTransaction) {
         log.info(
-                "[checkNewTypeOfTransactionWithTypeOfCategory] typeOfCategory={} typeOfTransaction={}",
+                "[ensureTransactionTypeMatchesCategory] typeOfCategory={} typeOfTransaction={}",
                 typeOfCategory,
                 typeOfTransaction);
 
         if (!typeOfCategory.equals(typeOfTransaction)) {
             log.error(
-                    "[checkNewTypeOfTransactionWithTypeOfCategory] typeOfCategory not equal typeOfTransaction");
+                    "[ensureTransactionTypeMatchesCategory] typeOfCategory not equal typeOfTransaction");
 
             throw new ValidationException(ErrorCode.INVALID_TRANSACTION_TYPE);
         }
