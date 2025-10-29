@@ -4,6 +4,9 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.budgee.model.Category;
@@ -20,4 +23,16 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
     void deleteAllByWalletAndUser(Wallet wallet, User user);
 
     List<Transaction> getAllByCategory(Category category);
+
+    @Modifying
+    @Query(
+            """
+            delete from Transaction tr
+            where
+            tr.category.id = :categoryId
+            and
+            tr.user.id = :userId
+            """)
+    void deleteAllByCategoryIdAndUserId(
+            @Param("categoryId") UUID categoryId, @Param("userId") UUID userId);
 }

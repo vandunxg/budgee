@@ -1,6 +1,5 @@
 package com.budgee.model;
 
-import com.budgee.exception.BusinessException;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -15,6 +14,7 @@ import jakarta.validation.constraints.*;
 
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import com.budgee.exception.BusinessException;
 import com.budgee.exception.ErrorCode;
 import com.budgee.exception.ValidationException;
 

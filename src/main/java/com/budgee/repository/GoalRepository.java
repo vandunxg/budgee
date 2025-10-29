@@ -22,11 +22,11 @@ public interface GoalRepository extends JpaRepository<Goal, UUID> {
                   AND g.id NOT IN (
                       SELECT gc.goal.id
                       FROM GoalCategory gc
-                      WHERE gc.category.id IN :categoryIds
+                      WHERE gc.category.id = :categoryId
                   )
             """)
-    List<Goal> findGoalsNotContainingCategories(
-            @Param("userId") UUID userId, @Param("categoryIds") List<UUID> categoryIds);
+    List<Goal> findGoalsWithoutAnyCategory(
+            @Param("userId") UUID userId, @Param("categoryId") UUID categoryId);
 
     List<Goal> findAllByUser(User user);
 }
