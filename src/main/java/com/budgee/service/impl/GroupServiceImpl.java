@@ -23,13 +23,16 @@ import com.budgee.payload.request.group.GroupRequest;
 import com.budgee.payload.response.group.GroupResponse;
 import com.budgee.payload.response.group.GroupSharingResponse;
 import com.budgee.payload.response.group.GroupSharingTokenResponse;
+import com.budgee.payload.response.group.JoinGroupRequestResponse;
 import com.budgee.repository.GroupMemberRepository;
 import com.budgee.repository.GroupRepository;
+import com.budgee.repository.GroupSharingRepository;
 import com.budgee.repository.GroupTransactionRepository;
 import com.budgee.service.GroupMemberService;
 import com.budgee.service.GroupService;
 import com.budgee.service.GroupSharingService;
 import com.budgee.service.UserService;
+import com.budgee.service.validator.DateValidator;
 import com.budgee.util.*;
 
 @Service
@@ -49,6 +52,7 @@ public class GroupServiceImpl implements GroupService {
     GroupRepository groupRepository;
     GroupMemberRepository groupMemberRepository;
     GroupTransactionRepository groupTransactionRepository;
+    GroupSharingRepository groupSharingRepository;
 
     // -------------------------------------------------------------------
     // SERVICE
@@ -66,7 +70,7 @@ public class GroupServiceImpl implements GroupService {
     // HELPER
     // -------------------------------------------------------------------
     DateValidator dateValidator;
-    SecurityHelper securityHelper;
+    AuthContext authContext;
     GroupTransactionHelper groupTransactionHelper;
     CodeGenerator codeGenerator;
     GroupValidator groupValidator;
@@ -145,12 +149,11 @@ public class GroupServiceImpl implements GroupService {
         log.info("[joinGroup] groupId={} sharingToken={}", groupId, sharingToken);
 
         Group group = getGroupById(groupId);
-        User user = securityHelper.getAuthenticatedUser();
+        User user = authContext.getAuthenticatedUser();
 
-        groupValidator.ensureNotAdminJoining(group, user);
-        groupValidator.ensureJoinEligibility(user, group);
-        groupValidator.ensureGroupIsSharing(group);
-        groupValidator.ensureValidToken(group, sharingToken);
+        group.ensureNotCreator(user);
+        group.ensureSharingEnabled();
+        group.validateToken(sharingToken);
 
         groupSharingService.createGroupSharing(user, group, sharingToken);
 
@@ -160,9 +163,43 @@ public class GroupServiceImpl implements GroupService {
                 .build();
     }
 
+    @Override
+    public List<JoinGroupRequestResponse> getJoinList(UUID groupId) {
+        log.info("[getJoinList]");
+
+        Group group = getGroupById(groupId);
+        User authenticatedUser = authContext.getAuthenticatedUser();
+
+        group.ensureCreator(authenticatedUser);
+
+        groupValidator.ensureUserIsGroupCreator(group, authenticatedUser);
+
+        List<GroupSharing> joinRequests = getJoinRequestsByGroup(group);
+
+        return joinRequests.stream().map(this::mapToJoinGroupRequestResponse).toList();
+    }
+
     // -------------------------------------------------------------------
     // PRIVATE FUNCTION
     // -------------------------------------------------------------------
+
+    JoinGroupRequestResponse mapToJoinGroupRequestResponse(GroupSharing groupSharing) {
+        log.info("[mapToJoinGroupRequestResponse]");
+
+        User user = groupSharing.getSharedUser();
+
+        return JoinGroupRequestResponse.builder()
+                .fullName(user.getFullName())
+                .userId(user.getId())
+                .joinedAt(groupSharing.getJoinedAt())
+                .build();
+    }
+
+    List<GroupSharing> getJoinRequestsByGroup(Group group) {
+        log.info("[getJoinRequestsByGroup]");
+
+        return groupSharingRepository.findAllByGroup(group);
+    }
 
     void setMembersForGroup(GroupRequest request, Group group) {
         log.info("[setMembersForGroup]");
@@ -228,7 +265,7 @@ public class GroupServiceImpl implements GroupService {
     List<Group> findAllGroupByAuthenticatedUser() {
         log.info("[findAllGroupByAuthenticatedUser]");
 
-        User authenticatedUser = securityHelper.getAuthenticatedUser();
+        User authenticatedUser = authContext.getAuthenticatedUser();
 
         List<GroupMember> members = groupMemberRepository.findAllByUser(authenticatedUser);
 

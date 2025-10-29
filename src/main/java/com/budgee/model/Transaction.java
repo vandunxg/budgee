@@ -74,4 +74,9 @@ public class Transaction extends BaseEntity implements OwnerEntity {
     public User getOwner() {
         return this.user;
     }
+
+    public static Transaction of(BigDecimal amount, TransactionType type) {
+
+        return Transaction.builder().amount(amount).type(type).build();
+    }
 }

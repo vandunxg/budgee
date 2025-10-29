@@ -96,4 +96,11 @@ public class GroupController {
         return ResponseUtil.success(
                 MessageConstants.JOIN_GROUP_SUCCESS, groupService.joinGroup(id, sharingToken));
     }
+
+    @GetMapping("/{id}/join-list")
+    ResponseEntity<?> joinList(@PathVariable UUID id) {
+        log.info("[GET /groups/{}/join-list]", id);
+
+        return ResponseUtil.success(MessageConstants.FETCH_SUCCESS, groupService.getJoinList(id));
+    }
 }

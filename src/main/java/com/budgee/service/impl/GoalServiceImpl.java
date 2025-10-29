@@ -20,13 +20,12 @@ import com.budgee.model.*;
 import com.budgee.payload.request.GoalRequest;
 import com.budgee.payload.response.GoalResponse;
 import com.budgee.repository.GoalRepository;
-import com.budgee.service.CategoryService;
 import com.budgee.service.GoalService;
-import com.budgee.service.UserService;
-import com.budgee.util.CommonHelper;
-import com.budgee.util.DateValidator;
-import com.budgee.util.SecurityHelper;
-import com.budgee.util.WalletHelper;
+import com.budgee.service.lookup.CategoryLookup;
+import com.budgee.service.lookup.WalletLookup;
+import com.budgee.service.validator.DateValidator;
+import com.budgee.service.validator.GoalValidator;
+import com.budgee.util.AuthContext;
 
 @Service
 @RequiredArgsConstructor
@@ -42,8 +41,8 @@ public class GoalServiceImpl implements GoalService {
     // -------------------------------------------------------------------
     // SERVICE
     // -------------------------------------------------------------------
-    UserService userService;
-    CategoryService categoryService;
+    CategoryLookup categoryLookup;
+    WalletLookup walletLookup;
 
     // -------------------------------------------------------------------
     // MAPPER
@@ -53,10 +52,13 @@ public class GoalServiceImpl implements GoalService {
     // -------------------------------------------------------------------
     // HELPER
     // -------------------------------------------------------------------
+    AuthContext authContext;
+
+    // -------------------------------------------------------------------
+    // VALIDATOR
+    // -------------------------------------------------------------------
     DateValidator dateValidator;
-    SecurityHelper securityHelper;
-    WalletHelper walletHelper;
-    CommonHelper commonHelper;
+    GoalValidator goalValidator;
 
     // -------------------------------------------------------------------
     // PUBLIC METHODS
@@ -67,8 +69,8 @@ public class GoalServiceImpl implements GoalService {
     public GoalResponse createGoal(GoalRequest request) {
         log.info("[createGoal] request={}", request);
 
-        User user = userService.getCurrentUser();
-        validateDates(request);
+        User user = authContext.getAuthenticatedUser();
+        dateValidator.checkEndDateBeforeStartDate(request.startDate(), request.endDate());
 
         Goal goal = goalMapper.toGoal(request, user);
 
@@ -86,7 +88,7 @@ public class GoalServiceImpl implements GoalService {
         log.info("[getGoal] id={}", id);
 
         Goal goal = getGoalById(id);
-        securityHelper.checkIsOwner(goal);
+        authContext.checkIsOwner(goal);
 
         return goalMapper.toGoalResponse(goal);
     }
@@ -96,10 +98,10 @@ public class GoalServiceImpl implements GoalService {
     public GoalResponse updateGoal(UUID id, GoalRequest request) {
         log.info("[updateGoal] id={} request={}", id, request);
 
-        User user = userService.getCurrentUser();
-        Goal goal = getGoalOfCurrentUserById(id);
+        User user = authContext.getAuthenticatedUser();
+        Goal goal = getGoalForCurrentUser(id);
 
-        validateDates(request);
+        dateValidator.checkEndDateBeforeStartDate(request.startDate(), request.endDate());
 
         applyGoalUpdate(goal, request, user);
 
@@ -111,7 +113,8 @@ public class GoalServiceImpl implements GoalService {
     public void deleteGoal(UUID id) {
         log.info("[deleteGoal] id={}", id);
 
-        Goal goal = getGoalOfCurrentUserById(id);
+        Goal goal = getGoalForCurrentUser(id);
+
         goal.getGoalWallets().clear();
         goal.getGoalCategories().clear();
 
@@ -123,20 +126,15 @@ public class GoalServiceImpl implements GoalService {
     public List<GoalResponse> getListGoals() {
         log.info("[getListGoals]");
 
-        User user = userService.getCurrentUser();
+        User user = authContext.getAuthenticatedUser();
         List<Goal> goals = goalRepository.findAllByUser(user);
+
         return goals.stream().map(goalMapper::toGoalResponse).toList();
     }
 
     // -------------------------------------------------------------------
     // PRIVATE METHODS
     // -------------------------------------------------------------------
-
-    void validateDates(GoalRequest request) {
-        log.info("[validateDates]");
-
-        dateValidator.checkEndDateBeforeStartDate(request.startDate(), request.endDate());
-    }
 
     List<GoalWallet> buildGoalWallets(List<UUID> walletIds, Goal goal, User user) {
         log.info("[buildGoalWallets]");
@@ -148,7 +146,7 @@ public class GoalServiceImpl implements GoalService {
         }
 
         return walletIds.stream()
-                .map(walletHelper::getWalletByIdForOwner)
+                .map(walletLookup::getWalletForCurrentUser)
                 .map(wallet -> GoalWallet.builder().goal(goal).wallet(wallet).user(user).build())
                 .toList();
     }
@@ -157,11 +155,13 @@ public class GoalServiceImpl implements GoalService {
         log.info("[buildGoalCategories]");
 
         if (categoryIds == null || categoryIds.isEmpty()) {
+            log.error("[buildGoalCategories] categoryIds is null");
+
             throw new ValidationException(ErrorCode.CATEGORY_IS_REQUIRED);
         }
 
         return categoryIds.stream()
-                .map(categoryService::getCategoryByIdForOwner)
+                .map(categoryLookup::getCategoryForCurrentUser)
                 .map(
                         category ->
                                 GoalCategory.builder()
@@ -189,11 +189,11 @@ public class GoalServiceImpl implements GoalService {
     void applyGoalUpdate(Goal goal, GoalRequest request, User user) {
         log.info("[applyGoalUpdate]");
 
-        commonHelper.updateIfChanged(goal::getName, goal::setName, request.name());
-        commonHelper.updateIfChanged(
+        goalValidator.updateIfChanged(goal::getName, goal::setName, request.name());
+        goalValidator.updateIfChanged(
                 goal::getTargetAmount, goal::setTargetAmount, request.targetAmount());
-        commonHelper.updateIfChanged(goal::getStartDate, goal::setStartDate, request.startDate());
-        commonHelper.updateIfChanged(goal::getEndDate, goal::setEndDate, request.endDate());
+        goalValidator.updateIfChanged(goal::getStartDate, goal::setStartDate, request.startDate());
+        goalValidator.updateIfChanged(goal::getEndDate, goal::setEndDate, request.endDate());
 
         updateGoalWallets(goal, request, user);
         updateGoalCategories(goal, request, user);
@@ -207,12 +207,12 @@ public class GoalServiceImpl implements GoalService {
                 .orElseThrow(() -> new NotFoundException(ErrorCode.GOAL_NOT_FOUND));
     }
 
-    Goal getGoalOfCurrentUserById(UUID id) {
-        log.info("[getGoalOfCurrentUserById]={}", id);
+    Goal getGoalForCurrentUser(UUID id) {
+        log.info("[getGoalForCurrentUser]={}", id);
 
         Goal goal = getGoalById(id);
 
-        securityHelper.checkIsOwner(goal);
+        authContext.checkIsOwner(goal);
 
         return goal;
     }

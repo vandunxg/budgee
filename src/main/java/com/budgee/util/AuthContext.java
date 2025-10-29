@@ -1,17 +1,24 @@
 package com.budgee.util;
 
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
-import java.time.LocalDate;
-
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
+import com.budgee.exception.AuthenticationException;
 import com.budgee.exception.ErrorCode;
-import com.budgee.exception.ValidationException;
+import com.budgee.model.OwnerEntity;
+import com.budgee.model.User;
 
 @Component
-@Slf4j(topic = "DATE-VALIDATOR")
-public class DateValidator {
+@Slf4j(topic = "SECURITY-HELPER")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+public class AuthContext {
 
     // -------------------------------------------------------------------
     // REPOSITORY
@@ -33,12 +40,23 @@ public class DateValidator {
     // PUBLIC FUNCTION
     // -------------------------------------------------------------------
 
-    public void checkEndDateBeforeStartDate(LocalDate startDate, LocalDate endDate) {
-        log.info("[checkEndDateBeforeStartDate] startDate={} endDate={}", startDate, endDate);
+    public <T extends OwnerEntity> void checkIsOwner(T entity) {
+        log.info("[checkIsOwner]");
 
-        if (!startDate.isBefore(endDate)) {
-            throw new ValidationException(ErrorCode.START_DATE_NOT_BEFORE_AFTER_DATE);
+        User authenticatedUser = this.getAuthenticatedUser();
+
+        entity.checkIsOwner(authenticatedUser);
+    }
+
+    public User getAuthenticatedUser() {
+        log.info("[getAuthenticatedUser]");
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !(authentication.getPrincipal() instanceof User user)) {
+            throw new AuthenticationException(ErrorCode.FORBIDDEN);
         }
+
+        return user;
     }
 
     // -------------------------------------------------------------------

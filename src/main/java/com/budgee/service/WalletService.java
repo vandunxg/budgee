@@ -1,11 +1,8 @@
 package com.budgee.service;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
-import com.budgee.enums.TransactionType;
-import com.budgee.model.Transaction;
 import com.budgee.model.Wallet;
 import com.budgee.payload.request.WalletRequest;
 import com.budgee.payload.response.WalletResponse;
@@ -23,16 +20,4 @@ public interface WalletService {
     void deleteWallet(UUID id);
 
     Wallet getWalletById(UUID id);
-
-    void applyTransaction(Wallet wallet, Transaction transaction);
-
-    void reverseTransaction(Wallet wallet, Transaction transaction);
-
-    void updateBalanceForTransactionUpdate(
-            Wallet oldWallet,
-            Wallet newWallet,
-            BigDecimal oldAmount,
-            BigDecimal newAmount,
-            TransactionType oldType,
-            TransactionType newType);
 }

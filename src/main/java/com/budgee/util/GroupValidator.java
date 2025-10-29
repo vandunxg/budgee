@@ -47,7 +47,7 @@ public class GroupValidator {
     // -------------------------------------------------------------------
     // HELPER
     // -------------------------------------------------------------------
-    SecurityHelper securityHelper;
+    AuthContext authContext;
 
     // -------------------------------------------------------------------
     // PUBLIC FUNCTION
@@ -73,7 +73,7 @@ public class GroupValidator {
     public void assertGroupMemberPermission(Group group) {
         log.info("[assertGroupMemberPermission]");
 
-        User authenticatedUser = securityHelper.getAuthenticatedUser();
+        User authenticatedUser = authContext.getAuthenticatedUser();
         GroupMember member = groupMemberRepository.findByGroupAndUser(group, authenticatedUser);
 
         if (Objects.isNull(member)) {
@@ -84,26 +84,44 @@ public class GroupValidator {
     }
 
     public void ensureNotAdminJoining(Group group, User user) {
+        log.info("[ensureNotAdminJoining]");
+
         if (Objects.equals(group.getCreator().getId(), user.getId())) {
             throw new BusinessException(ErrorCode.GROUP_ADMIN_CANT_JOIN);
         }
     }
 
     public void ensureJoinEligibility(User user, Group group) {
+        log.info("[ensureJoinEligibility]");
+
         GroupSharing gs = groupSharingService.getGroupSharingByUserAndGroup(user, group);
         if (gs == null) return;
         validateStatus(gs.getStatus());
     }
 
     public void ensureGroupIsSharing(Group group) {
+        log.info("[ensureGroupIsSharing]");
+
         if (!Boolean.TRUE.equals(group.getIsSharing())) {
             throw new BusinessException(ErrorCode.GROUP_NOT_SHARING);
         }
     }
 
     public void ensureValidToken(Group group, String token) {
+        log.info("[ensureValidToken]");
+
         if (!Objects.equals(group.getSharingToken(), token)) {
             throw new ValidationException(ErrorCode.SHARING_TOKEN_INVALID);
+        }
+    }
+
+    public void ensureUserIsGroupCreator(Group group, User user) {
+        log.info("[ensureUserIsGroupCreator]");
+
+        User groupCreator = group.getCreator();
+
+        if (!Objects.equals(groupCreator.getId(), user.getId())) {
+            throw new ValidationException(ErrorCode.NOT_GROUP_ADMIN);
         }
     }
 
@@ -112,6 +130,8 @@ public class GroupValidator {
     // -------------------------------------------------------------------
 
     private void validateStatus(GroupSharingStatus status) {
+        log.info("[validateStatus]");
+
         switch (status) {
             case PENDING -> throw new BusinessException(ErrorCode.JOIN_REQUEST_IS_PENDING);
             case ACCEPTED -> throw new BusinessException(ErrorCode.USER_IN_GROUP);

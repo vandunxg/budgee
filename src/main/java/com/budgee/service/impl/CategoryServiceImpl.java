@@ -13,6 +13,7 @@ import java.util.regex.Pattern;
 
 import jakarta.transaction.Transactional;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import com.budgee.enums.Role;
+import com.budgee.event.application.CategoryDeletedEvent;
 import com.budgee.exception.ErrorCode;
 import com.budgee.exception.NotFoundException;
 import com.budgee.mapper.CategoryMapper;
@@ -30,13 +32,9 @@ import com.budgee.payload.request.CategoryUpdateRequest;
 import com.budgee.payload.response.CategoryResponse;
 import com.budgee.payload.response.PagedResponse;
 import com.budgee.repository.CategoryRepository;
-import com.budgee.repository.GoalCategoryRepository;
-import com.budgee.repository.GoalRepository;
-import com.budgee.repository.TransactionRepository;
 import com.budgee.service.CategoryService;
-import com.budgee.service.UserService;
-import com.budgee.util.CommonHelper;
-import com.budgee.util.SecurityHelper;
+import com.budgee.service.validator.CategoryValidator;
+import com.budgee.util.AuthContext;
 
 @Service
 @RequiredArgsConstructor
@@ -48,14 +46,11 @@ public class CategoryServiceImpl implements CategoryService {
     // REPOSITORY
     // -------------------------------------------------------------------
     CategoryRepository categoryRepository;
-    TransactionRepository transactionRepository;
-    GoalCategoryRepository goalCategoryRepository;
-    GoalRepository goalRepository;
 
     // -------------------------------------------------------------------
-    // SERVICE
+    // SERVICES
     // -------------------------------------------------------------------
-    UserService userService;
+    ApplicationEventPublisher eventPublisher;
 
     // -------------------------------------------------------------------
     // MAPPER
@@ -65,8 +60,12 @@ public class CategoryServiceImpl implements CategoryService {
     // -------------------------------------------------------------------
     // HELPER
     // -------------------------------------------------------------------
-    SecurityHelper securityHelper;
-    CommonHelper commonHelper;
+    AuthContext authContext;
+
+    // -------------------------------------------------------------------
+    // VALIDATOR
+    // -------------------------------------------------------------------
+    CategoryValidator categoryValidator;
 
     // -------------------------------------------------------------------
     // PUBLIC FUNCTION
@@ -85,7 +84,7 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryResponse createCategory(CategoryRequest request) {
         log.info("[createCategory] {}", request.toString());
 
-        User authenticatedUser = userService.getCurrentUser();
+        User authenticatedUser = authContext.getAuthenticatedUser();
 
         Category newCategory = categoryMapper.toCategory(request, authenticatedUser);
 
@@ -119,13 +118,16 @@ public class CategoryServiceImpl implements CategoryService {
     public void deleteCategory(UUID id) {
         log.info("[deleteCategory]={}", id);
 
+        User authenticatedUser = authContext.getAuthenticatedUser();
+
         Category category = getCategoryByIdForOwner(id);
 
-        deleteAssociatedTransactionsByCategory(category);
+        UUID categoryId = category.getId();
+        UUID ownerId = authenticatedUser.getId();
 
-        removeCategoryFromGoal(category);
+        eventPublisher.publishEvent(new CategoryDeletedEvent(categoryId, ownerId));
 
-        log.warn("[deleteCategory] delete category from db");
+        log.warn("[deleteCategory] delete category {} from db", category.getId());
         categoryRepository.delete(category);
     }
 
@@ -137,7 +139,7 @@ public class CategoryServiceImpl implements CategoryService {
                 pageSize,
                 sortBy);
 
-        User authenticatedUser = userService.getCurrentUser();
+        User authenticatedUser = authContext.getAuthenticatedUser();
 
         String SORT_BY = "(\\w+?)(:)(.*)";
 
@@ -177,7 +179,8 @@ public class CategoryServiceImpl implements CategoryService {
         log.info("[getCategoryByIdForOwner]={}", id);
 
         Category category = getCategoryById(id);
-        securityHelper.checkIsOwner(category);
+
+        authContext.checkIsOwner(category);
 
         return category;
     }
@@ -189,42 +192,10 @@ public class CategoryServiceImpl implements CategoryService {
     void applyCategoryUpdate(Category category, CategoryUpdateRequest request) {
         log.info("[applyCategoryUpdate]");
 
-        commonHelper.updateIfChanged(category::getName, category::setName, request.name());
-        commonHelper.updateIfChanged(category::getType, category::setType, request.type());
-        commonHelper.updateIfChanged(category::getIcon, category::setIcon, request.icon());
-        commonHelper.updateIfChanged(category::getColor, category::setColor, request.color());
-    }
-
-    @Transactional
-    void removeCategoryFromGoal(Category category) {
-        log.info("[removeCategoryFromGoal]={}", category.getId());
-
-        goalCategoryRepository.deleteAllByCategory(category);
-
-        User authenticatedUser = userService.getCurrentUser();
-
-        List<GoalCategory> allGoalCategoriesOfUser =
-                goalCategoryRepository.findAllByUser(authenticatedUser);
-
-        List<UUID> categoriesIds =
-                allGoalCategoriesOfUser.stream().map(x -> x.getCategory().getId()).toList();
-
-        List<Goal> allGoalsOfAuthenticatedUserNotContainCategories =
-                goalRepository.findGoalsNotContainingCategories(
-                        authenticatedUser.getId(), categoriesIds);
-
-        goalRepository.deleteAll(allGoalsOfAuthenticatedUserNotContainCategories);
-    }
-
-    @Transactional
-    void deleteAssociatedTransactionsByCategory(Category category) {
-        log.info(
-                "[deleteAssociatedTransactionsByCategory] Deleting transactions for category={}",
-                category.getId());
-
-        User userAuthenticated = userService.getCurrentUser();
-
-        transactionRepository.deleteAllByCategoryAndUser(category, userAuthenticated);
+        categoryValidator.updateIfChanged(category::getName, category::setName, request.name());
+        categoryValidator.updateIfChanged(category::getType, category::setType, request.type());
+        categoryValidator.updateIfChanged(category::getIcon, category::setIcon, request.icon());
+        categoryValidator.updateIfChanged(category::getColor, category::setColor, request.color());
     }
 
     Category getCategoryById(UUID id) {
