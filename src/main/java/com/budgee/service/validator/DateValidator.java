@@ -1,4 +1,4 @@
-package com.budgee.util;
+package com.budgee.service.validator;
 
 import lombok.extern.slf4j.Slf4j;
 

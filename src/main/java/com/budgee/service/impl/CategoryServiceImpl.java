@@ -1,5 +1,6 @@
 package com.budgee.service.impl;
 
+import com.budgee.service.validator.CategoryValidator;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -53,11 +54,6 @@ public class CategoryServiceImpl implements CategoryService {
     GoalRepository goalRepository;
 
     // -------------------------------------------------------------------
-    // SERVICE
-    // -------------------------------------------------------------------
-    UserService userService;
-
-    // -------------------------------------------------------------------
     // MAPPER
     // -------------------------------------------------------------------
     CategoryMapper categoryMapper;
@@ -66,7 +62,11 @@ public class CategoryServiceImpl implements CategoryService {
     // HELPER
     // -------------------------------------------------------------------
     SecurityHelper securityHelper;
-    CommonHelper commonHelper;
+
+    // -------------------------------------------------------------------
+    // VALIDATOR
+    // -------------------------------------------------------------------
+    CategoryValidator categoryValidator;
 
     // -------------------------------------------------------------------
     // PUBLIC FUNCTION
@@ -85,7 +85,7 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryResponse createCategory(CategoryRequest request) {
         log.info("[createCategory] {}", request.toString());
 
-        User authenticatedUser = userService.getCurrentUser();
+        User authenticatedUser = securityHelper.getAuthenticatedUser();
 
         Category newCategory = categoryMapper.toCategory(request, authenticatedUser);
 
@@ -137,7 +137,7 @@ public class CategoryServiceImpl implements CategoryService {
                 pageSize,
                 sortBy);
 
-        User authenticatedUser = userService.getCurrentUser();
+        User authenticatedUser = securityHelper.getAuthenticatedUser();
 
         String SORT_BY = "(\\w+?)(:)(.*)";
 
@@ -189,10 +189,10 @@ public class CategoryServiceImpl implements CategoryService {
     void applyCategoryUpdate(Category category, CategoryUpdateRequest request) {
         log.info("[applyCategoryUpdate]");
 
-        commonHelper.updateIfChanged(category::getName, category::setName, request.name());
-        commonHelper.updateIfChanged(category::getType, category::setType, request.type());
-        commonHelper.updateIfChanged(category::getIcon, category::setIcon, request.icon());
-        commonHelper.updateIfChanged(category::getColor, category::setColor, request.color());
+        categoryValidator.updateIfChanged(category::getName, category::setName, request.name());
+        categoryValidator.updateIfChanged(category::getType, category::setType, request.type());
+        categoryValidator.updateIfChanged(category::getIcon, category::setIcon, request.icon());
+        categoryValidator.updateIfChanged(category::getColor, category::setColor, request.color());
     }
 
     @Transactional
@@ -201,7 +201,7 @@ public class CategoryServiceImpl implements CategoryService {
 
         goalCategoryRepository.deleteAllByCategory(category);
 
-        User authenticatedUser = userService.getCurrentUser();
+        User authenticatedUser = securityHelper.getAuthenticatedUser();
 
         List<GoalCategory> allGoalCategoriesOfUser =
                 goalCategoryRepository.findAllByUser(authenticatedUser);
@@ -222,7 +222,7 @@ public class CategoryServiceImpl implements CategoryService {
                 "[deleteAssociatedTransactionsByCategory] Deleting transactions for category={}",
                 category.getId());
 
-        User userAuthenticated = userService.getCurrentUser();
+        User userAuthenticated = securityHelper.getAuthenticatedUser();
 
         transactionRepository.deleteAllByCategoryAndUser(category, userAuthenticated);
     }

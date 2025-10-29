@@ -24,7 +24,7 @@ import com.budgee.service.CategoryService;
 import com.budgee.service.GoalService;
 import com.budgee.service.UserService;
 import com.budgee.util.CommonHelper;
-import com.budgee.util.DateValidator;
+import com.budgee.service.validator.DateValidator;
 import com.budgee.util.SecurityHelper;
 import com.budgee.util.WalletHelper;
 

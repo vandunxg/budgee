@@ -23,8 +23,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.budgee.payload.request.LoginRequest;
 import com.budgee.payload.request.RegisterRequest;
 import com.budgee.payload.response.ErrorResponse;
+import com.budgee.payload.response.swagger.RegisterApiResponse;
 import com.budgee.payload.response.swagger.TokenApiResponse;
-import com.budgee.payload.response.swagger.UserIdApiResponse;
 import com.budgee.service.AuthService;
 import com.budgee.service.UserService;
 import com.budgee.util.ResponseUtil;
@@ -57,7 +57,9 @@ public class AuthController {
                         content =
                                 @Content(
                                         schema =
-                                                @Schema(implementation = UserIdApiResponse.class))),
+                                                @Schema(
+                                                        implementation =
+                                                                RegisterApiResponse.class))),
                 @ApiResponse(
                         responseCode = "400",
                         description = "Validation failed",

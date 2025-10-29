@@ -1,5 +1,6 @@
 package com.budgee.repository;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,4 +15,6 @@ public interface GroupSharingRepository extends JpaRepository<GroupSharing, UUID
     boolean existsByGroupAndSharedUser(Group group, User sharedUser);
 
     GroupSharing findByGroupAndSharedUser(Group group, User sharedUser);
+
+    List<GroupSharing> findAllByGroup(Group group);
 }
