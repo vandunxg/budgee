@@ -1,5 +1,8 @@
 package com.budgee.service.impl;
 
+import com.budgee.payload.response.group.JoinGroupRequestResponse;
+import com.budgee.repository.GroupSharingRepository;
+import com.budgee.service.validator.DateValidator;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -49,6 +52,7 @@ public class GroupServiceImpl implements GroupService {
     GroupRepository groupRepository;
     GroupMemberRepository groupMemberRepository;
     GroupTransactionRepository groupTransactionRepository;
+    GroupSharingRepository groupSharingRepository;
 
     // -------------------------------------------------------------------
     // SERVICE
@@ -147,10 +151,9 @@ public class GroupServiceImpl implements GroupService {
         Group group = getGroupById(groupId);
         User user = securityHelper.getAuthenticatedUser();
 
-        groupValidator.ensureNotAdminJoining(group, user);
-        groupValidator.ensureJoinEligibility(user, group);
-        groupValidator.ensureGroupIsSharing(group);
-        groupValidator.ensureValidToken(group, sharingToken);
+        group.ensureNotCreator(user);
+        group.ensureSharingEnabled();
+        group.validateToken(sharingToken);
 
         groupSharingService.createGroupSharing(user, group, sharingToken);
 
@@ -160,9 +163,41 @@ public class GroupServiceImpl implements GroupService {
                 .build();
     }
 
+    @Override
+    public List<JoinGroupRequestResponse> getJoinList(UUID groupId) {
+        log.info("[getJoinList]");
+
+        Group group = getGroupById(groupId);
+        User authenticatedUser = securityHelper.getAuthenticatedUser();
+
+        groupValidator.ensureUserIsGroupCreator(group, authenticatedUser);
+
+        List<GroupSharing> joinRequests = getJoinRequestsByGroup(group);
+
+        return joinRequests.stream().map(this::mapToJoinGroupRequestResponse).toList();
+    }
+
     // -------------------------------------------------------------------
     // PRIVATE FUNCTION
     // -------------------------------------------------------------------
+
+    JoinGroupRequestResponse mapToJoinGroupRequestResponse(GroupSharing groupSharing) {
+        log.info("[mapToJoinGroupRequestResponse]");
+
+        User user = groupSharing.getSharedUser();
+
+        return JoinGroupRequestResponse.builder()
+                .fullName(user.getFullName())
+                .userId(user.getId())
+                .joinedAt(groupSharing.getJoinedAt())
+                .build();
+    }
+
+    List<GroupSharing> getJoinRequestsByGroup(Group group) {
+        log.info("[getJoinRequestsByGroup]");
+
+        return groupSharingRepository.findAllByGroup(group);
+    }
 
     void setMembersForGroup(GroupRequest request, Group group) {
         log.info("[setMembersForGroup]");

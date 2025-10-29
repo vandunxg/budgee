@@ -1,11 +1,13 @@
 package com.budgee.model;
 
+import com.budgee.exception.BusinessException;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 import jakarta.persistence.*;
@@ -76,5 +78,25 @@ public class Group extends BaseEntity implements OwnerEntity {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0)
             throw new ValidationException(ErrorCode.AMOUNT_MUST_BE_POSITIVE);
         this.balance = this.balance.subtract(amount);
+    }
+
+    public void ensureSharingEnabled() {
+        if (!Boolean.TRUE.equals(isSharing))
+            throw new BusinessException(ErrorCode.GROUP_NOT_SHARING);
+    }
+
+    public void validateToken(String token) {
+        if (!Objects.equals(this.sharingToken, token))
+            throw new ValidationException(ErrorCode.SHARING_TOKEN_INVALID);
+    }
+
+    public void ensureCreator(User user) {
+        if (!Objects.equals(this.creator.getId(), user.getId()))
+            throw new ValidationException(ErrorCode.NOT_GROUP_ADMIN);
+    }
+
+    public void ensureNotCreator(User user) {
+        if (Objects.equals(this.creator.getId(), user.getId()))
+            throw new BusinessException(ErrorCode.GROUP_ADMIN_CANT_JOIN);
     }
 }

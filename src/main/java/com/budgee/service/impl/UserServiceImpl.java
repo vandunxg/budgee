@@ -5,9 +5,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.Map;
-import java.util.UUID;
-
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,6 +21,7 @@ import com.budgee.exception.ValidationException;
 import com.budgee.mapper.UserMapper;
 import com.budgee.model.User;
 import com.budgee.payload.request.RegisterRequest;
+import com.budgee.payload.response.RegisterResponse;
 import com.budgee.repository.UserRepository;
 import com.budgee.service.UserService;
 
@@ -58,7 +56,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public Map<String, UUID> createUser(RegisterRequest request) {
+    public RegisterResponse createUser(RegisterRequest request) {
         log.info("[createUser] create user with email {}", request.email());
 
         //        comparePasswordAndConfirmPassword(request.password(), request.confirmPassword());
@@ -74,10 +72,11 @@ public class UserServiceImpl implements UserService {
                 userMapper.toUser(request, status, currency, defaultUserRole, defaultSubscription);
 
         user.setPasswordHash(passwordEncoder.encode(request.password()));
+
         userRepository.save(user);
         log.info("createUser success id={}", user.getId());
 
-        return Map.of("userId", user.getId());
+        return RegisterResponse.builder().userId(user.getId()).build();
     }
 
     @Override
