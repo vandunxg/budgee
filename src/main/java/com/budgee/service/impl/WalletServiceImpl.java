@@ -15,17 +15,14 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import com.budgee.enums.Currency;
-import com.budgee.enums.TransactionType;
 import com.budgee.event.application.WalletDeletedEvent;
 import com.budgee.exception.ErrorCode;
 import com.budgee.exception.NotFoundException;
 import com.budgee.mapper.WalletMapper;
-import com.budgee.model.Transaction;
 import com.budgee.model.User;
 import com.budgee.model.Wallet;
 import com.budgee.payload.request.WalletRequest;
 import com.budgee.payload.response.WalletResponse;
-import com.budgee.repository.TransactionRepository;
 import com.budgee.repository.WalletRepository;
 import com.budgee.service.WalletService;
 import com.budgee.service.validator.WalletValidator;
@@ -135,105 +132,6 @@ public class WalletServiceImpl implements WalletService {
 
         walletRepository.delete(wallet);
         log.warn("[deleteWallet] deleted walletId={}", wallet.getId());
-    }
-
-    @Override
-    @Transactional
-    public void applyTransaction(Wallet wallet, Transaction transaction) {
-        BigDecimal amount = transaction.getAmount();
-        log.info(
-                "[applyTransaction] wallet={} type={} amount={}",
-                wallet.getId(),
-                transaction.getType(),
-                amount);
-
-        switch (transaction.getType()) {
-            case EXPENSE -> wallet.decrease(amount);
-            case INCOME -> wallet.increase(amount);
-            default -> throw new IllegalArgumentException(
-                    "Unsupported type: " + transaction.getType());
-        }
-
-        log.debug("[applyTransaction] newBalance={}", wallet.getBalance());
-        walletRepository.save(wallet);
-    }
-
-    @Override
-    @Transactional
-    public void reverseTransaction(Wallet wallet, Transaction transaction) {
-        BigDecimal amount = transaction.getAmount();
-        log.info(
-                "[reverseTransaction] wallet={} type={} amount={}",
-                wallet.getId(),
-                transaction.getType(),
-                amount);
-
-        switch (transaction.getType()) {
-            case EXPENSE -> wallet.increase(amount);
-            case INCOME -> wallet.decrease(amount);
-            default -> throw new IllegalArgumentException(
-                    "Unsupported type: " + transaction.getType());
-        }
-
-        walletRepository.save(wallet);
-        log.debug("[reverseTransaction] newBalance={}", wallet.getBalance());
-    }
-
-    @Override
-    @Transactional
-    public void updateBalanceForTransactionUpdate(
-            Wallet oldWallet,
-            Wallet newWallet,
-            BigDecimal oldAmount,
-            BigDecimal newAmount,
-            TransactionType oldType,
-            TransactionType newType) {
-
-        log.info(
-                """
-                        [updateBalanceForTransactionUpdate]
-                        oldWallet={} newWallet={}
-                        oldAmount={} newAmount={}
-                        oldType={} newType={}
-                        """,
-                oldWallet.getId(),
-                newWallet.getId(),
-                oldAmount,
-                newAmount,
-                oldType,
-                newType);
-
-        boolean sameWallet = oldWallet.getId().equals(newWallet.getId());
-
-        if (sameWallet) {
-            if (oldType.equals(newType)) {
-                BigDecimal diff =
-                        switch (oldType) {
-                            case EXPENSE -> oldAmount.subtract(newAmount);
-                            case INCOME -> newAmount.subtract(oldAmount);
-                            default -> throw new NotFoundException(
-                                    ErrorCode.INVALID_TRANSACTION_TYPE);
-                        };
-                adjustWalletBalance(oldWallet, diff);
-            } else {
-
-                reverseTransaction(
-                        oldWallet, Transaction.builder().amount(oldAmount).type(oldType).build());
-
-                applyTransaction(
-                        oldWallet, Transaction.builder().amount(newAmount).type(newType).build());
-            }
-            walletRepository.save(oldWallet);
-        } else {
-
-            reverseTransaction(
-                    oldWallet, Transaction.builder().amount(oldAmount).type(oldType).build());
-
-            applyTransaction(
-                    newWallet, Transaction.builder().amount(newAmount).type(newType).build());
-
-            walletRepository.saveAll(List.of(oldWallet, newWallet));
-        }
     }
 
     @Override
