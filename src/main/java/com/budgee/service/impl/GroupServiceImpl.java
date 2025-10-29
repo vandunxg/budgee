@@ -70,7 +70,7 @@ public class GroupServiceImpl implements GroupService {
     // HELPER
     // -------------------------------------------------------------------
     DateValidator dateValidator;
-    SecurityHelper securityHelper;
+    AuthContext authContext;
     GroupTransactionHelper groupTransactionHelper;
     CodeGenerator codeGenerator;
     GroupValidator groupValidator;
@@ -149,7 +149,7 @@ public class GroupServiceImpl implements GroupService {
         log.info("[joinGroup] groupId={} sharingToken={}", groupId, sharingToken);
 
         Group group = getGroupById(groupId);
-        User user = securityHelper.getAuthenticatedUser();
+        User user = authContext.getAuthenticatedUser();
 
         group.ensureNotCreator(user);
         group.ensureSharingEnabled();
@@ -168,7 +168,7 @@ public class GroupServiceImpl implements GroupService {
         log.info("[getJoinList]");
 
         Group group = getGroupById(groupId);
-        User authenticatedUser = securityHelper.getAuthenticatedUser();
+        User authenticatedUser = authContext.getAuthenticatedUser();
 
         group.ensureCreator(authenticatedUser);
 
@@ -265,7 +265,7 @@ public class GroupServiceImpl implements GroupService {
     List<Group> findAllGroupByAuthenticatedUser() {
         log.info("[findAllGroupByAuthenticatedUser]");
 
-        User authenticatedUser = securityHelper.getAuthenticatedUser();
+        User authenticatedUser = authContext.getAuthenticatedUser();
 
         List<GroupMember> members = groupMemberRepository.findAllByUser(authenticatedUser);
 

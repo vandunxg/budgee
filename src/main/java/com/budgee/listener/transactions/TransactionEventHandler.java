@@ -14,6 +14,7 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import com.budgee.event.application.CategoryDeletedEvent;
+import com.budgee.event.application.WalletDeletedEvent;
 import com.budgee.repository.TransactionRepository;
 
 @Component
@@ -40,5 +41,20 @@ public class TransactionEventHandler {
                 categoryId,
                 ownerId);
         transactionRepository.deleteAllByCategoryIdAndUserId(categoryId, ownerId);
+    }
+
+    @Transactional
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
+    public void onWalletDeleted(WalletDeletedEvent event) {
+        UUID walletId = event.walletId();
+        UUID ownerId = event.ownerId();
+
+        log.info("[onWalletDeleted] walletId={} owner={}", walletId, ownerId);
+
+        log.warn(
+                "[onWalletDeleted] delete all transaction by walletId={} ownerId={}",
+                walletId,
+                ownerId);
+        transactionRepository.deleteAllByWalletIdAndUserId(walletId, ownerId);
     }
 }

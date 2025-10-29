@@ -13,7 +13,7 @@ import com.budgee.exception.ErrorCode;
 import com.budgee.exception.NotFoundException;
 import com.budgee.model.Wallet;
 import com.budgee.repository.WalletRepository;
-import com.budgee.util.SecurityHelper;
+import com.budgee.util.AuthContext;
 
 @Component
 @Slf4j(topic = "WALLET-LOOKUP")
@@ -29,7 +29,7 @@ public class WalletLookup {
     // -------------------------------------------------------------------
     // UTILITIES
     // -------------------------------------------------------------------
-    SecurityHelper securityHelper;
+    AuthContext authContext;
 
     public Wallet getWalletById(UUID id) {
         log.info("[getWalletById]={}", id);
@@ -43,7 +43,7 @@ public class WalletLookup {
         log.info("[getWalletForCurrentUser] categoryId={}", walletId);
 
         Wallet wallet = this.getWalletById(walletId);
-        securityHelper.checkIsOwner(wallet);
+        authContext.checkIsOwner(wallet);
 
         return wallet;
     }

@@ -35,4 +35,16 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
             """)
     void deleteAllByCategoryIdAndUserId(
             @Param("categoryId") UUID categoryId, @Param("userId") UUID userId);
+
+    @Modifying
+    @Query(
+            """
+            delete from Transaction tr
+            where
+            tr.wallet.id = :walletId
+            and
+            tr.user.id = :userId
+            """)
+    void deleteAllByWalletIdAndUserId(
+            @Param("walletId") UUID walletId, @Param("userId") UUID userId);
 }

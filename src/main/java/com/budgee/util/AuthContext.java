@@ -18,7 +18,7 @@ import com.budgee.model.User;
 @Slf4j(topic = "SECURITY-HELPER")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class SecurityHelper {
+public class AuthContext {
 
     // -------------------------------------------------------------------
     // REPOSITORY

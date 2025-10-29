@@ -34,7 +34,7 @@ import com.budgee.payload.response.PagedResponse;
 import com.budgee.repository.CategoryRepository;
 import com.budgee.service.CategoryService;
 import com.budgee.service.validator.CategoryValidator;
-import com.budgee.util.SecurityHelper;
+import com.budgee.util.AuthContext;
 
 @Service
 @RequiredArgsConstructor
@@ -60,7 +60,7 @@ public class CategoryServiceImpl implements CategoryService {
     // -------------------------------------------------------------------
     // HELPER
     // -------------------------------------------------------------------
-    SecurityHelper securityHelper;
+    AuthContext authContext;
 
     // -------------------------------------------------------------------
     // VALIDATOR
@@ -84,7 +84,7 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryResponse createCategory(CategoryRequest request) {
         log.info("[createCategory] {}", request.toString());
 
-        User authenticatedUser = securityHelper.getAuthenticatedUser();
+        User authenticatedUser = authContext.getAuthenticatedUser();
 
         Category newCategory = categoryMapper.toCategory(request, authenticatedUser);
 
@@ -118,7 +118,7 @@ public class CategoryServiceImpl implements CategoryService {
     public void deleteCategory(UUID id) {
         log.info("[deleteCategory]={}", id);
 
-        User authenticatedUser = securityHelper.getAuthenticatedUser();
+        User authenticatedUser = authContext.getAuthenticatedUser();
 
         Category category = getCategoryByIdForOwner(id);
 
@@ -139,7 +139,7 @@ public class CategoryServiceImpl implements CategoryService {
                 pageSize,
                 sortBy);
 
-        User authenticatedUser = securityHelper.getAuthenticatedUser();
+        User authenticatedUser = authContext.getAuthenticatedUser();
 
         String SORT_BY = "(\\w+?)(:)(.*)";
 
@@ -180,7 +180,7 @@ public class CategoryServiceImpl implements CategoryService {
 
         Category category = getCategoryById(id);
 
-        securityHelper.checkIsOwner(category);
+        authContext.checkIsOwner(category);
 
         return category;
     }

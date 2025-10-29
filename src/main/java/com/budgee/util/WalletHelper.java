@@ -36,7 +36,7 @@ public class WalletHelper {
     // -------------------------------------------------------------------
     // HELPER
     // -------------------------------------------------------------------
-    SecurityHelper securityHelper;
+    AuthContext authContext;
 
     // -------------------------------------------------------------------
     // PUBLIC FUNCTION
@@ -50,7 +50,7 @@ public class WalletHelper {
                         .findById(id)
                         .orElseThrow(() -> new NotFoundException(ErrorCode.WALLET_NOT_FOUND));
 
-        securityHelper.checkIsOwner(wallet);
+        authContext.checkIsOwner(wallet);
 
         return wallet;
     }
