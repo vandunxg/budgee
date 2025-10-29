@@ -29,7 +29,7 @@ import com.budgee.service.CategoryService;
 import com.budgee.service.TransactionService;
 import com.budgee.service.UserService;
 import com.budgee.service.WalletService;
-import com.budgee.util.SecurityHelper;
+import com.budgee.util.AuthContext;
 import com.budgee.util.WalletHelper;
 
 @Service
@@ -59,7 +59,7 @@ public class TransactionServiceImpl implements TransactionService {
     // HELPER
     // -------------------------------------------------------------------
     WalletHelper walletHelper;
-    SecurityHelper securityHelper;
+    AuthContext authContext;
 
     // -------------------------------------------------------------------
     // PUBLIC FUNCTION
@@ -103,7 +103,7 @@ public class TransactionServiceImpl implements TransactionService {
         TransactionType oldType = transaction.getType();
         TransactionType newType = request.type();
 
-        securityHelper.checkIsOwner(transaction);
+        authContext.checkIsOwner(transaction);
         checkNewTypeOfTransactionWithTypeOfCategory(newCategory.getType(), newType);
 
         walletService.updateBalanceForTransactionUpdate(
@@ -122,7 +122,7 @@ public class TransactionServiceImpl implements TransactionService {
         log.info("[getTransaction] id={}", id);
 
         Transaction transaction = this.getTransactionById(id);
-        securityHelper.checkIsOwner(transaction);
+        authContext.checkIsOwner(transaction);
 
         return transactionMapper.toTransactionResponse(transaction);
     }
@@ -140,7 +140,7 @@ public class TransactionServiceImpl implements TransactionService {
         log.info("[deleteTransaction] id={}", id);
 
         Transaction transaction = this.getTransactionById(id);
-        securityHelper.checkIsOwner(transaction);
+        authContext.checkIsOwner(transaction);
 
         walletService.reverseTransaction(transaction.getWallet(), transaction);
 

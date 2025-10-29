@@ -13,7 +13,7 @@ import com.budgee.exception.ErrorCode;
 import com.budgee.exception.NotFoundException;
 import com.budgee.model.Category;
 import com.budgee.repository.CategoryRepository;
-import com.budgee.util.SecurityHelper;
+import com.budgee.util.AuthContext;
 
 @Component
 @Slf4j(topic = "CATEGORY-LOOKUP")
@@ -29,7 +29,7 @@ public class CategoryLookup {
     // -------------------------------------------------------------------
     // UTILITIES
     // -------------------------------------------------------------------
-    SecurityHelper securityHelper;
+    AuthContext authContext;
 
     public Category getCategoryById(UUID id) {
         log.info("[getCategoryById]={}", id);
@@ -43,7 +43,7 @@ public class CategoryLookup {
         log.info("[getCategoryForCurrentUser] categoryId={}", categoryId);
 
         Category category = this.getCategoryById(categoryId);
-        securityHelper.checkIsOwner(category);
+        authContext.checkIsOwner(category);
 
         return category;
     }

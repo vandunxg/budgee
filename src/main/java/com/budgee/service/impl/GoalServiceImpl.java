@@ -25,7 +25,7 @@ import com.budgee.service.lookup.CategoryLookup;
 import com.budgee.service.lookup.WalletLookup;
 import com.budgee.service.validator.DateValidator;
 import com.budgee.service.validator.GoalValidator;
-import com.budgee.util.SecurityHelper;
+import com.budgee.util.AuthContext;
 
 @Service
 @RequiredArgsConstructor
@@ -52,7 +52,7 @@ public class GoalServiceImpl implements GoalService {
     // -------------------------------------------------------------------
     // HELPER
     // -------------------------------------------------------------------
-    SecurityHelper securityHelper;
+    AuthContext authContext;
 
     // -------------------------------------------------------------------
     // VALIDATOR
@@ -69,7 +69,7 @@ public class GoalServiceImpl implements GoalService {
     public GoalResponse createGoal(GoalRequest request) {
         log.info("[createGoal] request={}", request);
 
-        User user = securityHelper.getAuthenticatedUser();
+        User user = authContext.getAuthenticatedUser();
         dateValidator.checkEndDateBeforeStartDate(request.startDate(), request.endDate());
 
         Goal goal = goalMapper.toGoal(request, user);
@@ -88,7 +88,7 @@ public class GoalServiceImpl implements GoalService {
         log.info("[getGoal] id={}", id);
 
         Goal goal = getGoalById(id);
-        securityHelper.checkIsOwner(goal);
+        authContext.checkIsOwner(goal);
 
         return goalMapper.toGoalResponse(goal);
     }
@@ -98,7 +98,7 @@ public class GoalServiceImpl implements GoalService {
     public GoalResponse updateGoal(UUID id, GoalRequest request) {
         log.info("[updateGoal] id={} request={}", id, request);
 
-        User user = securityHelper.getAuthenticatedUser();
+        User user = authContext.getAuthenticatedUser();
         Goal goal = getGoalForCurrentUser(id);
 
         dateValidator.checkEndDateBeforeStartDate(request.startDate(), request.endDate());
@@ -126,7 +126,7 @@ public class GoalServiceImpl implements GoalService {
     public List<GoalResponse> getListGoals() {
         log.info("[getListGoals]");
 
-        User user = securityHelper.getAuthenticatedUser();
+        User user = authContext.getAuthenticatedUser();
         List<Goal> goals = goalRepository.findAllByUser(user);
 
         return goals.stream().map(goalMapper::toGoalResponse).toList();
@@ -212,7 +212,7 @@ public class GoalServiceImpl implements GoalService {
 
         Goal goal = getGoalById(id);
 
-        securityHelper.checkIsOwner(goal);
+        authContext.checkIsOwner(goal);
 
         return goal;
     }

@@ -47,7 +47,7 @@ public class GroupValidator {
     // -------------------------------------------------------------------
     // HELPER
     // -------------------------------------------------------------------
-    SecurityHelper securityHelper;
+    AuthContext authContext;
 
     // -------------------------------------------------------------------
     // PUBLIC FUNCTION
@@ -73,7 +73,7 @@ public class GroupValidator {
     public void assertGroupMemberPermission(Group group) {
         log.info("[assertGroupMemberPermission]");
 
-        User authenticatedUser = securityHelper.getAuthenticatedUser();
+        User authenticatedUser = authContext.getAuthenticatedUser();
         GroupMember member = groupMemberRepository.findByGroupAndUser(group, authenticatedUser);
 
         if (Objects.isNull(member)) {

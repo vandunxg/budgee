@@ -26,7 +26,7 @@ public class GroupTransactionValidator {
     // REPOSITORY
     // -------------------------------------------------------------------
     GroupMemberRepository groupMemberRepository;
-    SecurityHelper securityHelper;
+    AuthContext authContext;
 
     // -------------------------------------------------------------------
     // SERVICE
@@ -47,7 +47,7 @@ public class GroupTransactionValidator {
     public void validateAuthenticatedUserIsGroupMember(Group group) {
         log.info("[validateAuthenticatedUserIsGroupMember]");
 
-        User user = securityHelper.getAuthenticatedUser();
+        User user = authContext.getAuthenticatedUser();
         if (!groupMemberRepository.existsByGroupAndUser(group, user)) {
             throw new ValidationException(ErrorCode.USER_NOT_IN_GROUP);
         }

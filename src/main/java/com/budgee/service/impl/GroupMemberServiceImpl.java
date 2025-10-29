@@ -21,8 +21,8 @@ import com.budgee.payload.request.group.GroupMemberRequest;
 import com.budgee.payload.response.group.GroupMemberResponse;
 import com.budgee.repository.GroupTransactionRepository;
 import com.budgee.service.GroupMemberService;
+import com.budgee.util.AuthContext;
 import com.budgee.util.GroupTransactionHelper;
-import com.budgee.util.SecurityHelper;
 
 @Service
 @RequiredArgsConstructor
@@ -47,7 +47,7 @@ public class GroupMemberServiceImpl implements GroupMemberService {
     // -------------------------------------------------------------------
     // HELPER
     // -------------------------------------------------------------------
-    SecurityHelper securityHelper;
+    AuthContext authContext;
     GroupTransactionHelper groupTransactionHelper;
 
     // -------------------------------------------------------------------
@@ -58,7 +58,7 @@ public class GroupMemberServiceImpl implements GroupMemberService {
     public GroupMember createGroupMember(GroupMemberRequest request, Group group) {
         log.info("[createGroupMember]={}", request);
 
-        User authenticatedUser = securityHelper.getAuthenticatedUser();
+        User authenticatedUser = authContext.getAuthenticatedUser();
         Boolean isCreator = request.isCreator();
 
         final GroupRole ROLE_FOR_MEMBER = isCreator ? GroupRole.ADMIN : GroupRole.MEMBER;
