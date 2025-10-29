@@ -53,9 +53,11 @@ public class Wallet extends BaseEntity implements OwnerEntity {
     @Size(max = 500, message = "Description must be at most 500 characters")
     String description;
 
-    Boolean isDefault;
+    @Builder.Default
+    Boolean isDefault = Boolean.FALSE;
 
-    Boolean isTotalIgnored;
+    @Builder.Default
+    Boolean isTotalIgnored = Boolean.FALSE;
 
     @Override
     public User getOwner() {
