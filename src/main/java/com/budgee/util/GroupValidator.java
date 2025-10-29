@@ -1,6 +1,5 @@
 package com.budgee.util;
 
-import com.budgee.payload.request.group.GroupRequest;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -121,7 +120,7 @@ public class GroupValidator {
 
         User groupCreator = group.getCreator();
 
-        if(!Objects.equals(groupCreator.getId(), user.getId())) {
+        if (!Objects.equals(groupCreator.getId(), user.getId())) {
             throw new ValidationException(ErrorCode.NOT_GROUP_ADMIN);
         }
     }

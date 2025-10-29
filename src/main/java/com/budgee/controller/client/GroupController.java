@@ -101,9 +101,6 @@ public class GroupController {
     ResponseEntity<?> joinList(@PathVariable UUID id) {
         log.info("[GET /groups/{}/join-list]", id);
 
-        return ResponseUtil.success(
-                MessageConstants.FETCH_SUCCESS,
-                groupService.getJoinList(id)
-        );
+        return ResponseUtil.success(MessageConstants.FETCH_SUCCESS, groupService.getJoinList(id));
     }
 }
