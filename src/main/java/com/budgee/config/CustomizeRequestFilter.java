@@ -92,11 +92,10 @@ public class CustomizeRequestFilter extends OncePerRequestFilter {
             securityContext.setAuthentication(authToken);
             SecurityContextHolder.setContext(securityContext);
 
-            filterChain.doFilter(request, response);
         } else {
             log.warn("Request not contain token");
-
-            filterChain.doFilter(request, response);
         }
+
+        filterChain.doFilter(request, response);
     }
 }
