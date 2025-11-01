@@ -13,7 +13,7 @@ import java.util.function.Supplier;
 public abstract class Validator {
 
     public <T> void updateIfChanged(Supplier<T> getter, Consumer<T> setter, T newValue) {
-        log.info("[updateIfChanged]");
+        log.debug("[updateIfChanged]");
 
         T oldValue = getter.get();
 

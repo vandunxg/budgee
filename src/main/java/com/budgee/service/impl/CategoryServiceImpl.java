@@ -73,7 +73,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public CategoryResponse getCategory(UUID id) {
-        log.info("[getCategory]={}", id);
+        log.debug("[getCategory]={}", id);
 
         Category category = getCategoryByIdForOwner(id);
 
@@ -82,7 +82,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public CategoryResponse createCategory(CategoryRequest request) {
-        log.info("[createCategory] {}", request.toString());
+        log.debug("[createCategory] {}", request.toString());
 
         User authenticatedUser = authContext.getAuthenticatedUser();
 
@@ -101,7 +101,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public CategoryResponse updateCategory(CategoryUpdateRequest request, UUID id) {
-        log.info("[updateCategory]={}", request.toString());
+        log.debug("[updateCategory]={}", request.toString());
 
         Category category = getCategoryByIdForOwner(id);
 
@@ -116,7 +116,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Transactional
     public void deleteCategory(UUID id) {
-        log.info("[deleteCategory]={}", id);
+        log.debug("[deleteCategory]={}", id);
 
         User authenticatedUser = authContext.getAuthenticatedUser();
 
@@ -133,7 +133,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public PagedResponse<?> getAllCategoriesWithSortBy(int pageNo, int pageSize, String sortBy) {
-        log.info(
+        log.debug(
                 "[getAllCategoriesWithSortBy] page={} pageSize={} sortBy={}",
                 pageNo,
                 pageSize,
@@ -176,7 +176,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public Category getCategoryByIdForOwner(UUID id) {
-        log.info("[getCategoryByIdForOwner]={}", id);
+        log.debug("[getCategoryByIdForOwner]={}", id);
 
         Category category = getCategoryById(id);
 
@@ -190,7 +190,7 @@ public class CategoryServiceImpl implements CategoryService {
     // -------------------------------------------------------------------
 
     void applyCategoryUpdate(Category category, CategoryUpdateRequest request) {
-        log.info("[applyCategoryUpdate]");
+        log.debug("[applyCategoryUpdate]");
 
         categoryValidator.updateIfChanged(category::getName, category::setName, request.name());
         categoryValidator.updateIfChanged(category::getType, category::setType, request.type());
@@ -199,7 +199,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     Category getCategoryById(UUID id) {
-        log.info("[getCategoryById]={}", id);
+        log.debug("[getCategoryById]={}", id);
 
         return categoryRepository
                 .findById(id)

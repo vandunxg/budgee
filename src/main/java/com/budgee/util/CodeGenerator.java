@@ -16,16 +16,20 @@ public class CodeGenerator {
     String CHARSET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     SecureRandom RANDOM = new SecureRandom();
 
-    public String generateShortCode(int length) {
+    public String generateGroupInviteToken(int codeLength) {
+        log.debug("[generateGroupInviteToken] codeLength={}", codeLength);
+
+        return generateShortCode(codeLength);
+    }
+
+    String generateShortCode(int length) {
+        log.debug("[generateShortCode] length={}", length);
 
         StringBuilder code = new StringBuilder(length);
         for (int i = 0; i < length; i++) {
             code.append(CHARSET.charAt(RANDOM.nextInt(CHARSET.length())));
         }
-        return code.toString();
-    }
 
-    public String generateGroupInviteToken(int codeLength) {
-        return generateShortCode(codeLength);
+        return code.toString();
     }
 }

@@ -6,6 +6,7 @@ import lombok.experimental.FieldDefaults;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Objects;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
@@ -65,4 +66,33 @@ public class GroupTransaction extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     GroupExpenseSource groupExpenseSource;
+
+    public boolean isExpenseType() {
+        return TransactionType.EXPENSE.equals(this.type);
+    }
+
+    public boolean isIncomeType() {
+        return TransactionType.EXPENSE.equals(this.type);
+    }
+
+    public boolean isContributeType() {
+        return TransactionType.EXPENSE.equals(this.type);
+    }
+
+    public boolean isMemberAdvanceSource() {
+        return GroupExpenseSource.MEMBER_ADVANCE.equals(this.groupExpenseSource);
+    }
+
+    public boolean isMemberSponsorSource() {
+        return GroupExpenseSource.MEMBER_SPONSOR.equals(this.groupExpenseSource);
+    }
+
+    public boolean isGroupFundSource() {
+        return GroupExpenseSource.GROUP_FUND.equals(this.groupExpenseSource);
+    }
+
+    public boolean isTransactionOwner(GroupMember member) {
+
+        return Objects.equals(member.getId(), this.member.getId());
+    }
 }
