@@ -27,7 +27,6 @@ public class GroupController {
     // -------------------------------------------------------------------
     // SERVICES
     // -------------------------------------------------------------------
-
     GroupService groupService;
     GroupTransactionService groupTransactionService;
 
