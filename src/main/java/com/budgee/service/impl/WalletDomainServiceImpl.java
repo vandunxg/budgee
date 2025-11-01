@@ -24,7 +24,7 @@ public class WalletDomainServiceImpl implements WalletDomainService {
 
     @Override
     public void applyTransaction(Wallet wallet, Transaction transaction) {
-        log.info(
+        log.debug(
                 "[applyTransaction] walletId={} transactionId={}",
                 wallet.getId(),
                 transaction.getId());
@@ -39,7 +39,7 @@ public class WalletDomainServiceImpl implements WalletDomainService {
 
     @Override
     public void reverseTransaction(Wallet wallet, Transaction transaction) {
-        log.info(
+        log.debug(
                 "[reverseTransaction] walletId={} transactionId={}",
                 wallet.getId(),
                 transaction.getId());

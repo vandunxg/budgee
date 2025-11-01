@@ -1,25 +1,33 @@
-package com.budgee.util;
+package com.budgee.service.validator;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.Objects;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
+import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 
+import com.budgee.exception.ErrorCode;
+import com.budgee.exception.NotFoundException;
+import com.budgee.exception.ValidationException;
+import com.budgee.model.Group;
+import com.budgee.model.User;
+import com.budgee.repository.GroupMemberRepository;
+import com.budgee.util.AuthContext;
+
 @Component
-@Slf4j(topic = "COMMON-HELPER")
 @RequiredArgsConstructor
+@Slf4j(topic = "GROUP-TRANSACTION-VALIDATOR")
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class CommonHelper {
+public class GroupTransactionValidator {
 
     // -------------------------------------------------------------------
     // REPOSITORY
     // -------------------------------------------------------------------
+    GroupMemberRepository groupMemberRepository;
+    AuthContext authContext;
 
     // -------------------------------------------------------------------
     // SERVICE
@@ -37,15 +45,20 @@ public class CommonHelper {
     // PUBLIC FUNCTION
     // -------------------------------------------------------------------
 
-    public <T> void updateIfChanged(Supplier<T> getter, Consumer<T> setter, T newValue) {
-        log.info("[updateIfChanged]");
+    public void validateAuthenticatedUserIsGroupMember(Group group) {
+        log.debug("[validateAuthenticatedUserIsGroupMember]");
 
-        T oldValue = getter.get();
+        User user = authContext.getAuthenticatedUser();
+        if (!groupMemberRepository.existsByGroupAndUser(group, user)) {
+            throw new ValidationException(ErrorCode.USER_NOT_IN_GROUP);
+        }
+    }
 
-        if (!Objects.equals(oldValue, newValue)) {
-            log.trace("[updateIfChanged] Updated field from {} to {}", oldValue, newValue);
+    public void validateMemberBelongsToGroup(Group group, UUID memberId) {
+        log.debug("validateMemberBelongsToGroup");
 
-            setter.accept(newValue);
+        if (groupMemberRepository.findByGroupAndId(group, memberId) == null) {
+            throw new NotFoundException(ErrorCode.GROUP_MEMBER_NOT_FOUND);
         }
     }
 

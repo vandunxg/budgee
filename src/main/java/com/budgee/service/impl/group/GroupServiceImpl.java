@@ -1,38 +1,36 @@
-package com.budgee.service.impl;
+package com.budgee.service.impl.group;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
-import java.math.BigDecimal;
-import java.util.HashSet;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 import jakarta.transaction.Transactional;
 
 import org.springframework.stereotype.Service;
 
+import com.budgee.enums.GroupRole;
 import com.budgee.enums.GroupSharingStatus;
 import com.budgee.exception.*;
+import com.budgee.factory.GroupFactory;
+import com.budgee.factory.GroupMemberFactory;
 import com.budgee.mapper.GroupMapper;
 import com.budgee.model.*;
 import com.budgee.payload.request.group.GroupMemberRequest;
 import com.budgee.payload.request.group.GroupRequest;
-import com.budgee.payload.response.group.GroupResponse;
-import com.budgee.payload.response.group.GroupSharingResponse;
-import com.budgee.payload.response.group.GroupSharingTokenResponse;
-import com.budgee.payload.response.group.JoinGroupRequestResponse;
+import com.budgee.payload.response.group.*;
 import com.budgee.repository.GroupMemberRepository;
 import com.budgee.repository.GroupRepository;
 import com.budgee.repository.GroupSharingRepository;
 import com.budgee.repository.GroupTransactionRepository;
-import com.budgee.service.GroupMemberService;
 import com.budgee.service.GroupService;
-import com.budgee.service.GroupSharingService;
-import com.budgee.service.UserService;
 import com.budgee.service.validator.DateValidator;
+import com.budgee.service.validator.GroupValidator;
 import com.budgee.util.*;
 
 @Service
@@ -57,9 +55,15 @@ public class GroupServiceImpl implements GroupService {
     // -------------------------------------------------------------------
     // SERVICE
     // -------------------------------------------------------------------
-    GroupMemberService groupMemberService;
-    UserService userService;
-    GroupSharingService groupSharingService;
+    AuthContext authContext;
+    GroupSummaryService groupSummaryService;
+    GroupMemberSummaryService groupMemberSummaryService;
+
+    // -------------------------------------------------------------------
+    // FACTORY
+    // -------------------------------------------------------------------
+    GroupMemberFactory groupMemberFactory;
+    GroupFactory groupFactory;
 
     // -------------------------------------------------------------------
     // MAPPER
@@ -67,13 +71,15 @@ public class GroupServiceImpl implements GroupService {
     GroupMapper groupMapper;
 
     // -------------------------------------------------------------------
-    // HELPER
+    // VALIDATOR
     // -------------------------------------------------------------------
     DateValidator dateValidator;
-    AuthContext authContext;
-    GroupTransactionHelper groupTransactionHelper;
-    CodeGenerator codeGenerator;
     GroupValidator groupValidator;
+
+    // -------------------------------------------------------------------
+    // HELPER
+    // -------------------------------------------------------------------
+    CodeGenerator codeGenerator;
 
     // -------------------------------------------------------------------
     // PUBLIC FUNCTION
@@ -81,25 +87,22 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     public GroupResponse createGroup(GroupRequest request) {
-        log.info("[createGroup]={}", request);
-
-        User authenticatedUser = userService.getCurrentUser();
-        Group group = groupMapper.toGroup(request, authenticatedUser);
+        log.debug("[createGroup]={}", request);
 
         dateValidator.checkEndDateBeforeStartDate(request.startDate(), request.endDate());
+        groupValidator.validateSingleCreator(request.groupMembers());
 
-        setCalculateInitialBalance(request, group);
-        setMembersForGroup(request, group);
+        User authenticatedUser = authContext.getAuthenticatedUser();
+        Group group = groupFactory.createGroup(request, authenticatedUser);
 
-        log.warn("[createGroup] save group to db");
         groupRepository.save(group);
 
-        return toGroupResponse(group);
+        return getGroupResponse(group.getId());
     }
 
     @Override
     public Group getGroupById(UUID groupId) {
-        log.info("[getGroupById]={}", groupId);
+        log.debug("[getGroupById]={}", groupId);
 
         return groupRepository
                 .findById(groupId)
@@ -108,18 +111,19 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     public GroupResponse getGroup(UUID id) {
-        log.info("[getGroup]={}", id);
+        log.debug("[getGroup]={}", id);
 
         Group group = getGroupById(id);
+        User authenticatedUser = authContext.getAuthenticatedUser();
 
-        groupValidator.assertGroupMemberPermission(group);
+        group.ensureCurrentUserIsMember(authenticatedUser);
 
-        return toGroupResponse(group);
+        return getGroupResponse(group.getId());
     }
 
     @Override
     public List<GroupResponse> getListGroups() {
-        log.info("[getListGroups]");
+        log.debug("[getListGroups]");
 
         List<Group> groups = findAllGroupByAuthenticatedUser();
 
@@ -128,7 +132,7 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     public GroupSharingTokenResponse getGroupSharingToken(UUID groupId) {
-        log.info("[getGroupSharingToken] groupId={}", groupId);
+        log.debug("[getGroupSharingToken] groupId={}", groupId);
 
         Group group = getGroupById(groupId);
 
@@ -146,7 +150,7 @@ public class GroupServiceImpl implements GroupService {
     @Transactional
     @Override
     public GroupSharingResponse joinGroup(UUID groupId, String sharingToken) {
-        log.info("[joinGroup] groupId={} sharingToken={}", groupId, sharingToken);
+        log.debug("[joinGroup] groupId={} sharingToken={}", groupId, sharingToken);
 
         Group group = getGroupById(groupId);
         User user = authContext.getAuthenticatedUser();
@@ -155,7 +159,7 @@ public class GroupServiceImpl implements GroupService {
         group.ensureSharingEnabled();
         group.validateToken(sharingToken);
 
-        groupSharingService.createGroupSharing(user, group, sharingToken);
+        createGroupSharing(user, group, sharingToken);
 
         return GroupSharingResponse.builder()
                 .groupId(groupId)
@@ -165,14 +169,12 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     public List<JoinGroupRequestResponse> getJoinList(UUID groupId) {
-        log.info("[getJoinList]");
+        log.debug("[getJoinList]");
 
         Group group = getGroupById(groupId);
         User authenticatedUser = authContext.getAuthenticatedUser();
 
         group.ensureCreator(authenticatedUser);
-
-        groupValidator.ensureUserIsGroupCreator(group, authenticatedUser);
 
         List<GroupSharing> joinRequests = getJoinRequestsByGroup(group);
 
@@ -183,8 +185,28 @@ public class GroupServiceImpl implements GroupService {
     // PRIVATE FUNCTION
     // -------------------------------------------------------------------
 
+    void createGroupSharing(User user, Group group, String sharingToken) {
+        log.debug("[createGroupSharing]");
+
+        final GroupRole role = GroupRole.MEMBER;
+        final GroupSharingStatus status = GroupSharingStatus.PENDING;
+
+        GroupSharing groupSharing =
+                GroupSharing.builder()
+                        .role(role)
+                        .sharedUser(user)
+                        .group(group)
+                        .status(status)
+                        .sharingToken(sharingToken)
+                        .joinedAt(LocalDateTime.now())
+                        .build();
+
+        log.warn("[createGroupSharing] save group sharing to db");
+        groupSharingRepository.save(groupSharing);
+    }
+
     JoinGroupRequestResponse mapToJoinGroupRequestResponse(GroupSharing groupSharing) {
-        log.info("[mapToJoinGroupRequestResponse]");
+        log.debug("[mapToJoinGroupRequestResponse]");
 
         User user = groupSharing.getSharedUser();
 
@@ -196,32 +218,13 @@ public class GroupServiceImpl implements GroupService {
     }
 
     List<GroupSharing> getJoinRequestsByGroup(Group group) {
-        log.info("[getJoinRequestsByGroup]");
+        log.debug("[getJoinRequestsByGroup]");
 
         return groupSharingRepository.findAllByGroup(group);
     }
 
-    void setMembersForGroup(GroupRequest request, Group group) {
-        log.info("[setMembersForGroup]");
-
-        List<GroupMember> groupMembers = createGroupMembers(request.groupMembers(), group);
-        group.setMembers(new HashSet<>(groupMembers));
-        group.setMemberCount(groupMembers.size());
-    }
-
-    void setCalculateInitialBalance(GroupRequest request, Group group) {
-        log.info("[setCalculateInitialBalance]");
-
-        BigDecimal initialBalance =
-                request.groupMembers().stream()
-                        .map(GroupMemberRequest::advanceAmount)
-                        .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        group.setBalance(initialBalance);
-    }
-
     void setGroupSharing(Group group, String sharingToken) {
-        log.info("[setGroupSharing]");
+        log.debug("[setGroupSharing]");
 
         group.setIsSharing(Boolean.TRUE);
         group.setSharingToken(sharingToken);
@@ -231,7 +234,7 @@ public class GroupServiceImpl implements GroupService {
     }
 
     GroupSharingTokenResponse mapToGroupSharingTokenResponse(Group group, String sharingToken) {
-        log.info("[mapToGroupSharingTokenResponse]");
+        log.debug("[mapToGroupSharingTokenResponse]");
 
         return GroupSharingTokenResponse.builder()
                 .token(sharingToken)
@@ -240,30 +243,20 @@ public class GroupServiceImpl implements GroupService {
     }
 
     List<GroupResponse> toListGroupResponse(List<Group> groups) {
-        log.info("[toListGroupResponse]");
+        log.debug("[toListGroupResponse]");
 
         return groups.stream()
                 .map(
                         group -> {
-                            List<GroupTransaction> transactions =
-                                    groupTransactionRepository.findAllByGroup(group);
-                            BigDecimal totalSponsorship =
-                                    groupTransactionHelper.calculateTotalSponsorship(transactions);
-                            BigDecimal totalIncome =
-                                    groupTransactionHelper.calculateTotalIncome(transactions);
-                            BigDecimal totalExpense =
-                                    groupTransactionHelper.calculateTotalExpense(transactions);
+                            GroupSummary summary = groupSummaryService.calculateGroupSummary(group);
 
-                            BigDecimal totalIncomeAndExpense = totalSponsorship.add(totalIncome);
-
-                            return groupMapper.toGroupResponse(
-                                    group, totalIncomeAndExpense, totalExpense);
+                            return groupMapper.toGroupResponse(group, summary);
                         })
                 .toList();
     }
 
     List<Group> findAllGroupByAuthenticatedUser() {
-        log.info("[findAllGroupByAuthenticatedUser]");
+        log.debug("[findAllGroupByAuthenticatedUser]");
 
         User authenticatedUser = authContext.getAuthenticatedUser();
 
@@ -272,27 +265,39 @@ public class GroupServiceImpl implements GroupService {
         return members.stream().map(GroupMember::getGroup).toList();
     }
 
-    GroupResponse toGroupResponse(Group group) {
-        log.info("[toGroupResponse]");
+    List<GroupMember> createGroupMembers(List<GroupMemberRequest> request, Group group) {
+        log.debug("[createGroupMember]={}", request);
 
-        List<GroupTransaction> transactions = groupTransactionRepository.findAllByGroup(group);
-        BigDecimal totalSponsorship =
-                groupTransactionHelper.calculateTotalSponsorship(transactions);
-        GroupResponse response = groupMapper.toGroupResponse(group, totalSponsorship);
+        groupValidator.validateSingleCreator(request);
 
-        response.setMembers(
-                group.getMembers().stream()
-                        .map(x -> groupMemberService.toGroupMemberResponse(x, group))
-                        .toList());
-
-        return response;
+        return request.stream()
+                .map(memberRequest -> groupMemberFactory.createGroupMember(memberRequest, group))
+                .toList();
     }
 
-    List<GroupMember> createGroupMembers(List<GroupMemberRequest> request, Group group) {
-        log.info("[createGroupMember]={}", request);
+    public GroupResponse getGroupResponse(UUID groupId) {
+        Group group = getGroupById(groupId);
 
-        groupValidator.checkJustOnlyOneCreator(request);
+        List<GroupTransaction> transactions = groupTransactionRepository.findAllByGroup(group);
+        GroupSummary summary = groupSummaryService.calculateGroupSummary(group);
 
-        return request.stream().map(x -> groupMemberService.createGroupMember(x, group)).toList();
+        List<GroupMemberResponse> members =
+                group.getMembers().stream()
+                        .map(
+                                member -> {
+                                    boolean isCreator =
+                                            Objects.equals(group.getCreator(), member.getUser());
+
+                                    List<GroupTransaction> memberTransactions =
+                                            transactions.stream()
+                                                    .filter(x -> x.isTransactionOwner(member))
+                                                    .toList();
+
+                                    return groupMemberSummaryService.calculateGroupMemberSummary(
+                                            member, isCreator, memberTransactions);
+                                })
+                        .toList();
+
+        return groupMapper.toGroupResponse(group, summary, members);
     }
 }

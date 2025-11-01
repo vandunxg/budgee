@@ -32,7 +32,7 @@ public class CategoryLookup {
     AuthContext authContext;
 
     public Category getCategoryById(UUID id) {
-        log.info("[getCategoryById]={}", id);
+        log.debug("[getCategoryById]={}", id);
 
         return categoryRepository
                 .findById(id)
@@ -40,7 +40,7 @@ public class CategoryLookup {
     }
 
     public Category getCategoryForCurrentUser(UUID categoryId) {
-        log.info("[getCategoryForCurrentUser] categoryId={}", categoryId);
+        log.debug("[getCategoryForCurrentUser] categoryId={}", categoryId);
 
         Category category = this.getCategoryById(categoryId);
         authContext.checkIsOwner(category);

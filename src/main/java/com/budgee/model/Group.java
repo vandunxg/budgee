@@ -68,6 +68,13 @@ public class Group extends BaseEntity implements OwnerEntity {
         return this.creator;
     }
 
+    public void ensureCurrentUserIsMember(User user) {
+        boolean isMember =
+                members.stream().anyMatch(member -> member.getUser().getId().equals(user.getId()));
+
+        if (!isMember) throw new BusinessException(ErrorCode.GROUP_MEMBER_NOT_FOUND);
+    }
+
     public void increase(BigDecimal amount) {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0)
             throw new ValidationException(ErrorCode.AMOUNT_MUST_BE_POSITIVE);

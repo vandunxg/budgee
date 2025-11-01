@@ -69,7 +69,7 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     public WalletResponse getWallet(UUID id) {
-        log.info("[getWallet] id={}", id);
+        log.debug("[getWallet] id={}", id);
 
         Wallet wallet = getWalletByIdForOwner(id);
 
@@ -78,7 +78,7 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     public List<WalletResponse> getAllWallets() {
-        log.info("[getAllWallets]");
+        log.debug("[getAllWallets]");
 
         List<Wallet> wallets = getAllWalletsByUser();
 
@@ -88,7 +88,7 @@ public class WalletServiceImpl implements WalletService {
     @Override
     @Transactional
     public WalletResponse createWallet(WalletRequest request) {
-        log.info("[createWallet] request={}", request);
+        log.debug("[createWallet] request={}", request);
 
         Currency currency = request.currency() != null ? request.currency() : Currency.VND;
 
@@ -106,7 +106,7 @@ public class WalletServiceImpl implements WalletService {
     @Override
     @Transactional
     public WalletResponse updateWallet(UUID id, WalletRequest request) {
-        log.info("[updateWallet] id={} request={}", id, request);
+        log.debug("[updateWallet] id={} request={}", id, request);
 
         Wallet wallet = this.getWalletByIdForOwner(id);
 
@@ -122,7 +122,7 @@ public class WalletServiceImpl implements WalletService {
     @Override
     @Transactional
     public void deleteWallet(UUID id) {
-        log.info("[deleteWallet] id={}", id);
+        log.debug("[deleteWallet] id={}", id);
 
         Wallet wallet = this.getWalletByIdForOwner(id);
         User authenticatedUser = authContext.getAuthenticatedUser();
@@ -136,7 +136,7 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     public Wallet getWalletById(UUID id) {
-        log.info("[getWalletById]={}", id);
+        log.debug("[getWalletById]={}", id);
 
         return walletRepository
                 .findById(id)
@@ -148,7 +148,7 @@ public class WalletServiceImpl implements WalletService {
     // -------------------------------------------------------------------
 
     void applyWalletUpdates(Wallet wallet, WalletRequest request) {
-        log.info("[applyWalletUpdates]");
+        log.debug("[applyWalletUpdates]");
 
         walletValidator.updateIfChanged(wallet::getName, wallet::setName, request.name());
         walletValidator.updateIfChanged(wallet::getBalance, wallet::setBalance, request.balance());
@@ -162,7 +162,7 @@ public class WalletServiceImpl implements WalletService {
     }
 
     void setDefaultWallet(Boolean isDefault, Wallet wallet) {
-        log.info("[setDefaultWallet]");
+        log.debug("[setDefaultWallet]");
 
         if (isDefault) {
             unsetDefaultAllWallets();
@@ -171,7 +171,7 @@ public class WalletServiceImpl implements WalletService {
     }
 
     Wallet getWalletByIdForOwner(UUID id) {
-        log.info("[getWalletByIdForOwner]={}", id);
+        log.debug("[getWalletByIdForOwner]={}", id);
 
         Wallet wallet = getWalletById(id);
         authContext.checkIsOwner(wallet);
@@ -180,7 +180,7 @@ public class WalletServiceImpl implements WalletService {
     }
 
     void adjustWalletBalance(Wallet wallet, BigDecimal diff) {
-        log.info("[adjustWalletBalance]");
+        log.debug("[adjustWalletBalance]");
 
         if (diff.signum() > 0) {
             wallet.increase(diff);
@@ -194,7 +194,7 @@ public class WalletServiceImpl implements WalletService {
     }
 
     List<Wallet> getAllWalletsByUser() {
-        log.info("[getAllWalletsByUser]");
+        log.debug("[getAllWalletsByUser]");
 
         User user = authContext.getAuthenticatedUser();
 
@@ -202,7 +202,7 @@ public class WalletServiceImpl implements WalletService {
     }
 
     void unsetDefaultAllWallets() {
-        log.info("[unsetDefaultAllWallets]");
+        log.debug("[unsetDefaultAllWallets]");
 
         List<Wallet> wallets = getAllWalletsByUser();
         if (!wallets.isEmpty()) {

@@ -32,7 +32,7 @@ public class WalletLookup {
     AuthContext authContext;
 
     public Wallet getWalletById(UUID id) {
-        log.info("[getWalletById]={}", id);
+        log.debug("[getWalletById]={}", id);
 
         return walletRepository
                 .findById(id)
@@ -40,7 +40,7 @@ public class WalletLookup {
     }
 
     public Wallet getWalletForCurrentUser(UUID walletId) {
-        log.info("[getWalletForCurrentUser] categoryId={}", walletId);
+        log.debug("[getWalletForCurrentUser] categoryId={}", walletId);
 
         Wallet wallet = this.getWalletById(walletId);
         authContext.checkIsOwner(wallet);

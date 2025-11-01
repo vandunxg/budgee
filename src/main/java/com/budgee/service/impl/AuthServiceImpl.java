@@ -65,7 +65,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public TokenResponse getAccessToken(LoginRequest request) throws AccessDeniedException {
         final String email = normalizeEmail(request.email());
-        log.info("getAccessToken start email_fingerprint={}", fingerprint(email));
+        log.debug("getAccessToken start email_fingerprint={}", fingerprint(email));
 
         try {
             Authentication authRequest =
@@ -93,13 +93,13 @@ public class AuthServiceImpl implements AuthService {
         String accessToken = jwtService.generateAccessToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);
 
-        log.info("getAccessToken success user_id={}", user.getId());
+        log.debug("getAccessToken success user_id={}", user.getId());
         return TokenResponse.builder().accessToken(accessToken).refreshToken(refreshToken).build();
     }
 
     @Override
     public TokenResponse getRefreshToken(String refreshToken) throws AccessDeniedException {
-        log.info("getRefreshToken start token_fp={}", fingerprint(refreshToken));
+        log.debug("getRefreshToken start token_fp={}", fingerprint(refreshToken));
 
         if (!StringUtils.hasText(refreshToken)) {
             log.warn("refresh token blank");
