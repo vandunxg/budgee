@@ -48,7 +48,7 @@ public class GroupFactory {
                         .sharingToken(null)
                         .build();
 
-        group.setMembers(initialGroupMember(request, group));
+        group.getMembers().addAll(initialGroupMember(request, group));
         group.setMemberCount(group.getMembers().size());
 
         return group;

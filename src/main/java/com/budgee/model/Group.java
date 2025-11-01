@@ -60,6 +60,7 @@ public class Group extends BaseEntity implements OwnerEntity {
     @Column(unique = true, length = 5)
     String sharingToken;
 
+    @Builder.Default
     @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
     Set<GroupMember> members = new HashSet<>();
 
@@ -70,7 +71,15 @@ public class Group extends BaseEntity implements OwnerEntity {
 
     public void ensureCurrentUserIsMember(User user) {
         boolean isMember =
-                members.stream().anyMatch(member -> member.getUser().getId().equals(user.getId()));
+                members.stream()
+                        .anyMatch(
+                                member -> {
+                                    User userOfMember = member.getUser();
+
+                                    if (Objects.isNull(userOfMember)) return false;
+
+                                    return Objects.equals(userOfMember.getId(), user.getId());
+                                });
 
         if (!isMember) throw new BusinessException(ErrorCode.GROUP_MEMBER_NOT_FOUND);
     }
