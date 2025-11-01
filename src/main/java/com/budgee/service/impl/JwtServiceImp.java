@@ -64,7 +64,7 @@ public class JwtServiceImp implements JwtService {
 
     @Override
     public String generateAccessToken(User user) {
-        log.debug(
+        log.info(
                 "generate access token for user {} with authorities {}",
                 user.getEmail(),
                 user.getAuthorities());
@@ -72,13 +72,13 @@ public class JwtServiceImp implements JwtService {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", user.getId());
         claims.put("role", user.getRole().name());
-        log.debug("email={} userId={}", user.getEmail(), user.getId());
+        log.info("email={} userId={}", user.getEmail(), user.getId());
         return generateAccessToken(claims, user.getEmail());
     }
 
     @Override
     public String generateRefreshToken(User user) {
-        log.debug(
+        log.info(
                 "generate refresh token for user {} with authorities {}",
                 user.getEmail(),
                 user.getAuthorities());
@@ -93,7 +93,7 @@ public class JwtServiceImp implements JwtService {
 
     @Override
     public String extractEmail(String token, TokenType type) {
-        log.debug("extractEmail");
+        log.info("extractEmail");
 
         return extractClaim(token, type, Claims::getSubject);
     }
@@ -103,7 +103,7 @@ public class JwtServiceImp implements JwtService {
     // -------------------------------------------------------------------
 
     String generateAccessToken(Map<String, Object> claims, String email) {
-        log.debug("----------[ GENERATE-ACCESS-TOKEN ]----------");
+        log.info("----------[ GENERATE-ACCESS-TOKEN ]----------");
 
         return Jwts.builder()
                 .setClaims(claims)
@@ -118,7 +118,7 @@ public class JwtServiceImp implements JwtService {
     }
 
     String generateRefreshToken(Map<String, Object> claims, String email) {
-        log.debug("----------[ GENERATE-REFRESH-TOKEN ]----------");
+        log.info("----------[ GENERATE-REFRESH-TOKEN ]----------");
 
         return Jwts.builder()
                 .setClaims(claims)
@@ -133,7 +133,8 @@ public class JwtServiceImp implements JwtService {
     }
 
     Key getKeys(TokenType type) {
-        log.debug("----------[ GET-KEY ]----------");
+        log.info("----------[ GET-KEY ]----------");
+
         switch (type) {
             case ACCESS_TOKEN -> {
                 return Keys.hmacShaKeyFor(Decoders.BASE64.decode(ACCESS_TOKEN_PRIVATE_KEY));
@@ -148,13 +149,15 @@ public class JwtServiceImp implements JwtService {
     }
 
     <T> T extractClaim(String token, TokenType type, Function<Claims, T> claimResolver) {
-        log.debug("----------[ extractClaim ]----------");
+        log.info("----------[ extractClaim ]----------");
+
         final Claims claims = extraAllClaim(token, type);
         return claimResolver.apply(claims);
     }
 
     Claims extraAllClaim(String token, TokenType type) {
-        log.debug("----------[ extraAllClaim ]----------");
+        log.info("----------[ extraAllClaim ]----------");
+
         try {
             return Jwts.parserBuilder()
                     .setSigningKey(getKeys(type))

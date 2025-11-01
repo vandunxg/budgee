@@ -25,7 +25,7 @@ public class GroupMemberSummaryService {
 
     public GroupMemberResponse calculateGroupMemberSummary(
             GroupMember member, boolean isCreator, List<GroupTransaction> transactions) {
-        log.debug("[calculateGroupMemberSummary] memberId={}", member);
+        log.info("[calculateGroupMemberSummary] memberId={}", member);
 
         BigDecimal totalSponsorship =
                 transactions.stream()

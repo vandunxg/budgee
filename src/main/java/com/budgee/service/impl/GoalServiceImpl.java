@@ -67,7 +67,7 @@ public class GoalServiceImpl implements GoalService {
     @Override
     @Transactional
     public GoalResponse createGoal(GoalRequest request) {
-        log.debug("[createGoal] request={}", request);
+        log.info("[createGoal] request={}", request);
 
         User user = authContext.getAuthenticatedUser();
         dateValidator.checkEndDateBeforeStartDate(request.startDate(), request.endDate());
@@ -85,7 +85,7 @@ public class GoalServiceImpl implements GoalService {
 
     @Override
     public GoalResponse getGoal(UUID id) {
-        log.debug("[getGoal] id={}", id);
+        log.info("[getGoal] id={}", id);
 
         Goal goal = getGoalById(id);
         authContext.checkIsOwner(goal);
@@ -96,7 +96,7 @@ public class GoalServiceImpl implements GoalService {
     @Override
     @Transactional
     public GoalResponse updateGoal(UUID id, GoalRequest request) {
-        log.debug("[updateGoal] id={} request={}", id, request);
+        log.info("[updateGoal] id={} request={}", id, request);
 
         User user = authContext.getAuthenticatedUser();
         Goal goal = getGoalForCurrentUser(id);
@@ -111,7 +111,7 @@ public class GoalServiceImpl implements GoalService {
     @Override
     @Transactional
     public void deleteGoal(UUID id) {
-        log.debug("[deleteGoal] id={}", id);
+        log.info("[deleteGoal] id={}", id);
 
         Goal goal = getGoalForCurrentUser(id);
 
@@ -124,7 +124,7 @@ public class GoalServiceImpl implements GoalService {
 
     @Override
     public List<GoalResponse> getListGoals() {
-        log.debug("[getListGoals]");
+        log.info("[getListGoals]");
 
         User user = authContext.getAuthenticatedUser();
         List<Goal> goals = goalRepository.findAllByUser(user);
@@ -137,7 +137,7 @@ public class GoalServiceImpl implements GoalService {
     // -------------------------------------------------------------------
 
     List<GoalWallet> buildGoalWallets(List<UUID> walletIds, Goal goal, User user) {
-        log.debug("[buildGoalWallets]");
+        log.info("[buildGoalWallets]");
 
         if (walletIds == null || walletIds.isEmpty()) {
             log.error("[buildGoalWallets] walletIds is null");
@@ -152,7 +152,7 @@ public class GoalServiceImpl implements GoalService {
     }
 
     List<GoalCategory> buildGoalCategories(List<UUID> categoryIds, Goal goal, User user) {
-        log.debug("[buildGoalCategories]");
+        log.info("[buildGoalCategories]");
 
         if (categoryIds == null || categoryIds.isEmpty()) {
             log.error("[buildGoalCategories] categoryIds is null");
@@ -173,21 +173,21 @@ public class GoalServiceImpl implements GoalService {
     }
 
     void updateGoalCategories(Goal goal, GoalRequest request, User user) {
-        log.debug("[updateGoalCategories]");
+        log.info("[updateGoalCategories]");
 
         goal.getGoalCategories().clear();
         goal.getGoalCategories().addAll(buildGoalCategories(request.categories(), goal, user));
     }
 
     void updateGoalWallets(Goal goal, GoalRequest request, User user) {
-        log.debug("[updateGoalWallets]");
+        log.info("[updateGoalWallets]");
 
         goal.getGoalWallets().clear();
         goal.getGoalWallets().addAll(buildGoalWallets(request.wallets(), goal, user));
     }
 
     void applyGoalUpdate(Goal goal, GoalRequest request, User user) {
-        log.debug("[applyGoalUpdate]");
+        log.info("[applyGoalUpdate]");
 
         goalValidator.updateIfChanged(goal::getName, goal::setName, request.name());
         goalValidator.updateIfChanged(
@@ -200,7 +200,7 @@ public class GoalServiceImpl implements GoalService {
     }
 
     Goal getGoalById(UUID id) {
-        log.debug("[getGoalById]={}", id);
+        log.info("[getGoalById]={}", id);
 
         return goalRepository
                 .findById(id)
@@ -208,7 +208,7 @@ public class GoalServiceImpl implements GoalService {
     }
 
     Goal getGoalForCurrentUser(UUID id) {
-        log.debug("[getGoalForCurrentUser]={}", id);
+        log.info("[getGoalForCurrentUser]={}", id);
 
         Goal goal = getGoalById(id);
 

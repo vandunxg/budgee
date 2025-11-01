@@ -24,5 +24,9 @@ jwt:
   expiration:
     access-token: 2592000000 # 1 hour = 1 * 60 * 60 * 1000 = 3600000
     refresh-token: 2592000000 #30 days = 30 * 24 * 60 * 60 * 1000
+logging:
+  level:
+    com.budgee: DEBUG
+    org.springframework: INFO
 
 

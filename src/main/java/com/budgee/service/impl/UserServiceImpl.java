@@ -57,7 +57,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public RegisterResponse createUser(RegisterRequest request) {
-        log.debug("[createUser] create user with email {}", request.email());
+        log.info("[createUser] create user with email {}", request.email());
 
         //        comparePasswordAndConfirmPassword(request.password(), request.confirmPassword());
 
@@ -74,14 +74,14 @@ public class UserServiceImpl implements UserService {
         user.setPasswordHash(passwordEncoder.encode(request.password()));
 
         userRepository.save(user);
-        log.debug("createUser success id={}", user.getId());
+        log.info("createUser success id={}", user.getId());
 
         return RegisterResponse.builder().userId(user.getId()).build();
     }
 
     @Override
     public User getCurrentUser() {
-        log.debug("[getCurrentUser]");
+        log.info("[getCurrentUser]");
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !(authentication.getPrincipal() instanceof User user)) {
@@ -95,7 +95,7 @@ public class UserServiceImpl implements UserService {
     // -------------------------------------------------------------------
 
     void comparePasswordAndConfirmPassword(String password, String confirmPassword) {
-        log.debug("[comparePasswordAndConfirmPassword]");
+        log.info("[comparePasswordAndConfirmPassword]");
 
         if (!password.equals(confirmPassword)) {
             throw new ValidationException(ErrorCode.PASSWORDS_DO_NOT_MATCH);
@@ -103,7 +103,7 @@ public class UserServiceImpl implements UserService {
     }
 
     void checkUserExistsByEmail(String email) {
-        log.debug("[checkUserExistsByEmail]: {}", email);
+        log.info("[checkUserExistsByEmail]: {}", email);
         if (userRepository.existsByEmail(email)) {
             log.error("[checkUserExistsByEmail] email already exists");
             throw new AuthenticationException(ErrorCode.EMAIL_ALREADY_EXISTS);

@@ -55,7 +55,6 @@ public class AuthServiceImpl implements AuthService {
     // -------------------------------------------------------------------
     // PRIVATE FIELDS
     // -------------------------------------------------------------------
-
     Clock clock = Clock.systemDefaultZone();
 
     // -------------------------------------------------------------------
@@ -64,8 +63,10 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public TokenResponse getAccessToken(LoginRequest request) throws AccessDeniedException {
+        log.info("[getAccessToken]");
+
         final String email = normalizeEmail(request.email());
-        log.debug("getAccessToken start email_fingerprint={}", fingerprint(email));
+        log.info("getAccessToken start email_fingerprint={}", fingerprint(email));
 
         try {
             Authentication authRequest =
@@ -73,7 +74,7 @@ public class AuthServiceImpl implements AuthService {
             Authentication authentication = authenticationManager.authenticate(authRequest);
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
-            log.debug(
+            log.info(
                     "authenticated={}, authorities={}",
                     authentication.isAuthenticated(),
                     authentication.getAuthorities());
@@ -93,13 +94,13 @@ public class AuthServiceImpl implements AuthService {
         String accessToken = jwtService.generateAccessToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);
 
-        log.debug("getAccessToken success user_id={}", user.getId());
+        log.info("getAccessToken success user_id={}", user.getId());
         return TokenResponse.builder().accessToken(accessToken).refreshToken(refreshToken).build();
     }
 
     @Override
     public TokenResponse getRefreshToken(String refreshToken) throws AccessDeniedException {
-        log.debug("getRefreshToken start token_fp={}", fingerprint(refreshToken));
+        log.info("getRefreshToken start token_fp={}", fingerprint(refreshToken));
 
         if (!StringUtils.hasText(refreshToken)) {
             log.warn("refresh token blank");
@@ -141,7 +142,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     User findUserByEmail(String email) {
-        log.debug("findUserByEmail email_fp={}", fingerprint(email));
+        log.info("findUserByEmail email_fp={}", fingerprint(email));
         return userRepository
                 .findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Email not found"));

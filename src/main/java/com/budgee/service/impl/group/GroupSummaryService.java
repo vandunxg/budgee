@@ -34,7 +34,7 @@ public class GroupSummaryService {
     // -------------------------------------------------------------------
 
     public GroupSummary calculateGroupSummary(Group group) {
-        log.debug("[calculateGroupSummary] groupId={}", group.getId());
+        log.info("[calculateGroupSummary] groupId={}", group.getId());
 
         List<GroupTransaction> transactions = groupTransactionRepository.findAllByGroup(group);
 
@@ -54,7 +54,7 @@ public class GroupSummaryService {
     }
 
     public BigDecimal calculateNetExpense(Group group) {
-        log.debug("[calculateNetExpense] groupId={}", group.getId());
+        log.info("[calculateNetExpense] groupId={}", group.getId());
 
         List<GroupTransaction> transactions = groupTransactionRepository.findAllByGroup(group);
 
@@ -65,7 +65,7 @@ public class GroupSummaryService {
     }
 
     public BigDecimal calculateAdvancePayment(Group group) {
-        log.debug("[calculateAdvancePayment] groupId={}", group.getId());
+        log.info("[calculateAdvancePayment] groupId={}", group.getId());
 
         List<GroupTransaction> transactions = groupTransactionRepository.findAllByGroup(group);
 
@@ -77,7 +77,7 @@ public class GroupSummaryService {
     // -------------------------------------------------------------------
 
     BigDecimal calculateAdvancePaymentFromMember(List<GroupTransaction> transactions) {
-        log.debug("[calculateAdvancePaymentFromMember]");
+        log.info("[calculateAdvancePaymentFromMember]");
 
         return transactions.stream()
                 .filter(this::isAdvancePaymentFromMember)
@@ -86,7 +86,7 @@ public class GroupSummaryService {
     }
 
     BigDecimal calculateTotalSponsorship(List<GroupTransaction> transactions) {
-        log.debug("[calculateTotalSponsorship]");
+        log.info("[calculateTotalSponsorship]");
 
         return transactions.stream()
                 .filter(this::isSponsorshipTransaction)
@@ -95,7 +95,7 @@ public class GroupSummaryService {
     }
 
     BigDecimal calculateTotalIncome(List<GroupTransaction> transactions) {
-        log.debug("[calculateTotalIncome]");
+        log.info("[calculateTotalIncome]");
 
         return transactions.stream()
                 .filter(x -> TransactionType.INCOME.equals(x.getType()))
@@ -104,7 +104,7 @@ public class GroupSummaryService {
     }
 
     BigDecimal calculateTotalExpense(List<GroupTransaction> transactions) {
-        log.debug("[calculateTotalExpense]");
+        log.info("[calculateTotalExpense]");
 
         return transactions.stream()
                 .filter(x -> TransactionType.EXPENSE.equals(x.getType()))
@@ -113,14 +113,14 @@ public class GroupSummaryService {
     }
 
     boolean isAdvancePaymentFromMember(GroupTransaction transaction) {
-        log.debug("[isAdvancePaymentFromMember]");
+        log.info("[isAdvancePaymentFromMember]");
 
         return Objects.equals(
                 GroupExpenseSource.MEMBER_ADVANCE, transaction.getGroupExpenseSource());
     }
 
     boolean isSponsorshipTransaction(GroupTransaction tx) {
-        log.debug("[isSponsorshipTransaction]");
+        log.info("[isSponsorshipTransaction]");
 
         return (tx.getType() == TransactionType.EXPENSE
                         && tx.getGroupExpenseSource() == GroupExpenseSource.MEMBER_SPONSOR)

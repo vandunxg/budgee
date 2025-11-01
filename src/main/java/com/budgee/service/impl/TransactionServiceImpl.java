@@ -68,7 +68,7 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     @Transactional
     public TransactionResponse createTransaction(TransactionRequest request) {
-        log.debug("[createTransaction] request={}", request);
+        log.info("[createTransaction] request={}", request);
 
         Wallet wallet = walletLookup.getWalletForCurrentUser(request.walletId());
         Category category = categoryLookup.getCategoryForCurrentUser(request.categoryId());
@@ -80,12 +80,12 @@ public class TransactionServiceImpl implements TransactionService {
 
         walletDomainService.applyTransaction(wallet, transaction);
 
-        log.debug(
+        log.info(
                 "[createTransaction] update wallet when create transactionId={}",
                 transaction.getId());
         walletRepository.save(wallet);
 
-        log.debug("[createTransaction] saving transaction...");
+        log.info("[createTransaction] saving transaction...");
         transactionRepository.save(transaction);
 
         return transactionMapper.toTransactionResponse(transaction);
@@ -94,7 +94,7 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     @Transactional
     public TransactionResponse updateTransaction(UUID id, TransactionRequest request) {
-        log.debug("[updateTransaction] id={} request={}", id, request);
+        log.info("[updateTransaction] id={} request={}", id, request);
 
         Transaction transaction = getTransactionById(id);
         Category newCategory = categoryLookup.getCategoryForCurrentUser(request.categoryId());
@@ -113,12 +113,12 @@ public class TransactionServiceImpl implements TransactionService {
 
         walletDomainService.updateBalanceForTransactionUpdate(
                 oldWallet, newWallet, oldAmount, newAmount, oldType, newType);
-        log.debug(
+        log.info(
                 "[createTransaction] save wallet when update transactionId={}",
                 transaction.getId());
         walletRepository.saveAll(List.of(oldWallet, newWallet));
 
-        log.debug("[updateTransaction] updated successfully");
+        log.info("[updateTransaction] updated successfully");
         transactionRepository.save(transaction);
 
         return transactionMapper.toTransactionResponse(transaction);
@@ -126,7 +126,7 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public TransactionResponse getTransaction(UUID id) {
-        log.debug("[getTransaction] id={}", id);
+        log.info("[getTransaction] id={}", id);
 
         Transaction transaction = getTransactionById(id);
         authContext.checkIsOwner(transaction);
@@ -136,7 +136,7 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public List<Transaction> getTransactionByCategory(Category category) {
-        log.debug("[getTransactionByCategory] category={}", category);
+        log.info("[getTransactionByCategory] category={}", category);
 
         return transactionRepository.getTransactionsByCategory(category);
     }
@@ -144,14 +144,14 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     @Transactional
     public void deleteTransaction(UUID id) {
-        log.debug("[deleteTransaction] id={}", id);
+        log.info("[deleteTransaction] id={}", id);
 
         Transaction transaction = getTransactionById(id);
         Wallet wallet = transaction.getWallet();
         authContext.checkIsOwner(transaction);
 
         walletDomainService.reverseTransaction(wallet, transaction);
-        log.debug(
+        log.info(
                 "[deleteTransaction] update wallet when delete transactionId={}",
                 transaction.getId());
         walletRepository.save(wallet);
@@ -161,7 +161,7 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     public Transaction getTransactionById(UUID id) {
-        log.debug("[getTransactionById] id={}", id);
+        log.info("[getTransactionById] id={}", id);
 
         return transactionRepository
                 .findById(id)
@@ -173,7 +173,7 @@ public class TransactionServiceImpl implements TransactionService {
     // -------------------------------------------------------------------
     void applyTransactionChanges(
             Transaction transaction, TransactionRequest request, Category category, Wallet wallet) {
-        log.debug("[applyTransactionChanges]");
+        log.info("[applyTransactionChanges]");
 
         transaction.setCategory(category);
         transaction.setWallet(wallet);
@@ -186,7 +186,7 @@ public class TransactionServiceImpl implements TransactionService {
 
     void ensureTransactionTypeMatchesCategory(
             TransactionType typeOfCategory, TransactionType typeOfTransaction) {
-        log.debug(
+        log.info(
                 "[ensureTransactionTypeMatchesCategory] typeOfCategory={} typeOfTransaction={}",
                 typeOfCategory,
                 typeOfTransaction);

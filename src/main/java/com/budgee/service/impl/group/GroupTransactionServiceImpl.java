@@ -65,7 +65,7 @@ public class GroupTransactionServiceImpl implements GroupTransactionService {
     @Override
     public GroupTransactionResponse createGroupTransaction(
             UUID groupID, GroupTransactionRequest request) {
-        log.debug("[createGroupTransaction] groupId={} request={}", groupID, request);
+        log.info("[createGroupTransaction] groupId={} request={}", groupID, request);
 
         Group group = groupLookup.getGroupById(groupID);
         GroupMember member = getGroupMemberById(request.memberId());
@@ -86,7 +86,7 @@ public class GroupTransactionServiceImpl implements GroupTransactionService {
 
     @Override
     public GroupTransactionResponse getGroupTransaction(UUID groupId, UUID transactionId) {
-        log.debug("[getGroupTransaction] groupId={} transactionId={}", groupId, transactionId);
+        log.info("[getGroupTransaction] groupId={} transactionId={}", groupId, transactionId);
 
         Group group = groupLookup.getGroupById(groupId);
         groupTransactionValidator.validateAuthenticatedUserIsGroupMember(group);
@@ -104,7 +104,7 @@ public class GroupTransactionServiceImpl implements GroupTransactionService {
     // -------------------------------------------------------------------
 
     void adjustGroupBalance(GroupTransactionRequest request, Group group) {
-        log.debug("[adjustGroupBalance]");
+        log.info("[adjustGroupBalance]");
 
         BigDecimal amount = request.amount();
 
@@ -121,7 +121,7 @@ public class GroupTransactionServiceImpl implements GroupTransactionService {
     }
 
     GroupTransactionResponse toGroupTransactionResponse(GroupTransaction transaction) {
-        log.debug("[toGroupTransactionResponse]");
+        log.info("[toGroupTransactionResponse]");
 
         CreatorTransactionResponse creator = toCreatorTransactionResponse(transaction.getMember());
         GroupTransactionResponse response =
@@ -133,7 +133,7 @@ public class GroupTransactionServiceImpl implements GroupTransactionService {
     }
 
     GroupMember getGroupMemberById(UUID memberId) {
-        log.debug("[memberId]={}", memberId);
+        log.info("[memberId]={}", memberId);
 
         return groupMemberRepository
                 .findById(memberId)
@@ -141,7 +141,7 @@ public class GroupTransactionServiceImpl implements GroupTransactionService {
     }
 
     CreatorTransactionResponse toCreatorTransactionResponse(GroupMember member) {
-        log.debug("[toCreatorTransactionResponse] memberId={}", member.getId());
+        log.info("[toCreatorTransactionResponse] memberId={}", member.getId());
 
         return CreatorTransactionResponse.builder()
                 .creatorName(member.getMemberName())

@@ -87,7 +87,7 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     public GroupResponse createGroup(GroupRequest request) {
-        log.debug("[createGroup]={}", request);
+        log.info("[createGroup]={}", request);
 
         dateValidator.checkEndDateBeforeStartDate(request.startDate(), request.endDate());
         groupValidator.validateSingleCreator(request.groupMembers());
@@ -102,7 +102,7 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     public Group getGroupById(UUID groupId) {
-        log.debug("[getGroupById]={}", groupId);
+        log.info("[getGroupById]={}", groupId);
 
         return groupRepository
                 .findById(groupId)
@@ -111,7 +111,7 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     public GroupResponse getGroup(UUID id) {
-        log.debug("[getGroup]={}", id);
+        log.info("[getGroup]={}", id);
 
         Group group = getGroupById(id);
         User authenticatedUser = authContext.getAuthenticatedUser();
@@ -123,7 +123,7 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     public List<GroupResponse> getListGroups() {
-        log.debug("[getListGroups]");
+        log.info("[getListGroups]");
 
         List<Group> groups = findAllGroupByAuthenticatedUser();
 
@@ -132,7 +132,7 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     public GroupSharingTokenResponse getGroupSharingToken(UUID groupId) {
-        log.debug("[getGroupSharingToken] groupId={}", groupId);
+        log.info("[getGroupSharingToken] groupId={}", groupId);
 
         Group group = getGroupById(groupId);
 
@@ -150,7 +150,7 @@ public class GroupServiceImpl implements GroupService {
     @Transactional
     @Override
     public GroupSharingResponse joinGroup(UUID groupId, String sharingToken) {
-        log.debug("[joinGroup] groupId={} sharingToken={}", groupId, sharingToken);
+        log.info("[joinGroup] groupId={} sharingToken={}", groupId, sharingToken);
 
         Group group = getGroupById(groupId);
         User user = authContext.getAuthenticatedUser();
@@ -169,7 +169,7 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     public List<JoinGroupRequestResponse> getJoinList(UUID groupId) {
-        log.debug("[getJoinList]");
+        log.info("[getJoinList]");
 
         Group group = getGroupById(groupId);
         User authenticatedUser = authContext.getAuthenticatedUser();
@@ -186,7 +186,7 @@ public class GroupServiceImpl implements GroupService {
     // -------------------------------------------------------------------
 
     void createGroupSharing(User user, Group group, String sharingToken) {
-        log.debug("[createGroupSharing]");
+        log.info("[createGroupSharing]");
 
         final GroupRole role = GroupRole.MEMBER;
         final GroupSharingStatus status = GroupSharingStatus.PENDING;
@@ -206,7 +206,7 @@ public class GroupServiceImpl implements GroupService {
     }
 
     JoinGroupRequestResponse mapToJoinGroupRequestResponse(GroupSharing groupSharing) {
-        log.debug("[mapToJoinGroupRequestResponse]");
+        log.info("[mapToJoinGroupRequestResponse]");
 
         User user = groupSharing.getSharedUser();
 
@@ -218,13 +218,13 @@ public class GroupServiceImpl implements GroupService {
     }
 
     List<GroupSharing> getJoinRequestsByGroup(Group group) {
-        log.debug("[getJoinRequestsByGroup]");
+        log.info("[getJoinRequestsByGroup]");
 
         return groupSharingRepository.findAllByGroup(group);
     }
 
     void setGroupSharing(Group group, String sharingToken) {
-        log.debug("[setGroupSharing]");
+        log.info("[setGroupSharing]");
 
         group.setIsSharing(Boolean.TRUE);
         group.setSharingToken(sharingToken);
@@ -234,7 +234,7 @@ public class GroupServiceImpl implements GroupService {
     }
 
     GroupSharingTokenResponse mapToGroupSharingTokenResponse(Group group, String sharingToken) {
-        log.debug("[mapToGroupSharingTokenResponse]");
+        log.info("[mapToGroupSharingTokenResponse]");
 
         return GroupSharingTokenResponse.builder()
                 .token(sharingToken)
@@ -243,7 +243,7 @@ public class GroupServiceImpl implements GroupService {
     }
 
     List<GroupResponse> toListGroupResponse(List<Group> groups) {
-        log.debug("[toListGroupResponse]");
+        log.info("[toListGroupResponse]");
 
         return groups.stream()
                 .map(
@@ -256,7 +256,7 @@ public class GroupServiceImpl implements GroupService {
     }
 
     List<Group> findAllGroupByAuthenticatedUser() {
-        log.debug("[findAllGroupByAuthenticatedUser]");
+        log.info("[findAllGroupByAuthenticatedUser]");
 
         User authenticatedUser = authContext.getAuthenticatedUser();
 
@@ -266,7 +266,7 @@ public class GroupServiceImpl implements GroupService {
     }
 
     List<GroupMember> createGroupMembers(List<GroupMemberRequest> request, Group group) {
-        log.debug("[createGroupMember]={}", request);
+        log.info("[createGroupMember]={}", request);
 
         groupValidator.validateSingleCreator(request);
 

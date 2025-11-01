@@ -14,6 +14,9 @@ import com.budgee.model.User;
 import com.budgee.payload.request.group.GroupMemberRequest;
 import com.budgee.util.AuthContext;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
 @Component
 @RequiredArgsConstructor
 @Slf4j(topic = "GROUP-MEMBER-FACTORY")
@@ -26,7 +29,7 @@ public class GroupMemberFactory {
     AuthContext authContext;
 
     public GroupMember createGroupMember(GroupMemberRequest request, Group group) {
-        log.info("[createGroupMember]");
+        log.debug("[createGroupMember]");
 
         User authenticatedUser = authContext.getAuthenticatedUser();
         Boolean isCreator = request.isCreator();
@@ -37,6 +40,8 @@ public class GroupMemberFactory {
                 .memberName(request.memberName())
                 .group(group)
                 .role(ROLE_FOR_MEMBER)
+                .joinedAt(LocalDateTime.now())
+                .balanceOwed(BigDecimal.ZERO)
                 .advanceAmount(request.advanceAmount())
                 .user(isCreator ? authenticatedUser : null)
                 .build();
