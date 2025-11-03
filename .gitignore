@@ -34,6 +34,4 @@ build/
 
 ### YML/YAML ###
 # Ignore all local environment configs
-application-dev.yml
-application-local.yml
-application-test.yml
+src/main/resources/application*.yml
