@@ -2,5 +2,6 @@ package com.budgee.service;
 
 public interface EmailService {
 
-    void sendRegisterEmail(String toEmail, String fullName, String verificationLink);
+    void sendRegisterEmail(
+            String toEmail, String fullName, String verificationLink, String verificationToken);
 }

@@ -16,6 +16,12 @@ public class CodeGenerator {
     String CHARSET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     SecureRandom RANDOM = new SecureRandom();
 
+    public String generateVerificationToken(int codeLength) {
+        log.debug("[generateVerificationToken] codeLength={}", codeLength);
+
+        return generateShortCode(codeLength);
+    }
+
     public String generateGroupInviteToken(int codeLength) {
         log.debug("[generateGroupInviteToken] codeLength={}", codeLength);
 

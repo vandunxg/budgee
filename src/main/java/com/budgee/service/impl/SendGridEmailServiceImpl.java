@@ -37,7 +37,8 @@ public class SendGridEmailServiceImpl implements EmailService {
     String REGISTER_TEMPLATE_EMAIL;
 
     @Override
-    public void sendRegisterEmail(String toEmail, String fullName, String verificationLink) {
+    public void sendRegisterEmail(
+            String toEmail, String fullName, String verificationLink, String verificationToken) {
         log.info("[sendRegisterEmail] toEmail={}", toEmail);
 
         Email from = new Email(MAIL_FROM);
@@ -46,11 +47,11 @@ public class SendGridEmailServiceImpl implements EmailService {
 
         mail.setFrom(from);
         mail.setTemplateId(REGISTER_TEMPLATE_EMAIL);
-        mail.setSubject("Welcome to Budgee!");
 
         Personalization personalization = new Personalization();
         personalization.addTo(to);
         personalization.addDynamicTemplateData("full_name", fullName);
+        personalization.addDynamicTemplateData("verification_token", verificationToken);
         personalization.addDynamicTemplateData("verification_link", verificationLink);
 
         mail.addPersonalization(personalization);
@@ -63,7 +64,7 @@ public class SendGridEmailServiceImpl implements EmailService {
 
             Response response = sendGrid.api(request);
 
-            log.info("[sendRegisterEmail] send mail successfully={}", response.toString());
+            log.info("[sendRegisterEmail] send mail successfully={}", response.getBody());
         } catch (IOException e) {
             log.error("[sendRegisterEmail] error at send mail = {}", e.getMessage());
         }

@@ -3,6 +3,7 @@ package com.budgee.service.impl;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.security.core.Authentication;
@@ -23,7 +24,9 @@ import com.budgee.model.User;
 import com.budgee.payload.request.RegisterRequest;
 import com.budgee.payload.response.RegisterResponse;
 import com.budgee.repository.UserRepository;
+import com.budgee.service.EmailService;
 import com.budgee.service.UserService;
+import com.budgee.util.CodeGenerator;
 
 @Service
 @RequiredArgsConstructor
@@ -40,6 +43,8 @@ public class UserServiceImpl implements UserService {
     // SERVICE
     // -------------------------------------------------------------------
     PasswordEncoder passwordEncoder;
+    EmailService emailService;
+    CodeGenerator codeGenerator;
 
     // -------------------------------------------------------------------
     // MAPPER
@@ -49,6 +54,13 @@ public class UserServiceImpl implements UserService {
     // -------------------------------------------------------------------
     // HELPER
     // -------------------------------------------------------------------
+
+    // -------------------------------------------------------------------
+    // PRIVATE FIELDS
+    // -------------------------------------------------------------------
+    @NonFinal String VERIFICATION_LINK = "http://localhost:8080/verify?token=";
+
+    static int VERIFICATION_TOKEN_LENGTH = 5;
 
     // -------------------------------------------------------------------
     // PUBLIC FUNCTION
@@ -63,7 +75,7 @@ public class UserServiceImpl implements UserService {
 
         final String email = normalizeEmail(request.email());
         checkUserExistsByEmail(email);
-        UserStatus status = UserStatus.ACTIVE;
+        UserStatus status = UserStatus.INACTIVE;
         Currency currency = Currency.VND;
         Role defaultUserRole = Role.USER;
         SubscriptionTier defaultSubscription = SubscriptionTier.BASIC;
@@ -73,8 +85,16 @@ public class UserServiceImpl implements UserService {
 
         user.setPasswordHash(passwordEncoder.encode(request.password()));
 
+        String verificationToken =
+                codeGenerator.generateVerificationToken(VERIFICATION_TOKEN_LENGTH);
+        user.setVerificationToken(verificationToken);
+
         userRepository.save(user);
         log.info("createUser success id={}", user.getId());
+
+        String verificationLink = VERIFICATION_LINK.concat(verificationToken);
+        emailService.sendRegisterEmail(
+                email, user.getFullName(), verificationLink, verificationToken);
 
         return RegisterResponse.builder().userId(user.getId()).build();
     }

@@ -75,6 +75,8 @@ public class User extends BaseEntity implements UserDetails {
     @Enumerated(EnumType.STRING)
     UserStatus status;
 
+    String verificationToken;
+
     LocalDateTime lastLogin;
 
     @Override
