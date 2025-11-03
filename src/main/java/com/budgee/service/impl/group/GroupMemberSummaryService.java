@@ -10,7 +10,6 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import com.budgee.mapper.GroupMemberMapper;
 import com.budgee.model.GroupMember;
 import com.budgee.model.GroupTransaction;
 import com.budgee.payload.response.group.GroupMemberResponse;
@@ -21,11 +20,9 @@ import com.budgee.payload.response.group.GroupMemberResponse;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class GroupMemberSummaryService {
 
-    GroupMemberMapper groupMemberMapper;
-
     public GroupMemberResponse calculateGroupMemberSummary(
             GroupMember member, boolean isCreator, List<GroupTransaction> transactions) {
-        log.info("[calculateGroupMemberSummary] memberId={}", member);
+        log.info("[calculateGroupMemberSummary] memberId={}", member.getId());
 
         BigDecimal totalSponsorship =
                 transactions.stream()
@@ -38,7 +35,19 @@ public class GroupMemberSummaryService {
                         .map(GroupTransaction::getAmount)
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        return groupMemberMapper.toGroupMemberResponse(
-                member, isCreator, totalSponsorship, totalAdvanceAmount);
+        log.info(
+                "[calculateGroupMemberSummary] member={} isCreator={} sponsorship={} advance={}",
+                member.getId(),
+                isCreator,
+                totalSponsorship,
+                totalAdvanceAmount);
+
+        return GroupMemberResponse.builder()
+                .isCreator(isCreator)
+                .memberId(member.getId())
+                .memberName(member.getMemberName())
+                .totalAdvanceAmount(totalAdvanceAmount)
+                .totalSponsorship(totalSponsorship)
+                .build();
     }
 }

@@ -21,13 +21,7 @@ public interface GroupMapper {
     @Mapping(target = "groupId", source = "group.id")
     @Mapping(target = "groupName", source = "group.name")
     @Mapping(target = "summary", source = "summary")
-    @Mapping(target = "members", expression = "java( null )")
-    GroupResponse toGroupResponse(Group group, GroupSummary summary);
-
-    @Mapping(target = "groupId", source = "group.id")
-    @Mapping(target = "groupName", source = "group.name")
-    @Mapping(target = "members", expression = "java( null )")
-    @Mapping(target = "summary", source = "summary")
+    @Mapping(target = "members", expression = "java(members)")
     GroupResponse toGroupResponse(
             Group group, GroupSummary summary, List<GroupMemberResponse> members);
 }

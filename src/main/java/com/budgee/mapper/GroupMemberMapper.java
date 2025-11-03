@@ -18,10 +18,17 @@ public interface GroupMemberMapper {
     @Mapping(target = "balanceOwed", expression = "java( java.math.BigDecimal.ZERO )")
     GroupMember toGroupMember(GroupMemberRequest request, Group group, GroupRole role);
 
-    @Mapping(target = "memberId", source = "member.id")
-    @Mapping(target = "isCreator", source = "isCreator")
-    @Mapping(target = "totalSponsorship", source = "totalSponsorship")
-    @Mapping(target = "totalAdvanceAmount", source = "totalAdvanceAmount")
+    @Mapping(target = "memberId", expression = "java(member.getId())")
+    @Mapping(target = "memberName", expression = "java(member.getMemberName())")
+    @Mapping(target = "isCreator", expression = "java(isCreator)")
+    @Mapping(
+            target = "totalSponsorship",
+            expression =
+                    "java(totalSponsorship != null ? totalSponsorship : java.math.BigDecimal.ZERO)")
+    @Mapping(
+            target = "totalAdvanceAmount",
+            expression =
+                    "java(totalAdvanceAmount != null ? totalAdvanceAmount : java.math.BigDecimal.ZERO)")
     GroupMemberResponse toGroupMemberResponse(
             GroupMember member,
             Boolean isCreator,

@@ -57,6 +57,8 @@ public class Wallet extends BaseEntity implements OwnerEntity {
 
     @Builder.Default Boolean isTotalIgnored = Boolean.FALSE;
 
+    @Version private Long version;
+
     @Override
     public User getOwner() {
         return this.user;

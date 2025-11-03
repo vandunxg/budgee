@@ -9,7 +9,8 @@ import java.util.UUID;
 
 import com.budgee.enums.WalletType;
 
-@Data
+@Getter
+@Setter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor

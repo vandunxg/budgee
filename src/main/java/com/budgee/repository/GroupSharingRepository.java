@@ -17,4 +17,6 @@ public interface GroupSharingRepository extends JpaRepository<GroupSharing, UUID
     GroupSharing findByGroupAndSharedUser(Group group, User sharedUser);
 
     List<GroupSharing> findAllByGroup(Group group);
+
+    void deleteAllByGroupId(UUID groupId);
 }

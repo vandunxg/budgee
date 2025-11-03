@@ -108,6 +108,7 @@ public enum ErrorCode {
     WALLET_NOT_FOUND(6000, HttpStatus.NOT_FOUND, "Wallet not found"),
     AMOUNT_MUST_BE_POSITIVE(6001, HttpStatus.BAD_REQUEST, "Amount must be positive"),
     WALLET_IS_REQUIRED(6002, HttpStatus.BAD_REQUEST, "Wallet is required"),
+    CONCURRENT_BALANCE_UPDATE(6003, HttpStatus.BAD_REQUEST, "Concurrent balance updated fail"),
 
     // General system errors (7000-7999)
     DATABASE_ERROR(7000, HttpStatus.INTERNAL_SERVER_ERROR, "Database operation failed"),

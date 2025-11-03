@@ -7,6 +7,8 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
 
+import jakarta.transaction.Transactional;
+
 import org.springframework.stereotype.Service;
 
 import com.budgee.enums.TransactionType;
@@ -52,6 +54,7 @@ public class WalletDomainServiceImpl implements WalletDomainService {
         }
     }
 
+    @Transactional
     public void updateBalanceForTransactionUpdate(
             Wallet oldWallet,
             Wallet newWallet,

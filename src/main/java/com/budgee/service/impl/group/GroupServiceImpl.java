@@ -5,23 +5,18 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
-import jakarta.transaction.Transactional;
-
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
-import com.budgee.enums.GroupRole;
-import com.budgee.enums.GroupSharingStatus;
+import com.budgee.event.application.GroupDeletedEvent;
 import com.budgee.exception.*;
 import com.budgee.factory.GroupFactory;
-import com.budgee.factory.GroupMemberFactory;
 import com.budgee.mapper.GroupMapper;
 import com.budgee.model.*;
-import com.budgee.payload.request.group.GroupMemberRequest;
 import com.budgee.payload.request.group.GroupRequest;
 import com.budgee.payload.response.group.*;
 import com.budgee.repository.GroupMemberRepository;
@@ -38,11 +33,6 @@ import com.budgee.util.*;
 @Slf4j(topic = "GROUP-SERVICE")
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class GroupServiceImpl implements GroupService {
-
-    // -------------------------------------------------------------------
-    // PRIVATE FIELDS
-    // -------------------------------------------------------------------
-    Integer SHARING_TOKEN_LENGTH = 5;
 
     // -------------------------------------------------------------------
     // REPOSITORY
@@ -62,7 +52,6 @@ public class GroupServiceImpl implements GroupService {
     // -------------------------------------------------------------------
     // FACTORY
     // -------------------------------------------------------------------
-    GroupMemberFactory groupMemberFactory;
     GroupFactory groupFactory;
 
     // -------------------------------------------------------------------
@@ -77,9 +66,9 @@ public class GroupServiceImpl implements GroupService {
     GroupValidator groupValidator;
 
     // -------------------------------------------------------------------
-    // HELPER
+    // PUBLISHER
     // -------------------------------------------------------------------
-    CodeGenerator codeGenerator;
+    ApplicationEventPublisher eventPublisher;
 
     // -------------------------------------------------------------------
     // PUBLIC FUNCTION
@@ -122,6 +111,24 @@ public class GroupServiceImpl implements GroupService {
     }
 
     @Override
+    public Void deleteGroup(UUID id) {
+        log.info("[deleteGroup]={}", id);
+
+        Group group = getGroupById(id);
+        User authenticatedUser = authContext.getAuthenticatedUser();
+
+        group.checkIsOwner(authenticatedUser);
+
+        eventPublisher.publishEvent(
+                new GroupDeletedEvent(group.getId(), authenticatedUser.getId()));
+
+        log.warn("[deleteGroup] delete groupId={} from db", id);
+        groupRepository.delete(group);
+
+        return null;
+    }
+
+    @Override
     public List<GroupResponse> getListGroups() {
         log.info("[getListGroups]");
 
@@ -130,117 +137,9 @@ public class GroupServiceImpl implements GroupService {
         return toListGroupResponse(groups);
     }
 
-    @Override
-    public GroupSharingTokenResponse getGroupSharingToken(UUID groupId) {
-        log.info("[getGroupSharingToken] groupId={}", groupId);
-
-        Group group = getGroupById(groupId);
-
-        if (group.getIsSharing()) {
-
-            return mapToGroupSharingTokenResponse(group, group.getSharingToken());
-        }
-
-        String sharingToken = codeGenerator.generateGroupInviteToken(SHARING_TOKEN_LENGTH);
-        setGroupSharing(group, sharingToken);
-
-        return mapToGroupSharingTokenResponse(group, sharingToken);
-    }
-
-    @Transactional
-    @Override
-    public GroupSharingResponse joinGroup(UUID groupId, String sharingToken) {
-        log.info("[joinGroup] groupId={} sharingToken={}", groupId, sharingToken);
-
-        Group group = getGroupById(groupId);
-        User user = authContext.getAuthenticatedUser();
-
-        group.ensureNotCreator(user);
-        group.ensureSharingEnabled();
-        group.validateToken(sharingToken);
-
-        createGroupSharing(user, group, sharingToken);
-
-        return GroupSharingResponse.builder()
-                .groupId(groupId)
-                .status(GroupSharingStatus.PENDING)
-                .build();
-    }
-
-    @Override
-    public List<JoinGroupRequestResponse> getJoinList(UUID groupId) {
-        log.info("[getJoinList]");
-
-        Group group = getGroupById(groupId);
-        User authenticatedUser = authContext.getAuthenticatedUser();
-
-        group.ensureCreator(authenticatedUser);
-
-        List<GroupSharing> joinRequests = getJoinRequestsByGroup(group);
-
-        return joinRequests.stream().map(this::mapToJoinGroupRequestResponse).toList();
-    }
-
     // -------------------------------------------------------------------
     // PRIVATE FUNCTION
     // -------------------------------------------------------------------
-
-    void createGroupSharing(User user, Group group, String sharingToken) {
-        log.info("[createGroupSharing]");
-
-        final GroupRole role = GroupRole.MEMBER;
-        final GroupSharingStatus status = GroupSharingStatus.PENDING;
-
-        GroupSharing groupSharing =
-                GroupSharing.builder()
-                        .role(role)
-                        .sharedUser(user)
-                        .group(group)
-                        .status(status)
-                        .sharingToken(sharingToken)
-                        .joinedAt(LocalDateTime.now())
-                        .build();
-
-        log.warn("[createGroupSharing] save group sharing to db");
-        groupSharingRepository.save(groupSharing);
-    }
-
-    JoinGroupRequestResponse mapToJoinGroupRequestResponse(GroupSharing groupSharing) {
-        log.info("[mapToJoinGroupRequestResponse]");
-
-        User user = groupSharing.getSharedUser();
-
-        return JoinGroupRequestResponse.builder()
-                .fullName(user.getFullName())
-                .userId(user.getId())
-                .joinedAt(groupSharing.getJoinedAt())
-                .build();
-    }
-
-    List<GroupSharing> getJoinRequestsByGroup(Group group) {
-        log.info("[getJoinRequestsByGroup]");
-
-        return groupSharingRepository.findAllByGroup(group);
-    }
-
-    void setGroupSharing(Group group, String sharingToken) {
-        log.info("[setGroupSharing]");
-
-        group.setIsSharing(Boolean.TRUE);
-        group.setSharingToken(sharingToken);
-
-        log.warn("[setGroupSharing] update group to db");
-        groupRepository.save(group);
-    }
-
-    GroupSharingTokenResponse mapToGroupSharingTokenResponse(Group group, String sharingToken) {
-        log.info("[mapToGroupSharingTokenResponse]");
-
-        return GroupSharingTokenResponse.builder()
-                .token(sharingToken)
-                .groupId(group.getId())
-                .build();
-    }
 
     List<GroupResponse> toListGroupResponse(List<Group> groups) {
         log.info("[toListGroupResponse]");
@@ -250,7 +149,7 @@ public class GroupServiceImpl implements GroupService {
                         group -> {
                             GroupSummary summary = groupSummaryService.calculateGroupSummary(group);
 
-                            return groupMapper.toGroupResponse(group, summary);
+                            return groupMapper.toGroupResponse(group, summary, null);
                         })
                 .toList();
     }
@@ -265,17 +164,9 @@ public class GroupServiceImpl implements GroupService {
         return members.stream().map(GroupMember::getGroup).toList();
     }
 
-    List<GroupMember> createGroupMembers(List<GroupMemberRequest> request, Group group) {
-        log.info("[createGroupMember]={}", request);
-
-        groupValidator.validateSingleCreator(request);
-
-        return request.stream()
-                .map(memberRequest -> groupMemberFactory.createGroupMember(memberRequest, group))
-                .toList();
-    }
-
     public GroupResponse getGroupResponse(UUID groupId) {
+        log.info("[getGroupResponse] groupId={}", groupId);
+
         Group group = getGroupById(groupId);
 
         List<GroupTransaction> transactions = groupTransactionRepository.findAllByGroup(group);

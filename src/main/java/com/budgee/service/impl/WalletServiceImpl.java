@@ -5,7 +5,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -177,20 +176,6 @@ public class WalletServiceImpl implements WalletService {
         authContext.checkIsOwner(wallet);
 
         return wallet;
-    }
-
-    void adjustWalletBalance(Wallet wallet, BigDecimal diff) {
-        log.info("[adjustWalletBalance]");
-
-        if (diff.signum() > 0) {
-            wallet.increase(diff);
-            log.info("[adjustWalletBalance] +{} -> {}", diff, wallet.getBalance());
-        } else if (diff.signum() < 0) {
-            wallet.decrease(diff.abs());
-            log.info("[adjustWalletBalance] -{} -> {}", diff.abs(), wallet.getBalance());
-        } else {
-            log.trace("[adjustWalletBalance] no change");
-        }
     }
 
     List<Wallet> getAllWalletsByUser() {

@@ -6,9 +6,6 @@ import java.util.UUID;
 import com.budgee.model.Group;
 import com.budgee.payload.request.group.GroupRequest;
 import com.budgee.payload.response.group.GroupResponse;
-import com.budgee.payload.response.group.GroupSharingResponse;
-import com.budgee.payload.response.group.GroupSharingTokenResponse;
-import com.budgee.payload.response.group.JoinGroupRequestResponse;
 
 public interface GroupService {
 
@@ -18,11 +15,7 @@ public interface GroupService {
 
     GroupResponse getGroup(UUID id);
 
+    Void deleteGroup(UUID id);
+
     List<GroupResponse> getListGroups();
-
-    GroupSharingTokenResponse getGroupSharingToken(UUID groupId);
-
-    GroupSharingResponse joinGroup(UUID groupId, String sharingToken);
-
-    List<JoinGroupRequestResponse> getJoinList(UUID groupId);
 }

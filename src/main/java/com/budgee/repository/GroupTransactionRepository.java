@@ -13,4 +13,6 @@ public interface GroupTransactionRepository extends JpaRepository<GroupTransacti
     List<GroupTransaction> findAllByGroup(Group group);
 
     List<GroupTransaction> findAllByGroupAndMember(Group group, GroupMember member);
+
+    void deleteAllByGroupId(UUID groupId);
 }
