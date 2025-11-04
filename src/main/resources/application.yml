@@ -35,5 +35,12 @@ logging:
   level:
     com.budgee: DEBUG
     org.springframework: INFO
+budgee.executor:
+  mail:
+    core-size: 2
+    max-size: 4
+  group:
+    core-size: 4
+    max-size: 8
 
 

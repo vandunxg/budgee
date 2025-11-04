@@ -6,8 +6,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +15,7 @@ import com.budgee.enums.Currency;
 import com.budgee.enums.Role;
 import com.budgee.enums.SubscriptionTier;
 import com.budgee.enums.UserStatus;
+import com.budgee.event.application.UserRegisteredEvent;
 import com.budgee.exception.AuthenticationException;
 import com.budgee.exception.ErrorCode;
 import com.budgee.exception.ValidationException;
@@ -24,7 +24,6 @@ import com.budgee.model.User;
 import com.budgee.payload.request.RegisterRequest;
 import com.budgee.payload.response.RegisterResponse;
 import com.budgee.repository.UserRepository;
-import com.budgee.service.EmailService;
 import com.budgee.service.UserService;
 import com.budgee.util.CodeGenerator;
 
@@ -43,8 +42,12 @@ public class UserServiceImpl implements UserService {
     // SERVICE
     // -------------------------------------------------------------------
     PasswordEncoder passwordEncoder;
-    EmailService emailService;
     CodeGenerator codeGenerator;
+
+    // -------------------------------------------------------------------
+    // PUBLISHER
+    // -------------------------------------------------------------------
+    ApplicationEventPublisher eventPublisher;
 
     // -------------------------------------------------------------------
     // MAPPER
@@ -58,7 +61,7 @@ public class UserServiceImpl implements UserService {
     // -------------------------------------------------------------------
     // PRIVATE FIELDS
     // -------------------------------------------------------------------
-    @NonFinal String VERIFICATION_LINK = "http://localhost:8080/verify?token=";
+    @NonFinal String VERIFICATION_LINK = "http://localhost:8080/auth/verify?token=";
 
     static int VERIFICATION_TOKEN_LENGTH = 5;
 
@@ -88,26 +91,14 @@ public class UserServiceImpl implements UserService {
         String verificationToken =
                 codeGenerator.generateVerificationToken(VERIFICATION_TOKEN_LENGTH);
         user.setVerificationToken(verificationToken);
+        user.setVerificationLink(VERIFICATION_LINK.concat(verificationToken));
+
+        eventPublisher.publishEvent(new UserRegisteredEvent(user));
 
         userRepository.save(user);
         log.info("createUser success id={}", user.getId());
 
-        String verificationLink = VERIFICATION_LINK.concat(verificationToken);
-        emailService.sendRegisterEmail(
-                email, user.getFullName(), verificationLink, verificationToken);
-
         return RegisterResponse.builder().userId(user.getId()).build();
-    }
-
-    @Override
-    public User getCurrentUser() {
-        log.info("[getCurrentUser]");
-
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !(authentication.getPrincipal() instanceof User user)) {
-            throw new AuthenticationException(ErrorCode.FORBIDDEN);
-        }
-        return user;
     }
 
     // -------------------------------------------------------------------

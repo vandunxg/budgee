@@ -77,6 +77,8 @@ public class User extends BaseEntity implements UserDetails {
 
     String verificationToken;
 
+    String verificationLink;
+
     LocalDateTime lastLogin;
 
     @Override
