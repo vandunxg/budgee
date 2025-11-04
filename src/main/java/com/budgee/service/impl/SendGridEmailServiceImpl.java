@@ -7,11 +7,18 @@ import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
+import java.util.*;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import com.budgee.enums.Currency;
+import com.budgee.model.*;
 import com.budgee.service.EmailService;
+import com.budgee.service.lookup.GroupLookup;
+import com.budgee.service.lookup.GroupMemberLookup;
+import com.budgee.service.lookup.GroupTransactionLookup;
 import com.sendgrid.Method;
 import com.sendgrid.Request;
 import com.sendgrid.Response;
@@ -26,7 +33,24 @@ import com.sendgrid.helpers.mail.objects.Personalization;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class SendGridEmailServiceImpl implements EmailService {
 
+    // -------------------------------------------------------------------
+    // SERVICES
+    // -------------------------------------------------------------------
     SendGrid sendGrid;
+
+    // -------------------------------------------------------------------
+    // LOOKUP
+    // -------------------------------------------------------------------
+    GroupLookup groupLookup;
+    GroupTransactionLookup groupTransactionLookup;
+    GroupMemberLookup groupMemberLookup;
+
+    // -------------------------------------------------------------------
+    // PRIVATE FIELDS
+    // -------------------------------------------------------------------
+    @NonFinal
+    @Value("${spring.application.url}")
+    String BASE_URL;
 
     @NonFinal
     @Value("${spring.mail.from}")
@@ -36,25 +60,106 @@ public class SendGridEmailServiceImpl implements EmailService {
     @Value("${spring.sendgrid.register-template}")
     String REGISTER_TEMPLATE_EMAIL;
 
+    @NonFinal
+    @Value("${spring.sendgrid.group-transaction-template}")
+    String GROUP_TRANSACTION_TEMPLATE_EMAIL;
+
+    @Async("mailExecutor")
     @Override
     public void sendRegisterEmail(
             String toEmail, String fullName, String verificationLink, String verificationToken) {
+
         log.info("[sendRegisterEmail] toEmail={}", toEmail);
 
-        Email from = new Email(MAIL_FROM);
-        Email to = new Email(toEmail);
-        Mail mail = new Mail();
+        Map<String, Object> templateData =
+                Map.of(
+                        "full_name", fullName,
+                        "verification_token", verificationToken,
+                        "verification_link", verificationLink);
 
-        mail.setFrom(from);
-        mail.setTemplateId(REGISTER_TEMPLATE_EMAIL);
+        Mail mail = buildMail(toEmail, REGISTER_TEMPLATE_EMAIL, templateData);
+
+        sendMailToSendGrid(mail, "register");
+    }
+
+    @Async("mailExecutor")
+    @Override
+    public void sendGroupTransactionCreatedEmail(UUID groupId, UUID transactionId) {
+        log.info(
+                "[sendGroupTransactionCreatedEmail] groupId={} transactionId={}",
+                groupId,
+                transactionId);
+
+        Group group = groupLookup.getGroupById(groupId);
+        GroupTransaction transaction =
+                groupTransactionLookup.getGroupTransactionById(transactionId);
+        GroupMember creator = transaction.getMember();
+        List<GroupMember> groupMembers = groupMemberLookup.getAllGroupMembersByGroupId(groupId);
+
+        List<String> emails =
+                groupMembers.stream()
+                        .map(GroupMember::getUser)
+                        .filter(Objects::nonNull)
+                        .map(User::getEmail)
+                        .filter(Objects::nonNull)
+                        .distinct()
+                        .toList();
+
+        if (emails.isEmpty()) {
+            log.warn(
+                    "[sendGroupTransactionCreatedEmail] No valid recipients found for groupId={}",
+                    groupId);
+            return;
+        }
+
+        Map<String, Object> data =
+                Map.of(
+                        "creatorName", creator.getMemberName(),
+                        "note", Optional.ofNullable(transaction.getNote()).orElse(""),
+                        "transactionType",
+                                Optional.ofNullable(transaction.getType())
+                                        .map(Enum::name)
+                                        .orElse("UNKNOWN"),
+                        "amount",
+                                transaction.getAmount() != null
+                                        ? transaction.getAmount().toPlainString()
+                                        : "0",
+                        "currency", Currency.VND.name(),
+                        "date", transaction.getDate().toString(),
+                        "groupName", group.getName(),
+                        "viewLink", buildGroupTransactionUrl(groupId, transactionId));
+
+        emails.forEach(
+                email -> {
+                    Mail mail = buildMail(email, GROUP_TRANSACTION_TEMPLATE_EMAIL, data);
+                    log.info("[sendGroupTransactionCreatedEmail] sending mail to {}", email);
+                    sendMailToSendGrid(mail, "group transaction created");
+                });
+    }
+
+    // -------------------------------------------------------------------
+    // PRIVATE HELPERS
+    // -------------------------------------------------------------------
+
+    Mail buildMail(String toEmail, String templateId, Map<String, Object> dynamicData) {
+        Email to = new Email(toEmail);
+        Email from = new Email(MAIL_FROM);
 
         Personalization personalization = new Personalization();
         personalization.addTo(to);
-        personalization.addDynamicTemplateData("full_name", fullName);
-        personalization.addDynamicTemplateData("verification_token", verificationToken);
-        personalization.addDynamicTemplateData("verification_link", verificationLink);
 
+        dynamicData.forEach(personalization::addDynamicTemplateData);
+
+        Mail mail = new Mail();
+        mail.setFrom(from);
+        mail.setTemplateId(templateId);
         mail.addPersonalization(personalization);
+
+        return mail;
+    }
+
+    void sendMailToSendGrid(Mail mail, String mailType) {
+        log.info("[sendMailToSendGrid] type={}", mailType);
 
         try {
             Request request = new Request();
@@ -64,9 +169,19 @@ public class SendGridEmailServiceImpl implements EmailService {
 
             Response response = sendGrid.api(request);
 
-            log.info("[sendRegisterEmail] send mail successfully={}", response.getBody());
+            log.info(
+                    "[sendMailToSendGrid] Sent {} mail successfully: status={}, body={}",
+                    mailType,
+                    response.getStatusCode(),
+                    response.getBody());
+
         } catch (IOException e) {
-            log.error("[sendRegisterEmail] error at send mail = {}", e.getMessage());
+            log.error(
+                    "[sendMailToSendGrid] Failed to send {} mail: {}", mailType, e.getMessage(), e);
         }
+    }
+
+    String buildGroupTransactionUrl(UUID groupId, UUID transactionId) {
+        return BASE_URL + "/groups/" + groupId + "/transactions/" + transactionId;
     }
 }

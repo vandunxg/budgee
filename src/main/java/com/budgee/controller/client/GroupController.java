@@ -6,6 +6,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -59,10 +60,12 @@ public class GroupController {
 
     @PostMapping("/{id}/transactions/")
     ResponseEntity<?> createGroupTransaction(
-            @PathVariable UUID id, @RequestBody GroupTransactionRequest request) {
+            @PathVariable UUID id, @RequestBody GroupTransactionRequest request)
+            throws ExecutionException, InterruptedException {
         log.info("[POST /groups/{}/transactions/]={}", id, request);
 
-        return ResponseUtil.created(groupTransactionService.createGroupTransaction(id, request));
+        return ResponseUtil.created(
+                groupTransactionService.createGroupTransaction(id, request).get());
     }
 
     @DeleteMapping("/{id}/")

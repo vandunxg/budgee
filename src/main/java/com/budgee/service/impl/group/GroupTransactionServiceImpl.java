@@ -7,12 +7,15 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import jakarta.transaction.Transactional;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import com.budgee.enums.GroupExpenseSource;
+import com.budgee.event.application.GroupTransactionCreatedEvent;
 import com.budgee.exception.ErrorCode;
 import com.budgee.exception.NotFoundException;
 import com.budgee.mapper.GroupTransactionMapper;
@@ -39,8 +42,9 @@ public class GroupTransactionServiceImpl implements GroupTransactionService {
     GroupTransactionRepository groupTransactionRepository;
 
     // -------------------------------------------------------------------
-    // SERVICE
+    // PUBLISHER
     // -------------------------------------------------------------------
+    ApplicationEventPublisher eventPublisher;
 
     // -------------------------------------------------------------------
     // MAPPER
@@ -63,11 +67,11 @@ public class GroupTransactionServiceImpl implements GroupTransactionService {
 
     @Transactional
     @Override
-    public GroupTransactionResponse createGroupTransaction(
-            UUID groupID, GroupTransactionRequest request) {
-        log.info("[createGroupTransaction] groupId={} request={}", groupID, request);
+    public CompletableFuture<GroupTransactionResponse> createGroupTransaction(
+            UUID groupId, GroupTransactionRequest request) {
+        log.info("[createGroupTransaction] groupId={} request={}", groupId, request);
 
-        Group group = groupLookup.getGroupById(groupID);
+        Group group = groupLookup.getGroupById(groupId);
         GroupMember member = getGroupMemberById(request.memberId());
 
         groupTransactionValidator.validateAuthenticatedUserIsGroupMember(group);
@@ -81,7 +85,9 @@ public class GroupTransactionServiceImpl implements GroupTransactionService {
         log.warn("[createGroupTransaction] save transaction to db");
         groupTransactionRepository.save(transaction);
 
-        return toGroupTransactionResponse(transaction);
+        eventPublisher.publishEvent(new GroupTransactionCreatedEvent(groupId, transaction.getId()));
+
+        return CompletableFuture.completedFuture(toGroupTransactionResponse(transaction));
     }
 
     @Override

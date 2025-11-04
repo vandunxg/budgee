@@ -6,7 +6,6 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.context.event.EventListener;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import com.budgee.event.application.UserRegisteredEvent;
@@ -21,9 +20,8 @@ public class UserEventHandler {
 
     EmailService emailService;
 
-    @Async("mailExecutor")
     @EventListener
-    public void handleUserRegistered(UserRegisteredEvent event) {
+    public void onUserRegistered(UserRegisteredEvent event) {
         User user = event.user();
         log.info("[handleUserRegistered]= {}", user.getEmail());
 

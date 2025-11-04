@@ -14,7 +14,9 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import com.budgee.event.application.GroupDeletedEvent;
+import com.budgee.event.application.GroupTransactionCreatedEvent;
 import com.budgee.repository.GroupTransactionRepository;
+import com.budgee.service.EmailService;
 
 @Component
 @RequiredArgsConstructor
@@ -27,6 +29,11 @@ public class GroupTransactionEventHandler {
     // -------------------------------------------------------------------
     GroupTransactionRepository groupTransactionRepository;
 
+    // -------------------------------------------------------------------
+    // SERVICES
+    // -------------------------------------------------------------------
+    EmailService emailService;
+
     @Transactional
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     public void onGroupDeleted(GroupDeletedEvent event) {
@@ -36,5 +43,14 @@ public class GroupTransactionEventHandler {
         log.warn("[onGroupDeleted] delete all group transactions by groupId={}", groupId);
 
         groupTransactionRepository.deleteAllByGroupId(groupId);
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onGroupTransactionCreated(GroupTransactionCreatedEvent event) {
+        UUID transactionId = event.transactionId();
+        UUID groupId = event.groupId();
+        log.info("[onGroupTransactionCreated] groupId={} transactionId={}", groupId, transactionId);
+
+        emailService.sendGroupTransactionCreatedEmail(groupId, transactionId);
     }
 }
