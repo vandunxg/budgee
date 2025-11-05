@@ -111,7 +111,7 @@ public class AuthServiceImpl implements AuthService {
             String email = jwtService.extractEmail(refreshToken, TokenType.REFRESH_TOKEN);
             User user = findUserByEmail(email);
 
-            return issueTokens(user);
+            return issueTokensIgnoreRefreshToken(user, refreshToken);
         } catch (Exception ex) {
             log.warn(
                     "refresh token invalid fp={}, reason={}",
@@ -154,6 +154,13 @@ public class AuthServiceImpl implements AuthService {
         } catch (AuthenticationException ex) {
             throw new com.budgee.exception.AuthenticationException(ErrorCode.INVALID_CREDENTIALS);
         }
+    }
+
+    TokenResponse issueTokensIgnoreRefreshToken(User user, String refreshToken) {
+        return TokenResponse.builder()
+                .accessToken(jwtService.generateAccessToken(user))
+                .refreshToken(refreshToken)
+                .build();
     }
 
     TokenResponse issueTokens(User user) {
