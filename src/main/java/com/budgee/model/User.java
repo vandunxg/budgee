@@ -111,7 +111,7 @@ public class User extends BaseEntity implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return UserDetails.super.isEnabled();
+        return UserStatus.ACTIVE.equals(this.status);
     }
 
     public void ensureIsActiveAccount() {

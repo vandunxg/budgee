@@ -53,6 +53,7 @@ public enum ErrorCode {
             1210,
             HttpStatus.TOO_MANY_REQUESTS,
             "You are sending requests too frequently, please wait before retrying."),
+    ACCOUNT_VERIFIED(1211, HttpStatus.BAD_REQUEST, "User account is verified."),
     // Group-related errors (2000-2999)
     GROUP_NOT_FOUND(2000, HttpStatus.NOT_FOUND, "Group not found"),
     GROUP_MEMBER_NOT_FOUND(2001, HttpStatus.NOT_FOUND, "Member not found in group"),

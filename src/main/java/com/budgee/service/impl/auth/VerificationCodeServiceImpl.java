@@ -100,6 +100,8 @@ public class VerificationCodeServiceImpl implements VerificationCodeService {
     public void sendCode(User user, VerificationType type, String target) {
         log.info("[sendCode] user={} type={} target={}", user.getId(), type, target);
 
+        ensureAccountNotVerified(type, user);
+
         VerificationCode lastestVerificationCode =
                 verificationCodeRepository.findLastestVerificationCodeByUserAndType(user, type);
 
@@ -184,6 +186,16 @@ public class VerificationCodeServiceImpl implements VerificationCodeService {
                 verificationCodeRepository.findLatestByUserAndType(user, type).stream().findFirst();
 
         return latest.map(VerificationCode::isVerified).orElse(false);
+    }
+
+    void ensureAccountNotVerified(VerificationType type, User user) {
+        log.info("[ensureAccountNotVerified] userId={} type={}", user.getId(), type);
+
+        if (VerificationType.REGISTER.equals(type) && user.isEnabled()) {
+            log.info("[ensureAccountNotVerified] account verified can't get register code");
+
+            throw new ValidationException(ErrorCode.ACCOUNT_VERIFIED);
+        }
     }
 
     void ensureVerificationCooldownRespected(VerificationCode verificationCode) {

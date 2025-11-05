@@ -21,7 +21,6 @@ import org.springframework.util.StringUtils;
 
 import com.budgee.enums.TokenType;
 import com.budgee.enums.VerificationType;
-import com.budgee.event.application.UserRegisteredEvent;
 import com.budgee.exception.ErrorCode;
 import com.budgee.factory.UserFactory;
 import com.budgee.model.User;
@@ -138,7 +137,8 @@ public class AuthServiceImpl implements AuthService {
 
         verificationCodeService.sendCode(user, REGISTER_VERIFICATION_TYPE, email);
 
-        eventPublisher.publishEvent(new UserRegisteredEvent(email, REGISTER_VERIFICATION_TYPE));
+        //        eventPublisher.publishEvent(new UserRegisteredEvent(email,
+        // REGISTER_VERIFICATION_TYPE));
 
         return RegisterResponse.builder().userId(user.getId()).build();
     }
