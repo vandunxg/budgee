@@ -8,7 +8,8 @@ import com.budgee.payload.response.group.GroupTransactionResponse;
 
 public interface GroupTransactionService {
 
-    CompletableFuture<GroupTransactionResponse> createGroupTransaction(UUID groupID, GroupTransactionRequest request);
+    CompletableFuture<GroupTransactionResponse> createGroupTransaction(
+            UUID groupID, GroupTransactionRequest request);
 
     GroupTransactionResponse getGroupTransaction(UUID groupId, UUID transactionId);
 }
