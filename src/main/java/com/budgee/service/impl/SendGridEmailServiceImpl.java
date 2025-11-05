@@ -74,13 +74,15 @@ public class SendGridEmailServiceImpl implements EmailService {
         Map<String, Object> templateData =
                 Map.of(
                         "full_name", fullName,
-                        "verification_token", verificationToken,
-                        "verification_link", verificationLink);
+                        "verification_token", verificationToken);
 
         Mail mail = buildMail(toEmail, REGISTER_TEMPLATE_EMAIL, templateData);
 
         sendMailToSendGrid(mail, "register");
     }
+
+    @Override
+    public void sendForgetPassword() {}
 
     @Async("mailExecutor")
     @Override

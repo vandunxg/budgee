@@ -19,11 +19,14 @@ spring:
       max-request-size: 2MB
   application:
     version: 1.0
+    verification:
+      expiry-minutes: 15
   sendgrid:
     api-key: YUMMY_TOKEN
     register-template: YUMMY_TOKEN
   mail:
       from: YUMMY_EMAIL
+
 jwt:
   private-key:
     access-token: YUMMY_TOKEN

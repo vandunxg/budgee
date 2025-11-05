@@ -44,7 +44,15 @@ public enum ErrorCode {
     ACCOUNT_LOCKED(1202, HttpStatus.FORBIDDEN, "User account is locked"),
     ACCOUNT_DISABLED(1203, HttpStatus.FORBIDDEN, "User account is disabled"),
     ACCOUNT_NOT_VERIFIED(1204, HttpStatus.FORBIDDEN, "User account is not verified"),
-
+    VERIFICATION_CODE_NOT_MATCH(1205, HttpStatus.FORBIDDEN, "Verification code not match"),
+    VERIFICATION_CODE_EXPIRED(1206, HttpStatus.FORBIDDEN, "Verification code expired"),
+    VERIFICATION_CODE_ALREADY_USED(1207, HttpStatus.FORBIDDEN, "Verification code already used"),
+    INVALID_VERIFICATION_TYPE(1208, HttpStatus.BAD_REQUEST, "Invalid verification type"),
+    VERIFICATION_CODE_NOT_FOUND(1209, HttpStatus.FORBIDDEN, "Verification code not found"),
+    SEND_TOO_FAST(
+            1210,
+            HttpStatus.TOO_MANY_REQUESTS,
+            "You are sending requests too frequently, please wait before retrying."),
     // Group-related errors (2000-2999)
     GROUP_NOT_FOUND(2000, HttpStatus.NOT_FOUND, "Group not found"),
     GROUP_MEMBER_NOT_FOUND(2001, HttpStatus.NOT_FOUND, "Member not found in group"),

@@ -26,10 +26,18 @@ public class UserLookup {
     UserRepository userRepository;
 
     public User getUserById(UUID userId) {
-        log.debug("[getUserById]={}", userId);
+        log.info("[getUserById]={}", userId);
 
         return userRepository
                 .findById(userId)
+                .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    public User getUserByEmail(String email) {
+        log.info("[getUserByEmail]={}", email);
+
+        return userRepository
+                .findByEmail(email)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND));
     }
 }

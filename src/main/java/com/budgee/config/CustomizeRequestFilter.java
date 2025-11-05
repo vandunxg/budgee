@@ -29,7 +29,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import com.budgee.exception.ErrorCode;
 import com.budgee.payload.response.ErrorResponse;
 import com.budgee.service.JwtService;
-import com.budgee.service.impl.UserDetailService;
+import com.budgee.service.impl.auth.UserDetailService;
 import com.budgee.util.ResponseUtil;
 import com.google.gson.Gson;
 

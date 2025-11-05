@@ -1,4 +1,4 @@
-package com.budgee.service.impl;
+package com.budgee.service.impl.auth;
 
 import static com.budgee.enums.TokenType.ACCESS_TOKEN;
 import static com.budgee.enums.TokenType.REFRESH_TOKEN;

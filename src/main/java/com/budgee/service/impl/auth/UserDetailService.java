@@ -1,4 +1,4 @@
-package com.budgee.service.impl;
+package com.budgee.service.impl.auth;
 
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
