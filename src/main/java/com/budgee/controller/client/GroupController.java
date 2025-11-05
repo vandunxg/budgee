@@ -6,6 +6,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import com.budgee.payload.request.group.GroupRequest;
 import com.budgee.payload.request.group.GroupTransactionRequest;
 import com.budgee.service.GroupService;
+import com.budgee.service.GroupSharingService;
 import com.budgee.service.GroupTransactionService;
 import com.budgee.util.MessageConstants;
 import com.budgee.util.ResponseUtil;
@@ -27,9 +29,9 @@ public class GroupController {
     // -------------------------------------------------------------------
     // SERVICES
     // -------------------------------------------------------------------
-
     GroupService groupService;
     GroupTransactionService groupTransactionService;
+    GroupSharingService groupSharingService;
 
     // -------------------------------------------------------------------
     // PUBLIC API
@@ -58,10 +60,19 @@ public class GroupController {
 
     @PostMapping("/{id}/transactions/")
     ResponseEntity<?> createGroupTransaction(
-            @PathVariable UUID id, @RequestBody GroupTransactionRequest request) {
+            @PathVariable UUID id, @RequestBody GroupTransactionRequest request)
+            throws ExecutionException, InterruptedException {
         log.info("[POST /groups/{}/transactions/]={}", id, request);
 
-        return ResponseUtil.created(groupTransactionService.createGroupTransaction(id, request));
+        return ResponseUtil.created(
+                groupTransactionService.createGroupTransaction(id, request).get());
+    }
+
+    @DeleteMapping("/{id}/")
+    ResponseEntity<?> deleteGroup(@PathVariable UUID id) {
+        log.info("[DELETE /groups/{}]", id);
+
+        return ResponseUtil.success(MessageConstants.DELETE_SUCCESS, groupService.deleteGroup(id));
     }
 
     @GetMapping("/{groupId}/transactions/{transactionId}")
@@ -82,10 +93,10 @@ public class GroupController {
     }
 
     @GetMapping("/{id}/sharing")
-    ResponseEntity<?> getGroupSharingToken(@PathVariable UUID id) {
+    ResponseEntity<?> generateGroupSharing(@PathVariable UUID id) {
         log.info("[GET /{}/sharing]", id);
 
-        return ResponseUtil.success(groupService.getGroupSharingToken(id));
+        return ResponseUtil.success(groupSharingService.generateToken(id));
     }
 
     @GetMapping("/{id}/join")
@@ -94,13 +105,15 @@ public class GroupController {
         log.info("[GET /groups/{}/join?sharing-token={}]", id, sharingToken);
 
         return ResponseUtil.success(
-                MessageConstants.JOIN_GROUP_SUCCESS, groupService.joinGroup(id, sharingToken));
+                MessageConstants.JOIN_GROUP_SUCCESS,
+                groupSharingService.joinGroup(id, sharingToken));
     }
 
     @GetMapping("/{id}/join-list")
     ResponseEntity<?> joinList(@PathVariable UUID id) {
         log.info("[GET /groups/{}/join-list]", id);
 
-        return ResponseUtil.success(MessageConstants.FETCH_SUCCESS, groupService.getJoinList(id));
+        return ResponseUtil.success(
+                MessageConstants.FETCH_SUCCESS, groupSharingService.getJoinList(id));
     }
 }

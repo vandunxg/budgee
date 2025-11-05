@@ -5,7 +5,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -97,7 +96,7 @@ public class WalletServiceImpl implements WalletService {
 
         setDefaultWallet(request.isDefault(), wallet);
 
-        log.debug("[createWallet] saved wallet={} balance={}", wallet.getId(), wallet.getBalance());
+        log.info("[createWallet] saved wallet={} balance={}", wallet.getId(), wallet.getBalance());
         walletRepository.save(wallet);
 
         return walletMapper.toWalletResponse(wallet);
@@ -113,7 +112,7 @@ public class WalletServiceImpl implements WalletService {
         applyWalletUpdates(wallet, request);
 
         walletRepository.save(wallet);
-        log.debug(
+        log.info(
                 "[updateWallet] updated wallet={} balance={}", wallet.getId(), wallet.getBalance());
 
         return walletMapper.toWalletResponse(wallet);
@@ -177,20 +176,6 @@ public class WalletServiceImpl implements WalletService {
         authContext.checkIsOwner(wallet);
 
         return wallet;
-    }
-
-    void adjustWalletBalance(Wallet wallet, BigDecimal diff) {
-        log.info("[adjustWalletBalance]");
-
-        if (diff.signum() > 0) {
-            wallet.increase(diff);
-            log.debug("[adjustWalletBalance] +{} -> {}", diff, wallet.getBalance());
-        } else if (diff.signum() < 0) {
-            wallet.decrease(diff.abs());
-            log.debug("[adjustWalletBalance] -{} -> {}", diff.abs(), wallet.getBalance());
-        } else {
-            log.trace("[adjustWalletBalance] no change");
-        }
     }
 
     List<Wallet> getAllWalletsByUser() {

@@ -1,12 +1,17 @@
 package com.budgee.service;
 
-import com.budgee.model.Group;
-import com.budgee.model.GroupSharing;
-import com.budgee.model.User;
+import java.util.List;
+import java.util.UUID;
+
+import com.budgee.payload.response.group.GroupSharingResponse;
+import com.budgee.payload.response.group.GroupSharingTokenResponse;
+import com.budgee.payload.response.group.JoinGroupRequestResponse;
 
 public interface GroupSharingService {
 
-    void createGroupSharing(User user, Group group, String sharingToken);
+    GroupSharingTokenResponse generateToken(UUID groupID);
 
-    GroupSharing getGroupSharingByUserAndGroup(User user, Group group);
+    GroupSharingResponse joinGroup(UUID groupId, String token);
+
+    List<JoinGroupRequestResponse> getJoinList(UUID groupId);
 }

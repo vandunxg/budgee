@@ -22,6 +22,8 @@ import com.budgee.enums.Currency;
 import com.budgee.enums.Role;
 import com.budgee.enums.SubscriptionTier;
 import com.budgee.enums.UserStatus;
+import com.budgee.exception.AuthenticationException;
+import com.budgee.exception.ErrorCode;
 
 @Getter
 @Setter
@@ -110,5 +112,12 @@ public class User extends BaseEntity implements UserDetails {
     @Override
     public boolean isEnabled() {
         return UserDetails.super.isEnabled();
+    }
+
+    public void ensureIsActiveAccount() {
+
+        if (!UserStatus.ACTIVE.equals(this.status)) {
+            throw new AuthenticationException(ErrorCode.ACCOUNT_NOT_VERIFIED);
+        }
     }
 }

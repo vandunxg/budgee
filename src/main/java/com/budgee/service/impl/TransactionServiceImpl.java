@@ -9,11 +9,13 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
+import jakarta.persistence.OptimisticLockException;
 import jakarta.transaction.Transactional;
 
 import org.springframework.stereotype.Service;
 
 import com.budgee.enums.TransactionType;
+import com.budgee.exception.BusinessException;
 import com.budgee.exception.ErrorCode;
 import com.budgee.exception.NotFoundException;
 import com.budgee.exception.ValidationException;
@@ -62,6 +64,11 @@ public class TransactionServiceImpl implements TransactionService {
     CategoryLookup categoryLookup;
 
     // -------------------------------------------------------------------
+    // PRIVATE FIELDS
+    // -------------------------------------------------------------------
+    static final int MAX_RETRY = 3;
+
+    // -------------------------------------------------------------------
     // PUBLIC FUNCTION
     // -------------------------------------------------------------------
 
@@ -70,25 +77,40 @@ public class TransactionServiceImpl implements TransactionService {
     public TransactionResponse createTransaction(TransactionRequest request) {
         log.info("[createTransaction] request={}", request);
 
-        Wallet wallet = walletLookup.getWalletForCurrentUser(request.walletId());
-        Category category = categoryLookup.getCategoryForCurrentUser(request.categoryId());
-        User user = authContext.getAuthenticatedUser();
+        int currentRetry = 1;
 
-        Transaction transaction = transactionMapper.toTransaction(request, wallet, category, user);
+        while (currentRetry <= MAX_RETRY) {
+            try {
+                Wallet wallet = walletLookup.getWalletForCurrentUser(request.walletId());
+                Category category = categoryLookup.getCategoryForCurrentUser(request.categoryId());
+                User user = authContext.getAuthenticatedUser();
 
-        ensureTransactionTypeMatchesCategory(category.getType(), request.type());
+                Transaction transaction =
+                        transactionMapper.toTransaction(request, wallet, category, user);
 
-        walletDomainService.applyTransaction(wallet, transaction);
+                ensureTransactionTypeMatchesCategory(category.getType(), request.type());
 
-        log.debug(
-                "[createTransaction] update wallet when create transactionId={}",
-                transaction.getId());
-        walletRepository.save(wallet);
+                walletDomainService.applyTransaction(wallet, transaction);
 
-        log.debug("[createTransaction] saving transaction...");
-        transactionRepository.save(transaction);
+                log.info(
+                        "[createTransaction] update wallet when create transactionId={}",
+                        transaction.getId());
+                walletRepository.save(wallet);
 
-        return transactionMapper.toTransactionResponse(transaction);
+                log.info("[createTransaction] saving transaction...");
+                transactionRepository.save(transaction);
+
+                return transactionMapper.toTransactionResponse(transaction);
+            } catch (OptimisticLockException e) {
+                log.warn("[createTransaction] Retrying wallet update (attempt {})", currentRetry);
+                if (currentRetry == MAX_RETRY)
+                    throw new BusinessException(ErrorCode.CONCURRENT_BALANCE_UPDATE);
+            } finally {
+                currentRetry++;
+            }
+        }
+
+        return null;
     }
 
     @Override
@@ -96,32 +118,48 @@ public class TransactionServiceImpl implements TransactionService {
     public TransactionResponse updateTransaction(UUID id, TransactionRequest request) {
         log.info("[updateTransaction] id={} request={}", id, request);
 
-        Transaction transaction = getTransactionById(id);
-        Category newCategory = categoryLookup.getCategoryForCurrentUser(request.categoryId());
-        Wallet newWallet = walletLookup.getWalletForCurrentUser(request.walletId());
-        Wallet oldWallet = transaction.getWallet();
+        int currentRetry = 1;
 
-        BigDecimal oldAmount = transaction.getAmount();
-        BigDecimal newAmount = request.amount();
-        TransactionType oldType = transaction.getType();
-        TransactionType newType = request.type();
+        while (currentRetry <= MAX_RETRY) {
+            try {
+                Transaction transaction = getTransactionById(id);
+                Category newCategory =
+                        categoryLookup.getCategoryForCurrentUser(request.categoryId());
+                Wallet newWallet = walletLookup.getWalletForCurrentUser(request.walletId());
+                Wallet oldWallet = transaction.getWallet();
 
-        authContext.checkIsOwner(transaction);
-        ensureTransactionTypeMatchesCategory(newCategory.getType(), newType);
+                BigDecimal oldAmount = transaction.getAmount();
+                BigDecimal newAmount = request.amount();
+                TransactionType oldType = transaction.getType();
+                TransactionType newType = request.type();
 
-        applyTransactionChanges(transaction, request, newCategory, newWallet);
+                authContext.checkIsOwner(transaction);
+                ensureTransactionTypeMatchesCategory(newCategory.getType(), newType);
 
-        walletDomainService.updateBalanceForTransactionUpdate(
-                oldWallet, newWallet, oldAmount, newAmount, oldType, newType);
-        log.debug(
-                "[createTransaction] save wallet when update transactionId={}",
-                transaction.getId());
-        walletRepository.saveAll(List.of(oldWallet, newWallet));
+                applyTransactionChanges(transaction, request, newCategory, newWallet);
 
-        log.debug("[updateTransaction] updated successfully");
-        transactionRepository.save(transaction);
+                walletDomainService.updateBalanceForTransactionUpdate(
+                        oldWallet, newWallet, oldAmount, newAmount, oldType, newType);
+                log.info(
+                        "[createTransaction] save wallet when update transactionId={}",
+                        transaction.getId());
+                walletRepository.saveAll(List.of(oldWallet, newWallet));
 
-        return transactionMapper.toTransactionResponse(transaction);
+                log.info("[updateTransaction] updated successfully");
+                transactionRepository.save(transaction);
+
+                return transactionMapper.toTransactionResponse(transaction);
+            } catch (OptimisticLockException e) {
+                log.warn("[updateTransaction] Retrying wallet update (attempt {})", currentRetry);
+
+                if (currentRetry == MAX_RETRY)
+                    throw new BusinessException(ErrorCode.CONCURRENT_BALANCE_UPDATE);
+            } finally {
+                currentRetry++;
+            }
+        }
+
+        return null;
     }
 
     @Override
@@ -146,18 +184,31 @@ public class TransactionServiceImpl implements TransactionService {
     public void deleteTransaction(UUID id) {
         log.info("[deleteTransaction] id={}", id);
 
-        Transaction transaction = getTransactionById(id);
-        Wallet wallet = transaction.getWallet();
-        authContext.checkIsOwner(transaction);
+        int currentRetry = 1;
 
-        walletDomainService.reverseTransaction(wallet, transaction);
-        log.debug(
-                "[deleteTransaction] update wallet when delete transactionId={}",
-                transaction.getId());
-        walletRepository.save(wallet);
+        while (currentRetry <= MAX_RETRY) {
+            try {
+                Transaction transaction = getTransactionById(id);
+                Wallet wallet = transaction.getWallet();
+                authContext.checkIsOwner(transaction);
 
-        log.warn("[deleteTransaction] deleted transaction id={}", id);
-        transactionRepository.delete(transaction);
+                walletDomainService.reverseTransaction(wallet, transaction);
+                log.info(
+                        "[deleteTransaction] update wallet when delete transactionId={}",
+                        transaction.getId());
+                walletRepository.save(wallet);
+
+                log.warn("[deleteTransaction] deleted transaction id={}", id);
+                transactionRepository.delete(transaction);
+            } catch (OptimisticLockException e) {
+                log.warn("[deleteTransaction] Retrying wallet update (attempt {})", currentRetry);
+
+                if (currentRetry == MAX_RETRY)
+                    throw new BusinessException(ErrorCode.CONCURRENT_BALANCE_UPDATE);
+            } finally {
+                currentRetry++;
+            }
+        }
     }
 
     public Transaction getTransactionById(UUID id) {

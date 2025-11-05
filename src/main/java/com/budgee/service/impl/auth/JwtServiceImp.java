@@ -1,4 +1,4 @@
-package com.budgee.service.impl;
+package com.budgee.service.impl.auth;
 
 import static com.budgee.enums.TokenType.ACCESS_TOKEN;
 import static com.budgee.enums.TokenType.REFRESH_TOKEN;
@@ -134,6 +134,7 @@ public class JwtServiceImp implements JwtService {
 
     Key getKeys(TokenType type) {
         log.info("----------[ GET-KEY ]----------");
+
         switch (type) {
             case ACCESS_TOKEN -> {
                 return Keys.hmacShaKeyFor(Decoders.BASE64.decode(ACCESS_TOKEN_PRIVATE_KEY));
@@ -149,12 +150,14 @@ public class JwtServiceImp implements JwtService {
 
     <T> T extractClaim(String token, TokenType type, Function<Claims, T> claimResolver) {
         log.info("----------[ extractClaim ]----------");
+
         final Claims claims = extraAllClaim(token, type);
         return claimResolver.apply(claims);
     }
 
     Claims extraAllClaim(String token, TokenType type) {
         log.info("----------[ extraAllClaim ]----------");
+
         try {
             return Jwts.parserBuilder()
                     .setSigningKey(getKeys(type))

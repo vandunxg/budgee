@@ -5,20 +5,16 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import java.util.UUID;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.budgee.enums.Currency;
-import com.budgee.enums.Role;
-import com.budgee.enums.SubscriptionTier;
 import com.budgee.enums.UserStatus;
 import com.budgee.exception.AuthenticationException;
 import com.budgee.exception.ErrorCode;
 import com.budgee.exception.ValidationException;
-import com.budgee.mapper.UserMapper;
+import com.budgee.factory.UserFactory;
 import com.budgee.model.User;
 import com.budgee.payload.request.RegisterRequest;
 import com.budgee.payload.response.RegisterResponse;
@@ -37,18 +33,9 @@ public class UserServiceImpl implements UserService {
     UserRepository userRepository;
 
     // -------------------------------------------------------------------
-    // SERVICE
+    // FACTORY
     // -------------------------------------------------------------------
-    PasswordEncoder passwordEncoder;
-
-    // -------------------------------------------------------------------
-    // MAPPER
-    // -------------------------------------------------------------------
-    UserMapper userMapper;
-
-    // -------------------------------------------------------------------
-    // HELPER
-    // -------------------------------------------------------------------
+    UserFactory userFactory;
 
     // -------------------------------------------------------------------
     // PUBLIC FUNCTION
@@ -59,19 +46,10 @@ public class UserServiceImpl implements UserService {
     public RegisterResponse createUser(RegisterRequest request) {
         log.info("[createUser] create user with email {}", request.email());
 
-        //        comparePasswordAndConfirmPassword(request.password(), request.confirmPassword());
-
         final String email = normalizeEmail(request.email());
         checkUserExistsByEmail(email);
-        UserStatus status = UserStatus.ACTIVE;
-        Currency currency = Currency.VND;
-        Role defaultUserRole = Role.USER;
-        SubscriptionTier defaultSubscription = SubscriptionTier.BASIC;
 
-        User user =
-                userMapper.toUser(request, status, currency, defaultUserRole, defaultSubscription);
-
-        user.setPasswordHash(passwordEncoder.encode(request.password()));
+        User user = userFactory.createUser(request, email);
 
         userRepository.save(user);
         log.info("createUser success id={}", user.getId());
@@ -80,19 +58,28 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User getCurrentUser() {
-        log.info("[getCurrentUser]");
+    public void activateUser(UUID userId) {
+        log.info("[activateUser] userId={}", userId);
 
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !(authentication.getPrincipal() instanceof User user)) {
-            throw new AuthenticationException(ErrorCode.FORBIDDEN);
-        }
-        return user;
+        User user = getUserById(userId);
+
+        user.setStatus(UserStatus.ACTIVE);
+
+        log.info("[activateUser] update active user");
+        userRepository.save(user);
     }
 
     // -------------------------------------------------------------------
     // PRIVATE FUNCTION
     // -------------------------------------------------------------------
+
+    User getUserById(UUID userId) {
+        log.info("[getUserById]={}", userId);
+
+        return userRepository
+                .findById(userId)
+                .orElseThrow(() -> new AuthenticationException(ErrorCode.USER_NOT_FOUND));
+    }
 
     void comparePasswordAndConfirmPassword(String password, String confirmPassword) {
         log.info("[comparePasswordAndConfirmPassword]");

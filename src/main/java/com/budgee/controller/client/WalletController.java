@@ -1,5 +1,10 @@
 package com.budgee.controller.client;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -13,6 +18,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.budgee.payload.request.WalletRequest;
+import com.budgee.payload.response.ErrorResponse;
+import com.budgee.payload.response.swagger.WalletApiResponse;
 import com.budgee.service.WalletService;
 import com.budgee.util.MessageConstants;
 import com.budgee.util.ResponseUtil;
@@ -22,18 +29,34 @@ import com.budgee.util.ResponseUtil;
 @RequiredArgsConstructor
 @Slf4j(topic = "WALLET-CONTROLLER")
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@Tag(name = "Wallet API", description = "CRUD operations for user wallets")
 public class WalletController {
 
     // -------------------------------------------------------------------
     // SERVICES
     // -------------------------------------------------------------------
-
     WalletService walletService;
 
     // -------------------------------------------------------------------
     // PUBLIC API
     // -------------------------------------------------------------------
 
+    @Operation(
+            summary = "Get wallet by ID",
+            description = "Fetch wallet details using the given UUID.",
+            responses = {
+                @ApiResponse(
+                        responseCode = "200",
+                        description = "Wallet fetched successfully",
+                        content =
+                                @Content(
+                                        schema =
+                                                @Schema(implementation = WalletApiResponse.class))),
+                @ApiResponse(
+                        responseCode = "401",
+                        description = "Wallet not found",
+                        content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+            })
     @RequestMapping("/{id}")
     ResponseEntity<?> getWallet(@PathVariable UUID id) {
         log.info("[GET /wallets/{}]", id);

@@ -7,6 +7,8 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
 
+import jakarta.transaction.Transactional;
+
 import org.springframework.stereotype.Service;
 
 import com.budgee.enums.TransactionType;
@@ -52,6 +54,7 @@ public class WalletDomainServiceImpl implements WalletDomainService {
         }
     }
 
+    @Transactional
     public void updateBalanceForTransactionUpdate(
             Wallet oldWallet,
             Wallet newWallet,
@@ -59,6 +62,7 @@ public class WalletDomainServiceImpl implements WalletDomainService {
             BigDecimal newAmount,
             TransactionType oldType,
             TransactionType newType) {
+        log.info("[updateBalanceForTransactionUpdate]");
 
         boolean sameWallet = oldWallet.getId().equals(newWallet.getId());
 
@@ -76,6 +80,7 @@ public class WalletDomainServiceImpl implements WalletDomainService {
             BigDecimal newAmount,
             TransactionType oldType,
             TransactionType newType) {
+        log.info("[handleSameWallet]");
 
         if (oldType.equals(newType)) {
             BigDecimal diff = calculateDiff(oldType, oldAmount, newAmount);
@@ -87,6 +92,8 @@ public class WalletDomainServiceImpl implements WalletDomainService {
     }
 
     BigDecimal calculateDiff(TransactionType type, BigDecimal oldAmount, BigDecimal newAmount) {
+        log.info("[calculateDiff]");
+
         return switch (type) {
             case EXPENSE -> oldAmount.subtract(newAmount);
             case INCOME -> newAmount.subtract(oldAmount);
@@ -95,6 +102,8 @@ public class WalletDomainServiceImpl implements WalletDomainService {
     }
 
     void adjust(Wallet wallet, BigDecimal diff) {
+        log.info("[adjust]");
+
         if (diff.signum() > 0) wallet.increase(diff);
         else if (diff.signum() < 0) wallet.decrease(diff.abs());
     }

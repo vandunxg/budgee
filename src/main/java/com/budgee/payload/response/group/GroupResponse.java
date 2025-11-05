@@ -3,7 +3,7 @@ package com.budgee.payload.response.group;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.math.BigDecimal;
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -16,16 +16,11 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class GroupResponse {
+public class GroupResponse implements Serializable {
 
     UUID groupId;
     String groupName;
-    BigDecimal balance;
-    BigDecimal totalSponsorship;
-    BigDecimal totalIncome;
-    BigDecimal totalExpense;
-    BigDecimal totalIncomeAndSponsorship;
-    BigDecimal totalRemaining;
+    GroupSummary summary;
     LocalDate startDate;
     List<GroupMemberResponse> members;
 }

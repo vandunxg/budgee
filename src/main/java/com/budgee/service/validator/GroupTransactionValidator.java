@@ -1,4 +1,4 @@
-package com.budgee.util;
+package com.budgee.service.validator;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -11,19 +11,23 @@ import org.springframework.stereotype.Component;
 
 import com.budgee.exception.ErrorCode;
 import com.budgee.exception.NotFoundException;
+import com.budgee.exception.ValidationException;
 import com.budgee.model.Group;
-import com.budgee.repository.GroupRepository;
+import com.budgee.model.User;
+import com.budgee.repository.GroupMemberRepository;
+import com.budgee.util.AuthContext;
 
 @Component
 @RequiredArgsConstructor
-@Slf4j(topic = "GROUP-HELPER")
+@Slf4j(topic = "GROUP-TRANSACTION-VALIDATOR")
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class GroupHelper {
+public class GroupTransactionValidator {
 
     // -------------------------------------------------------------------
     // REPOSITORY
     // -------------------------------------------------------------------
-    GroupRepository groupRepository;
+    GroupMemberRepository groupMemberRepository;
+    AuthContext authContext;
 
     // -------------------------------------------------------------------
     // SERVICE
@@ -41,12 +45,21 @@ public class GroupHelper {
     // PUBLIC FUNCTION
     // -------------------------------------------------------------------
 
-    public Group getGroupById(UUID groupId) {
-        log.info("[getGroupById]={}", groupId);
+    public void validateAuthenticatedUserIsGroupMember(Group group) {
+        log.debug("[validateAuthenticatedUserIsGroupMember]");
 
-        return groupRepository
-                .findById(groupId)
-                .orElseThrow(() -> new NotFoundException(ErrorCode.GROUP_NOT_FOUND));
+        User user = authContext.getAuthenticatedUser();
+        if (!groupMemberRepository.existsByGroupAndUser(group, user)) {
+            throw new ValidationException(ErrorCode.USER_NOT_IN_GROUP);
+        }
+    }
+
+    public void validateMemberBelongsToGroup(Group group, UUID memberId) {
+        log.debug("validateMemberBelongsToGroup");
+
+        if (groupMemberRepository.findByGroupAndId(group, memberId) == null) {
+            throw new NotFoundException(ErrorCode.GROUP_MEMBER_NOT_FOUND);
+        }
     }
 
     // -------------------------------------------------------------------

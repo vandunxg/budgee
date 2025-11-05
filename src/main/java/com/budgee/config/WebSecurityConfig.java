@@ -23,7 +23,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import com.budgee.service.impl.UserDetailService;
+import com.budgee.service.impl.auth.UserDetailService;
 
 @Configuration
 @RequiredArgsConstructor

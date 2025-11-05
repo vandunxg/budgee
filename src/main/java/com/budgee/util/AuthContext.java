@@ -41,7 +41,7 @@ public class AuthContext {
     // -------------------------------------------------------------------
 
     public <T extends OwnerEntity> void checkIsOwner(T entity) {
-        log.info("[checkIsOwner]");
+        log.debug("[checkIsOwner]");
 
         User authenticatedUser = this.getAuthenticatedUser();
 
@@ -49,7 +49,7 @@ public class AuthContext {
     }
 
     public User getAuthenticatedUser() {
-        log.info("[getAuthenticatedUser]");
+        log.debug("[getAuthenticatedUser]");
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !(authentication.getPrincipal() instanceof User user)) {

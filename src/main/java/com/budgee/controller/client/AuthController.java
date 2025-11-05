@@ -22,11 +22,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.budgee.payload.request.LoginRequest;
 import com.budgee.payload.request.RegisterRequest;
+import com.budgee.payload.request.SendVerificationRequest;
+import com.budgee.payload.request.VerificationRequest;
 import com.budgee.payload.response.ErrorResponse;
 import com.budgee.payload.response.swagger.RegisterApiResponse;
 import com.budgee.payload.response.swagger.TokenApiResponse;
 import com.budgee.service.AuthService;
-import com.budgee.service.UserService;
+import com.budgee.service.VerificationCodeService;
+import com.budgee.util.MessageConstants;
 import com.budgee.util.ResponseUtil;
 
 @RestController
@@ -40,7 +43,7 @@ public class AuthController {
     // -------------------------------------------------------------------
     // SERVICES
     // -------------------------------------------------------------------
-    UserService userService;
+    VerificationCodeService verificationCodeService;
     AuthService authService;
 
     // -------------------------------------------------------------------
@@ -69,7 +72,7 @@ public class AuthController {
     public ResponseEntity<?> register(@RequestBody @Valid RegisterRequest request) {
         log.info("[POST auth/register]={}", request.email());
 
-        return ResponseUtil.created(userService.createUser(request));
+        return ResponseUtil.created(authService.register(request));
     }
 
     @Operation(
@@ -92,6 +95,24 @@ public class AuthController {
             throws AccessDeniedException {
         log.info("[POST /auth/login]={}", request.email());
 
-        return ResponseUtil.success("Login successfully", authService.getAccessToken(request));
+        return ResponseUtil.success(
+                MessageConstants.LOGIN_SUCCESS, authService.getAccessToken(request));
+    }
+
+    @PostMapping("/verification/send")
+    public ResponseEntity<?> getVerificationCode(@RequestBody SendVerificationRequest request) {
+        log.info("[POST /auth/verification/send]={}", request);
+
+        verificationCodeService.getVerificationCode(request);
+
+        return ResponseUtil.success("Send verification request successfully", null);
+    }
+
+    @PostMapping("/verification/verify")
+    public ResponseEntity<?> verifyCode(@RequestBody VerificationRequest request) {
+        log.info("[POST /auth/verification/verify]={}", request);
+
+        return ResponseUtil.success(
+                "Verify successfully", verificationCodeService.verifyCode(request));
     }
 }

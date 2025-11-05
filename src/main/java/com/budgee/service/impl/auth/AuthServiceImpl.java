@@ -1,4 +1,4 @@
-package com.budgee.service.impl;
+package com.budgee.service.impl.auth;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -8,24 +8,31 @@ import lombok.extern.slf4j.Slf4j;
 import java.time.Clock;
 import java.time.LocalDateTime;
 
+import jakarta.transaction.Transactional;
+
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import com.budgee.enums.TokenType;
+import com.budgee.enums.VerificationType;
+import com.budgee.event.application.UserRegisteredEvent;
 import com.budgee.exception.ErrorCode;
+import com.budgee.factory.UserFactory;
 import com.budgee.model.User;
 import com.budgee.payload.request.LoginRequest;
+import com.budgee.payload.request.RegisterRequest;
+import com.budgee.payload.response.RegisterResponse;
 import com.budgee.payload.response.TokenResponse;
 import com.budgee.repository.UserRepository;
 import com.budgee.service.AuthService;
 import com.budgee.service.JwtService;
+import com.budgee.service.VerificationCodeService;
 
 @Service
 @RequiredArgsConstructor
@@ -43,20 +50,22 @@ public class AuthServiceImpl implements AuthService {
     // -------------------------------------------------------------------
     JwtService jwtService;
     AuthenticationManager authenticationManager;
-
-    // -------------------------------------------------------------------
-    // MAPPER
-    // -------------------------------------------------------------------
-
-    // -------------------------------------------------------------------
-    // HELPER
-    // -------------------------------------------------------------------
+    VerificationCodeService verificationCodeService;
 
     // -------------------------------------------------------------------
     // PRIVATE FIELDS
     // -------------------------------------------------------------------
-
     Clock clock = Clock.systemDefaultZone();
+
+    // -------------------------------------------------------------------
+    // FACTORY
+    // -------------------------------------------------------------------
+    UserFactory userFactory;
+
+    // -------------------------------------------------------------------
+    // PUBLISHER
+    // -------------------------------------------------------------------
+    ApplicationEventPublisher eventPublisher;
 
     // -------------------------------------------------------------------
     // PUBLIC FUNCTION
@@ -64,19 +73,13 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public TokenResponse getAccessToken(LoginRequest request) throws AccessDeniedException {
+        log.info("[getAccessToken]");
+
         final String email = normalizeEmail(request.email());
         log.info("getAccessToken start email_fingerprint={}", fingerprint(email));
 
         try {
-            Authentication authRequest =
-                    new UsernamePasswordAuthenticationToken(email, request.password());
-            Authentication authentication = authenticationManager.authenticate(authRequest);
-
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            log.debug(
-                    "authenticated={}, authorities={}",
-                    authentication.isAuthenticated(),
-                    authentication.getAuthorities());
+            authenticate(email, request.password());
         } catch (AuthenticationException ex) {
             log.warn(
                     "authentication failed email_fingerprint={}, reason={}",
@@ -87,14 +90,12 @@ public class AuthServiceImpl implements AuthService {
 
         User user = findUserByEmail(email);
 
+        user.ensureIsActiveAccount();
+
         user.setLastLogin(LocalDateTime.now(clock));
         userRepository.save(user);
 
-        String accessToken = jwtService.generateAccessToken(user);
-        String refreshToken = jwtService.generateRefreshToken(user);
-
-        log.info("getAccessToken success user_id={}", user.getId());
-        return TokenResponse.builder().accessToken(accessToken).refreshToken(refreshToken).build();
+        return issueTokens(user);
     }
 
     @Override
@@ -110,12 +111,7 @@ public class AuthServiceImpl implements AuthService {
             String email = jwtService.extractEmail(refreshToken, TokenType.REFRESH_TOKEN);
             User user = findUserByEmail(email);
 
-            String newAccessToken = jwtService.generateAccessToken(user);
-
-            return TokenResponse.builder()
-                    .accessToken(newAccessToken)
-                    .refreshToken(refreshToken)
-                    .build();
+            return issueTokens(user);
         } catch (Exception ex) {
             log.warn(
                     "refresh token invalid fp={}, reason={}",
@@ -125,9 +121,55 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
+    @Override
+    @Transactional
+    public RegisterResponse register(RegisterRequest request) {
+        log.info("[register] create user with email {}", request.email());
+
+        final String email = normalizeEmail(request.email());
+        checkUserExistsByEmail(email);
+
+        User user = userFactory.createUser(request, email);
+
+        VerificationType REGISTER_VERIFICATION_TYPE = VerificationType.REGISTER;
+
+        userRepository.save(user);
+        log.info("createUser success id={}", user.getId());
+
+        verificationCodeService.sendCode(user, REGISTER_VERIFICATION_TYPE, email);
+
+        eventPublisher.publishEvent(new UserRegisteredEvent(email, REGISTER_VERIFICATION_TYPE));
+
+        return RegisterResponse.builder().userId(user.getId()).build();
+    }
+
     // -------------------------------------------------------------------
     // PRIVATE FUNCTION
     // -------------------------------------------------------------------
+
+    void authenticate(String email, String password) {
+        try {
+            var authRequest = new UsernamePasswordAuthenticationToken(email, password);
+            authenticationManager.authenticate(authRequest);
+        } catch (AuthenticationException ex) {
+            throw new com.budgee.exception.AuthenticationException(ErrorCode.INVALID_CREDENTIALS);
+        }
+    }
+
+    TokenResponse issueTokens(User user) {
+        return TokenResponse.builder()
+                .accessToken(jwtService.generateAccessToken(user))
+                .refreshToken(jwtService.generateRefreshToken(user))
+                .build();
+    }
+
+    void checkUserExistsByEmail(String email) {
+        log.info("[checkUserExistsByEmail]: {}", email);
+        if (userRepository.existsByEmail(email)) {
+            log.error("[checkUserExistsByEmail] email already exists");
+            throw new com.budgee.exception.AuthenticationException(ErrorCode.EMAIL_ALREADY_EXISTS);
+        }
+    }
 
     String normalizeEmail(String email) {
         return email == null ? null : email.trim().toLowerCase();
@@ -141,7 +183,8 @@ public class AuthServiceImpl implements AuthService {
     }
 
     User findUserByEmail(String email) {
-        log.debug("findUserByEmail email_fp={}", fingerprint(email));
+        log.info("findUserByEmail email_fp={}", fingerprint(email));
+
         return userRepository
                 .findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Email not found"));
