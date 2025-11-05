@@ -15,10 +15,7 @@ import java.nio.file.AccessDeniedException;
 import jakarta.validation.Valid;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.budgee.payload.request.LoginRequest;
 import com.budgee.payload.request.RegisterRequest;
@@ -97,6 +94,15 @@ public class AuthController {
 
         return ResponseUtil.success(
                 MessageConstants.LOGIN_SUCCESS, authService.getAccessToken(request));
+    }
+
+    @PostMapping("/refresh-token")
+    public ResponseEntity<?> refreshToken(@RequestHeader("x-token") String refreshToken)
+            throws AccessDeniedException {
+        log.info("[POST /auth/refresh-token] refresh token={}", refreshToken.substring(1, 15));
+
+        return ResponseUtil.success(
+                MessageConstants.FETCH_SUCCESS, authService.getRefreshToken(refreshToken));
     }
 
     @PostMapping("/verification/send")
