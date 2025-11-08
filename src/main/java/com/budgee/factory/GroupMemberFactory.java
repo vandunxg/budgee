@@ -46,4 +46,23 @@ public class GroupMemberFactory {
                 .user(isCreator ? authenticatedUser : null)
                 .build();
     }
+
+    public GroupMember createGroupMemberWithRoleMember(Group group, User user) {
+        log.debug(
+                "[createGroupMemberWithRoleMember] groupId={} userId={}",
+                group.getId(),
+                user.getId());
+
+        final GroupRole GROUP_ROLE_MEMBER = GroupRole.MEMBER;
+
+        return GroupMember.builder()
+                .memberName(user.getFullName())
+                .group(group)
+                .role(GROUP_ROLE_MEMBER)
+                .joinedAt(LocalDateTime.now())
+                .balanceOwed(BigDecimal.ZERO)
+                .advanceAmount(BigDecimal.ZERO)
+                .user(user)
+                .build();
+    }
 }

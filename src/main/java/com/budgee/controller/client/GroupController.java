@@ -11,6 +11,7 @@ import java.util.concurrent.ExecutionException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.budgee.payload.request.group.AcceptJoinRequest;
 import com.budgee.payload.request.group.GroupRequest;
 import com.budgee.payload.request.group.GroupTransactionRequest;
 import com.budgee.service.GroupService;
@@ -115,5 +116,15 @@ public class GroupController {
 
         return ResponseUtil.success(
                 MessageConstants.FETCH_SUCCESS, groupSharingService.getJoinList(id));
+    }
+
+    @PostMapping("/{groupId}/accept-join")
+    ResponseEntity<?> acceptJoin(
+            @PathVariable UUID groupId, @RequestBody AcceptJoinRequest request) {
+        log.info("[POST /groups/{}/accept-join]={}", groupId, request);
+
+        groupSharingService.acceptJoinRequest(groupId, request);
+
+        return ResponseUtil.success(MessageConstants.ACCEPT_JOIN_GROUP_SUCCESS);
     }
 }

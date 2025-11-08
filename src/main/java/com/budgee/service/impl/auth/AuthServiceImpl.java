@@ -75,15 +75,7 @@ public class AuthServiceImpl implements AuthService {
         final String email = normalizeEmail(request.email());
         log.info("getAccessToken start email_fingerprint={}", fingerprint(email));
 
-        try {
-            authenticate(email, request.password());
-        } catch (AuthenticationException ex) {
-            log.warn(
-                    "authentication failed email_fingerprint={}, reason={}",
-                    fingerprint(email),
-                    ex.getClass().getSimpleName());
-            throw new com.budgee.exception.AuthenticationException(ErrorCode.INVALID_CREDENTIALS);
-        }
+        authenticate(email, request.password());
 
         User user = findUserByEmail(email);
 

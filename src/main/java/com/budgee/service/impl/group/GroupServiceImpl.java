@@ -21,7 +21,6 @@ import com.budgee.payload.request.group.GroupRequest;
 import com.budgee.payload.response.group.*;
 import com.budgee.repository.GroupMemberRepository;
 import com.budgee.repository.GroupRepository;
-import com.budgee.repository.GroupSharingRepository;
 import com.budgee.repository.GroupTransactionRepository;
 import com.budgee.service.GroupService;
 import com.budgee.service.validator.DateValidator;
@@ -40,7 +39,6 @@ public class GroupServiceImpl implements GroupService {
     GroupRepository groupRepository;
     GroupMemberRepository groupMemberRepository;
     GroupTransactionRepository groupTransactionRepository;
-    GroupSharingRepository groupSharingRepository;
 
     // -------------------------------------------------------------------
     // SERVICE

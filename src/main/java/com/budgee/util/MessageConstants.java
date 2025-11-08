@@ -11,4 +11,5 @@ public final class MessageConstants {
     public static final String LOGOUT_SUCCESS = "Logged out successfully";
     public static final String OPERATION_SUCCESS = "Operation successful";
     public static final String JOIN_GROUP_SUCCESS = "Join group successful";
+    public static final String ACCEPT_JOIN_GROUP_SUCCESS = "Accept join group successful";
 }

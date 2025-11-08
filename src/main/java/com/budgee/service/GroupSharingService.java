@@ -3,6 +3,7 @@ package com.budgee.service;
 import java.util.List;
 import java.util.UUID;
 
+import com.budgee.payload.request.group.AcceptJoinRequest;
 import com.budgee.payload.response.group.GroupSharingResponse;
 import com.budgee.payload.response.group.GroupSharingTokenResponse;
 import com.budgee.payload.response.group.JoinGroupRequestResponse;
@@ -14,4 +15,6 @@ public interface GroupSharingService {
     GroupSharingResponse joinGroup(UUID groupId, String token);
 
     List<JoinGroupRequestResponse> getJoinList(UUID groupId);
+
+    void acceptJoinRequest(UUID groupId, AcceptJoinRequest request);
 }

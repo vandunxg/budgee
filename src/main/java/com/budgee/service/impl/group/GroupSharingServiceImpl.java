@@ -11,13 +11,18 @@ import java.util.UUID;
 
 import jakarta.transaction.Transactional;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import com.budgee.enums.GroupRole;
 import com.budgee.enums.GroupSharingStatus;
+import com.budgee.event.application.AcceptedJoinGroupEvent;
+import com.budgee.exception.ErrorCode;
+import com.budgee.exception.ValidationException;
 import com.budgee.model.Group;
 import com.budgee.model.GroupSharing;
 import com.budgee.model.User;
+import com.budgee.payload.request.group.AcceptJoinRequest;
 import com.budgee.payload.response.group.GroupSharingResponse;
 import com.budgee.payload.response.group.GroupSharingTokenResponse;
 import com.budgee.payload.response.group.JoinGroupRequestResponse;
@@ -25,6 +30,7 @@ import com.budgee.repository.GroupRepository;
 import com.budgee.repository.GroupSharingRepository;
 import com.budgee.service.GroupSharingService;
 import com.budgee.service.lookup.GroupLookup;
+import com.budgee.service.lookup.UserLookup;
 import com.budgee.util.AuthContext;
 import com.budgee.util.CodeGenerator;
 
@@ -54,6 +60,12 @@ public class GroupSharingServiceImpl implements GroupSharingService {
     // LOOKUP
     // -------------------------------------------------------------------
     GroupLookup groupLookup;
+    UserLookup userLookup;
+
+    // -------------------------------------------------------------------
+    // PUBLISHER
+    // -------------------------------------------------------------------
+    ApplicationEventPublisher eventPublisher;
 
     static final int SHARING_TOKEN_LENGTH = 5;
 
@@ -93,6 +105,12 @@ public class GroupSharingServiceImpl implements GroupSharingService {
         group.ensureSharingEnabled();
         group.validateToken(token);
 
+        if (group.checkUserIsMember(user)) {
+            log.warn("[joinGroup] user is member of this group, cant join again");
+
+            throw new ValidationException(ErrorCode.USER_IN_GROUP);
+        }
+
         GroupSharing sharing =
                 GroupSharing.builder()
                         .role(GroupRole.MEMBER)
@@ -123,6 +141,24 @@ public class GroupSharingServiceImpl implements GroupSharingService {
         List<GroupSharing> joinRequests = getJoinRequestsByGroup(group);
 
         return joinRequests.stream().map(this::mapToJoinGroupRequestResponse).toList();
+    }
+
+    @Transactional
+    @Override
+    public void acceptJoinRequest(UUID groupId, AcceptJoinRequest request) {
+        log.info("[acceptJoinRequest] groupId={} userId={}", groupId, request.userId());
+
+        Group group = groupLookup.getGroupById(groupId);
+        User sharedUser = userLookup.getUserById(request.userId());
+
+        GroupSharing sharing = groupSharingRepository.findByGroupAndSharedUser(group, sharedUser);
+        sharing.setStatus(GroupSharingStatus.ACCEPTED);
+        sharing.setAcceptedAt(LocalDateTime.now());
+
+        log.info("[acceptJoinRequest] update status sharing to db");
+        groupSharingRepository.save(sharing);
+
+        eventPublisher.publishEvent(new AcceptedJoinGroupEvent(groupId, request.userId()));
     }
 
     List<GroupSharing> getJoinRequestsByGroup(Group group) {

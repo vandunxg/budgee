@@ -70,18 +70,27 @@ public class Group extends BaseEntity implements OwnerEntity {
     }
 
     public void ensureCurrentUserIsMember(User user) {
-        boolean isMember =
-                members.stream()
-                        .anyMatch(
-                                member -> {
-                                    User userOfMember = member.getUser();
-
-                                    if (Objects.isNull(userOfMember)) return false;
-
-                                    return Objects.equals(userOfMember.getId(), user.getId());
-                                });
+        boolean isMember = checkUserIsMember(user);
 
         if (!isMember) throw new BusinessException(ErrorCode.GROUP_MEMBER_NOT_FOUND);
+    }
+
+    public void addMemberToGroup(GroupMember member) {
+        this.getMembers().add(member);
+        this.setMemberCount(this.getMembers().size());
+    }
+
+    public boolean checkUserIsMember(User user) {
+
+        return members.stream()
+                .anyMatch(
+                        member -> {
+                            User userOfMember = member.getUser();
+
+                            if (Objects.isNull(userOfMember)) return false;
+
+                            return Objects.equals(userOfMember.getId(), user.getId());
+                        });
     }
 
     public void increase(BigDecimal amount) {
