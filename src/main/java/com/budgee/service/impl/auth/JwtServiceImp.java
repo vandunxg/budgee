@@ -98,6 +98,12 @@ public class JwtServiceImp implements JwtService {
         return extractClaim(token, type, Claims::getSubject);
     }
 
+    public Date extractExpiration(String token, TokenType type) {
+        log.info("[extractExpiration] token={} type={}", token.substring(0, 10), type);
+
+        return extractClaim(token, type, Claims::getExpiration);
+    }
+
     // -------------------------------------------------------------------
     // PRIVATE FUNCTION
     // -------------------------------------------------------------------

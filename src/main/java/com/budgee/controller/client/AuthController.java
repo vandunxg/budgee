@@ -17,10 +17,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.budgee.payload.request.LoginRequest;
-import com.budgee.payload.request.RegisterRequest;
-import com.budgee.payload.request.SendVerificationRequest;
-import com.budgee.payload.request.VerificationRequest;
+import com.budgee.payload.request.*;
 import com.budgee.payload.response.ErrorResponse;
 import com.budgee.payload.response.swagger.RegisterApiResponse;
 import com.budgee.payload.response.swagger.TokenApiResponse;
@@ -94,6 +91,16 @@ public class AuthController {
 
         return ResponseUtil.success(
                 MessageConstants.LOGIN_SUCCESS, authService.getAccessToken(request));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(@RequestBody LogoutRequest request)
+            throws AccessDeniedException {
+        log.info("[POST /auth/logout] refresh token={}", request.refreshToken().substring(1, 15));
+
+        authService.logout(request);
+
+        return ResponseUtil.success(MessageConstants.LOGOUT_SUCCESS);
     }
 
     @PostMapping("/refresh-token")

@@ -7,10 +7,10 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.Date;
 
 import jakarta.transaction.Transactional;
 
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -25,12 +25,14 @@ import com.budgee.exception.ErrorCode;
 import com.budgee.factory.UserFactory;
 import com.budgee.model.User;
 import com.budgee.payload.request.LoginRequest;
+import com.budgee.payload.request.LogoutRequest;
 import com.budgee.payload.request.RegisterRequest;
 import com.budgee.payload.response.RegisterResponse;
 import com.budgee.payload.response.TokenResponse;
 import com.budgee.repository.UserRepository;
 import com.budgee.service.AuthService;
 import com.budgee.service.JwtService;
+import com.budgee.service.TokenBlackListService;
 import com.budgee.service.VerificationCodeService;
 
 @Service
@@ -50,6 +52,7 @@ public class AuthServiceImpl implements AuthService {
     JwtService jwtService;
     AuthenticationManager authenticationManager;
     VerificationCodeService verificationCodeService;
+    TokenBlackListService blackListService;
 
     // -------------------------------------------------------------------
     // PRIVATE FIELDS
@@ -60,11 +63,6 @@ public class AuthServiceImpl implements AuthService {
     // FACTORY
     // -------------------------------------------------------------------
     UserFactory userFactory;
-
-    // -------------------------------------------------------------------
-    // PUBLISHER
-    // -------------------------------------------------------------------
-    ApplicationEventPublisher eventPublisher;
 
     // -------------------------------------------------------------------
     // PUBLIC FUNCTION
@@ -106,18 +104,16 @@ public class AuthServiceImpl implements AuthService {
             throw new com.budgee.exception.AuthenticationException(ErrorCode.INVALID_REFRESH_TOKEN);
         }
 
-        try {
-            String email = jwtService.extractEmail(refreshToken, TokenType.REFRESH_TOKEN);
-            User user = findUserByEmail(email);
+        if (blackListService.isBlackListed(refreshToken)) {
+            log.info("[getRefreshToken] token={} in blacklist", refreshToken.substring(0, 10));
 
-            return issueTokensIgnoreRefreshToken(user, refreshToken);
-        } catch (Exception ex) {
-            log.warn(
-                    "refresh token invalid fp={}, reason={}",
-                    fingerprint(refreshToken),
-                    ex.getClass().getSimpleName());
-            throw new AccessDeniedException("Invalid or expired token");
+            throw new com.budgee.exception.AuthenticationException(ErrorCode.EXPIRED_TOKEN);
         }
+
+        String email = jwtService.extractEmail(refreshToken, TokenType.REFRESH_TOKEN);
+        User user = findUserByEmail(email);
+
+        return issueTokensIgnoreRefreshToken(user, refreshToken);
     }
 
     @Override
@@ -141,6 +137,16 @@ public class AuthServiceImpl implements AuthService {
         // REGISTER_VERIFICATION_TYPE));
 
         return RegisterResponse.builder().userId(user.getId()).build();
+    }
+
+    @Override
+    public void logout(LogoutRequest request) {
+        log.info("[logout]={}", request);
+
+        Date expirationDate =
+                jwtService.extractExpiration(request.refreshToken(), TokenType.REFRESH_TOKEN);
+
+        blackListService.blackListToken(request.refreshToken(), expirationDate.toInstant());
     }
 
     // -------------------------------------------------------------------
