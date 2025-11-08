@@ -9,8 +9,6 @@ import java.time.LocalDateTime;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
 import com.budgee.enums.Currency;
 import com.budgee.enums.InvoiceStatus;
 import com.budgee.enums.PaymentMethod;
@@ -20,7 +18,6 @@ import com.budgee.enums.PaymentMethod;
 @Entity
 @Table(name = "invoices")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@EntityListeners(AuditingEntityListener.class)
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor

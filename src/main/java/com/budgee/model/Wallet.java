@@ -8,8 +8,6 @@ import java.math.BigDecimal;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
 import com.budgee.enums.Currency;
 import com.budgee.enums.WalletType;
 import com.budgee.exception.ErrorCode;
@@ -20,7 +18,6 @@ import com.budgee.exception.ValidationException;
 @Entity
 @Table(name = "wallets")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@EntityListeners(AuditingEntityListener.class)
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor

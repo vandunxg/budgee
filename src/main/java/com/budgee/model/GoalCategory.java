@@ -5,14 +5,11 @@ import lombok.experimental.FieldDefaults;
 
 import jakarta.persistence.*;
 
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
 @Getter
 @Setter
 @Entity
 @Table(name = "goal_categories")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@EntityListeners(AuditingEntityListener.class)
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor

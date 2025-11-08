@@ -9,8 +9,6 @@ import java.time.LocalDateTime;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
 import com.budgee.enums.GroupRole;
 
 @Getter
@@ -20,7 +18,6 @@ import com.budgee.enums.GroupRole;
         name = "group_members",
         indexes = {@Index(columnList = "group_id"), @Index(columnList = "user_id")})
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@EntityListeners(AuditingEntityListener.class)
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor

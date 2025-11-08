@@ -9,8 +9,6 @@ import java.util.Objects;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
 import com.budgee.enums.GroupRole;
 import com.budgee.enums.GroupSharingStatus;
 import com.budgee.exception.ErrorCode;
@@ -21,7 +19,6 @@ import com.budgee.exception.ValidationException;
 @Entity
 @Table(name = "group_sharings")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@EntityListeners(AuditingEntityListener.class)
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor

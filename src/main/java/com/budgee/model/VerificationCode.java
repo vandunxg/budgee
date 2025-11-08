@@ -7,8 +7,6 @@ import java.time.LocalDateTime;
 
 import jakarta.persistence.*;
 
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
 import com.budgee.enums.VerificationType;
 
 @Getter
@@ -16,7 +14,6 @@ import com.budgee.enums.VerificationType;
 @Entity
 @Table(name = "verification_codes")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@EntityListeners(AuditingEntityListener.class)
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor

@@ -11,8 +11,6 @@ import java.util.Objects;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
 import com.budgee.enums.GroupExpenseSource;
 import com.budgee.enums.TransactionType;
 
@@ -21,7 +19,6 @@ import com.budgee.enums.TransactionType;
 @Entity
 @Table(name = "group_transactions")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@EntityListeners(AuditingEntityListener.class)
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor

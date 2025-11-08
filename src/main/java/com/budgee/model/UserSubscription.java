@@ -9,8 +9,6 @@ import java.time.LocalDateTime;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
 import com.budgee.enums.SubscriptionStatus;
 
 @Getter
@@ -18,7 +16,6 @@ import com.budgee.enums.SubscriptionStatus;
 @Entity
 @Table(name = "user_subscriptions")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@EntityListeners(AuditingEntityListener.class)
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor

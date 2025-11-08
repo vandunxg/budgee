@@ -10,8 +10,6 @@ import java.time.LocalTime;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
 import com.budgee.enums.TransactionType;
 
 @Getter
@@ -19,7 +17,6 @@ import com.budgee.enums.TransactionType;
 @Entity
 @Table(name = "transactions")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@EntityListeners(AuditingEntityListener.class)
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor

@@ -9,8 +9,6 @@ import java.time.LocalDate;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
 import com.budgee.enums.VoucherDiscountType;
 
 @Getter
@@ -18,7 +16,6 @@ import com.budgee.enums.VoucherDiscountType;
 @Entity
 @Table(name = "voucher_codes")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@EntityListeners(AuditingEntityListener.class)
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor

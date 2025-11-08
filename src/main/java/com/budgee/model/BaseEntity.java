@@ -10,10 +10,13 @@ import java.util.UUID;
 
 import jakarta.persistence.*;
 
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
 @Getter
 @Setter
 @MappedSuperclass
 @FieldDefaults(level = AccessLevel.PROTECTED)
+@EntityListeners(AuditingEntityListener.class)
 public abstract class BaseEntity {
 
     @Id

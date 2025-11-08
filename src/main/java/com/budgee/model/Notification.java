@@ -6,8 +6,6 @@ import lombok.experimental.FieldDefaults;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
 import com.budgee.enums.NotificationType;
 
 @Getter
@@ -15,7 +13,6 @@ import com.budgee.enums.NotificationType;
 @Entity
 @Table(name = "notifications")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@EntityListeners(AuditingEntityListener.class)
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor

@@ -12,8 +12,6 @@ import java.util.Set;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
 import com.budgee.exception.BusinessException;
 import com.budgee.exception.ErrorCode;
 import com.budgee.exception.ValidationException;
@@ -23,7 +21,6 @@ import com.budgee.exception.ValidationException;
 @Entity
 @Table(name = "`groups`")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@EntityListeners(AuditingEntityListener.class)
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
