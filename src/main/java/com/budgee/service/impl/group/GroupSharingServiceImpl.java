@@ -135,10 +135,11 @@ public class GroupSharingServiceImpl implements GroupSharingService {
 
         Group group = groupLookup.getGroupById(groupId);
         User authenticatedUser = authContext.getAuthenticatedUser();
+        GroupSharingStatus status = GroupSharingStatus.PENDING;
 
         group.ensureCreator(authenticatedUser);
 
-        List<GroupSharing> joinRequests = getJoinRequestsByGroup(group);
+        List<GroupSharing> joinRequests = getJoinRequestsByGroupAndPendingStatus(group, status);
 
         return joinRequests.stream().map(this::mapToJoinGroupRequestResponse).toList();
     }
@@ -152,8 +153,16 @@ public class GroupSharingServiceImpl implements GroupSharingService {
         User sharedUser = userLookup.getUserById(request.userId());
 
         GroupSharing sharing = groupSharingRepository.findByGroupAndSharedUser(group, sharedUser);
-        sharing.setStatus(GroupSharingStatus.ACCEPTED);
-        sharing.setAcceptedAt(LocalDateTime.now());
+
+        sharing.ensureGroupSharingNotNull(sharing);
+
+        if (sharing.isAccepted()) {
+            log.warn("[acceptJoinRequest] sharing is accepted, can't accept again");
+
+            throw new ValidationException(ErrorCode.INVALID_REQUEST_JOINING_GROUP);
+        }
+
+        sharing.markAccepted();
 
         log.info("[acceptJoinRequest] update status sharing to db");
         groupSharingRepository.save(sharing);
@@ -161,10 +170,14 @@ public class GroupSharingServiceImpl implements GroupSharingService {
         eventPublisher.publishEvent(new AcceptedJoinGroupEvent(groupId, request.userId()));
     }
 
-    List<GroupSharing> getJoinRequestsByGroup(Group group) {
-        log.info("[getJoinRequestsByGroup]");
+    List<GroupSharing> getJoinRequestsByGroupAndPendingStatus(
+            Group group, GroupSharingStatus status) {
+        log.info(
+                "[getJoinRequestsByGroupAndPendingStatus] groupId={} status={}",
+                group.getId(),
+                status);
 
-        return groupSharingRepository.findAllByGroup(group);
+        return groupSharingRepository.findAllByGroupAndStatus(group, status);
     }
 
     JoinGroupRequestResponse mapToJoinGroupRequestResponse(GroupSharing groupSharing) {

@@ -78,6 +78,7 @@ public enum ErrorCode {
     USER_IN_GROUP(2013, HttpStatus.BAD_REQUEST, "User in group"),
     INVALID_JOIN_STATUS(2014, HttpStatus.BAD_REQUEST, "Invalid join status"),
     GROUP_ADMIN_CANT_JOIN(2015, HttpStatus.BAD_REQUEST, "Group admin can't join own group"),
+    INVALID_REQUEST_JOINING_GROUP(2016, HttpStatus.BAD_REQUEST, "Invalid request joining group"),
     // Transaction-related errors (3000-3999)
     TRANSACTION_NOT_FOUND(3000, HttpStatus.NOT_FOUND, "Transaction not found"),
     INVALID_TRANSACTION_AMOUNT(

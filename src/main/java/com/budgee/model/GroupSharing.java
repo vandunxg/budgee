@@ -4,6 +4,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
@@ -12,6 +13,8 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.budgee.enums.GroupRole;
 import com.budgee.enums.GroupSharingStatus;
+import com.budgee.exception.ErrorCode;
+import com.budgee.exception.ValidationException;
 
 @Getter
 @Setter
@@ -46,6 +49,7 @@ public class GroupSharing extends BaseEntity {
     String sharingToken;
 
     LocalDateTime joinedAt;
+
     LocalDateTime acceptedAt;
 
     // -------------------------------------------------------------------
@@ -67,5 +71,13 @@ public class GroupSharing extends BaseEntity {
 
     public void markRevoked() {
         this.status = GroupSharingStatus.REVOKED;
+    }
+
+    public void ensureGroupSharingNotNull(GroupSharing sharing) {
+
+        if (Objects.isNull(sharing)) {
+
+            throw new ValidationException(ErrorCode.INVALID_REQUEST_JOINING_GROUP);
+        }
     }
 }

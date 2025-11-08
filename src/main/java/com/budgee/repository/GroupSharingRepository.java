@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import com.budgee.enums.GroupSharingStatus;
 import com.budgee.model.Group;
 import com.budgee.model.GroupSharing;
 import com.budgee.model.User;
@@ -19,4 +20,6 @@ public interface GroupSharingRepository extends JpaRepository<GroupSharing, UUID
     List<GroupSharing> findAllByGroup(Group group);
 
     void deleteAllByGroupId(UUID groupId);
+
+    List<GroupSharing> findAllByGroupAndStatus(Group group, GroupSharingStatus status);
 }
