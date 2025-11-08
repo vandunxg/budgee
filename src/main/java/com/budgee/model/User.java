@@ -6,9 +6,7 @@ import lombok.experimental.FieldDefaults;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
@@ -67,9 +65,6 @@ public class User extends BaseEntity implements UserDetails {
 
     @FutureOrPresent(message = "Subscription expiry must be in the present or future")
     LocalDate subscriptionExpiry;
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    Set<GroupMember> groupMemberships = new HashSet<>();
 
     @Enumerated(EnumType.STRING)
     Role role;

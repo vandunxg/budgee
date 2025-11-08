@@ -11,13 +11,14 @@ import jakarta.validation.constraints.*;
 
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import com.budgee.enums.Currency;
+import com.budgee.enums.InvoiceStatus;
 import com.budgee.enums.PaymentMethod;
-import com.budgee.enums.PaymentStatus;
 
 @Getter
 @Setter
 @Entity
-@Table(name = "payments")
+@Table(name = "invoices")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @EntityListeners(AuditingEntityListener.class)
 @Builder
@@ -25,43 +26,35 @@ import com.budgee.enums.PaymentStatus;
 @AllArgsConstructor
 @ToString
 @EqualsAndHashCode(callSuper = true)
-public class Payment extends BaseEntity {
-
-    @NotNull(message = "User is required")
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    User user;
+public class Invoice extends BaseEntity {
 
     @NotNull(message = "Subscription is required")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "subscription_id", nullable = false)
     UserSubscription subscription;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    InvoiceStatus status;
+
     @NotNull(message = "Amount is required")
     @DecimalMin(value = "0.01", message = "Amount must be at least 0.01")
     @Column(nullable = false, precision = 15, scale = 2)
     BigDecimal amount;
 
+    @Builder.Default
     @NotBlank(message = "Currency is required")
     @Pattern(regexp = "[A-Z]{3}", message = "Currency must be a 3-letter code")
     @Column(length = 3)
-    String currency = "VND";
+    Currency currency = Currency.VND;
 
     @NotNull(message = "Method is required")
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     PaymentMethod method;
 
-    @Size(max = 255, message = "Transaction ID must be at most 255 characters")
-    @Column(length = 255)
-    String transactionId;
-
-    @Enumerated(EnumType.STRING)
-    PaymentStatus status = PaymentStatus.PENDING;
-
-    @Size(max = 1000, message = "QR code data must be at most 1000 characters")
-    String qrCodeData;
-
     @PastOrPresent(message = "Paid at must be in the past or present")
     LocalDateTime paidAt;
+
+    LocalDateTime issuedAt;
 }

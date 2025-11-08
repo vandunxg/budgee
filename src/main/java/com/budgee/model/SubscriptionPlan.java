@@ -10,6 +10,7 @@ import jakarta.validation.constraints.*;
 
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import com.budgee.enums.Currency;
 import com.budgee.enums.SubscriptionDuration;
 
 @Getter
@@ -40,10 +41,11 @@ public class SubscriptionPlan extends BaseEntity {
     @Column(nullable = false, precision = 15, scale = 2)
     BigDecimal price;
 
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
     @NotBlank(message = "Currency is required")
-    @Pattern(regexp = "[A-Z]{3}", message = "Currency must be a 3-letter code")
     @Column(length = 3)
-    String currency = "VND";
+    Currency currency = Currency.VND;
 
     @Size(max = 1000, message = "Features must be at most 1000 characters")
     String features;

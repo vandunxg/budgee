@@ -4,6 +4,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
@@ -25,36 +26,40 @@ import com.budgee.enums.SubscriptionStatus;
 @EqualsAndHashCode(callSuper = true)
 public class UserSubscription extends BaseEntity {
 
-    @NotNull(message = "User is required")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     User user;
 
-    @NotNull(message = "Plan is required")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "plan_id", nullable = false)
     SubscriptionPlan plan;
 
-    @NotNull(message = "Start date is required")
-    @PastOrPresent(message = "Start date must be in the past or present")
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    SubscriptionStatus status;
+
     @Column(nullable = false)
     LocalDate startDate;
 
-    @NotNull(message = "End date is required")
-    @FutureOrPresent(message = "End date must be in the present or future")
     @Column(nullable = false)
     LocalDate endDate;
 
-    @Enumerated(EnumType.STRING)
-    SubscriptionStatus status = SubscriptionStatus.PENDING;
+    @Column(nullable = false)
+    LocalDate nextBillingAt;
+
+    @Builder.Default Boolean autoRenew = Boolean.TRUE;
+
+    LocalDateTime trialEndsAt;
+
+    LocalDateTime canceledAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "latest_invoice_id")
+    Invoice latestInvoice;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "voucher_id")
     VoucherCode voucher;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "payment_id")
-    Payment payment;
-
-    boolean autoRenew = true;
+    @Version Long version;
 }
