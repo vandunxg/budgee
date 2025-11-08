@@ -41,7 +41,6 @@ public class PaymentAttempt extends BaseEntity {
     @Column(length = 3, nullable = false)
     Currency currency;
 
-    @Column(length = 255)
     String gatewayTransactionId;
 
     @Column(length = 500)
